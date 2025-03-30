@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "117850780335",
+    "project_id": "district37-toastmasters",
+    "storage_bucket": "district37-toastmasters.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:117850780335:android:9ac6349c3379a04bd8da5a",
+        "android_client_info": {
+          "package_name": "com.district37.toastmasters"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcZwD-yHb8B8CpwwhOnVuLYSXRUB8FlRE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
