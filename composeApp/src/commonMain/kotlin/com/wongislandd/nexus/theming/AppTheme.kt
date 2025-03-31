@@ -17,7 +17,7 @@ val errorColor = Color(0xFFE57373) // Soft Red for errors
 // Background and text colors
 val backgroundColor
     @Composable
-    get() = if (isSystemInDarkTheme()) Color(0xFF121212) else Color(0xFFFFFFFF) // Dark gray for dark theme, white for light
+    get() = if (isSystemInDarkTheme()) Color(0xFF121212) else Color(0xFF003B5C) // Dark gray for dark theme, white for light
 
 val textColor
     @Composable

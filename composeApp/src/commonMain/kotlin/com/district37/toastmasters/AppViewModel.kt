@@ -1,6 +1,8 @@
 package com.district37.toastmasters
 
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavController
+import co.touchlab.kermit.Logger
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.wongislandd.nexus.events.BackChannelEvent
 import com.wongislandd.nexus.events.EventBus
@@ -12,7 +14,7 @@ class AppViewModel(
     private val navigationSlice: NavigationSlice,
     uiEventBus: EventBus<UiEvent>,
     backChannelEventBus: EventBus<BackChannelEvent>
-): SliceableViewModel(uiEventBus, backChannelEventBus) {
+) : SliceableViewModel(uiEventBus, backChannelEventBus) {
 
     init {
         registerSlices(navigationSlice)
@@ -24,11 +26,17 @@ class AppViewModel(
         args: Map<String, Any?> = emptyMap(),
         removeSelfFromStack: Boolean = false
     ) {
-        navigationSlice.navigationHelper.navigate(
-            navigationController,
-            navigationKey.name,
-            args,
-            removeSelfFromStack
-        )
+        val isCurrentlyNavigating =
+            navigationController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.STARTED
+        if (!isCurrentlyNavigating) {
+            navigationSlice.navigationHelper.navigate(
+                navigationController,
+                navigationKey.name,
+                args,
+                removeSelfFromStack
+            )
+        } else {
+            Logger.i("Navigation requested when already navigating!")
+        }
     }
 }
