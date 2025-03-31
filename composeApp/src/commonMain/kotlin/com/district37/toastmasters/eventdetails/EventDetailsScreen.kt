@@ -2,6 +2,7 @@ package com.district37.toastmasters.eventdetails
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,13 +29,14 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
     val screenState by viewModel.screenStateSlice.screenState.collectAsState()
     StatefulScaffold(resource = screenState) {
         LazyColumn(
+            modifier = modifier,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     // TODO transform this into a carousel
                     it.event.images.firstOrNull()?.let { firstImage ->
-                        EventImage(url = firstImage, modifier = Modifier.height(400.dp))
+                        EventImage(url = firstImage, modifier = Modifier.height(400.dp).fillMaxWidth())
                     }
                     Column(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),

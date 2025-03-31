@@ -23,11 +23,6 @@ class EventDetailsScreenStateSlice(
         MutableStateFlow(Resource.Loading())
     val screenState = _screenState
 
-    /**
-     * May be refreshing more than necessary, consider
-     * caching last known event or finding a better way to
-     * initialize this viewmodel
-     */
     fun initialize(eventId: Int) {
         sliceScope.launch(Dispatchers.IO) {
             val eventDetails = eventRepository.getEventDetails(eventId)
