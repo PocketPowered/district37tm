@@ -7,8 +7,6 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
 import org.koin.ktor.plugin.Koin
 import org.koin.ktor.plugin.scope
@@ -30,7 +28,7 @@ fun Application.main() {
         })
     }
     install(RequestContextPlugin)
-    eventsModule()
+    eventsController()
 }
 
 val RequestContextPlugin = createApplicationPlugin(name = "RequestContextPlugin") {
