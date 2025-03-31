@@ -33,7 +33,6 @@ import com.district37.toastmasters.models.EventPreview
 import com.district37.toastmasters.navigation.EVENT_ID_ARG
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.navigation.StatefulScaffold
-import com.district37.toastmasters.util.formatEpochMillisToDateTime
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -123,7 +122,7 @@ private fun EventCard(
                     color = MaterialTheme.colors.onPrimary,
                 )
                 Text(
-                    text = formatEpochMillisToDateTime(eventPreview.time),
+                    text = eventPreview.time.timeDisplay,
                     style = MaterialTheme.typography.body2,
                     color = MaterialTheme.colors.onPrimary,
                 )

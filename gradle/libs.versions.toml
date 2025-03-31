@@ -48,6 +48,8 @@ ktor-client-serialization = { group = "io.ktor", name = "ktor-client-serializati
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-json = { group = "io.ktor", name = "ktor-client-json", version.ref = "ktor" }
 ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
+ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
+ktor-server-content-negotation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koinCore" }
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koinKtor" }

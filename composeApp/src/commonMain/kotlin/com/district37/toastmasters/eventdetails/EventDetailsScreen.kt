@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -14,7 +15,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.components.EventImage
 import com.district37.toastmasters.navigation.StatefulScaffold
-import com.district37.toastmasters.util.formatEpochMillisToDateTime
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
@@ -22,7 +22,9 @@ import org.koin.core.annotation.KoinExperimentalAPI
 @Composable
 fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
     val viewModel = koinViewModel<EventDetailsViewModel>()
-    viewModel.screenStateSlice.initialize(eventId)
+    LaunchedEffect(eventId) {
+        viewModel.screenStateSlice.initialize(eventId)
+    }
     val screenState by viewModel.screenStateSlice.screenState.collectAsState()
     StatefulScaffold(resource = screenState) {
         LazyColumn(
@@ -39,7 +41,7 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
                     ) {
                         Text(text = it.event.title, fontWeight = FontWeight.Bold)
                         Text(text = it.event.locationInfo)
-                        Text(text = formatEpochMillisToDateTime(it.event.time))
+                        Text(text = it.event.time.timeDisplay)
                     }
                 }
             }

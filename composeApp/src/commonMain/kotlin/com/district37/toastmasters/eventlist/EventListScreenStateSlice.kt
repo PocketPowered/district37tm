@@ -15,8 +15,9 @@ data class EventListScreenState(
 )
 
 class EventListScreenStateSlice(
-    private val eventRepository: EventRepository
-): ViewModelSlice() {
+    private val eventRepository: EventRepository,
+    private val eventPreviewTransformer: EventPreviewTransformer
+) : ViewModelSlice() {
 
     private val _screenState: MutableStateFlow<Resource<EventListScreenState>> =
         MutableStateFlow(Resource.Loading())
@@ -27,8 +28,9 @@ class EventListScreenStateSlice(
         sliceScope.launch(Dispatchers.IO) {
             val events = eventRepository.getEvents()
             _screenState.update {
-                events.map {
-                    EventListScreenState(it)
+                events.map { backendEventPreviews ->
+                    val mappedEvents = backendEventPreviews.map(eventPreviewTransformer::transform)
+                    EventListScreenState(mappedEvents)
                 }
             }
         }
