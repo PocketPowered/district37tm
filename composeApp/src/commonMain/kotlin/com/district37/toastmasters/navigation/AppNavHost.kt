@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.district37.toastmasters.eventdetails.EventDetailsScreen
 import com.district37.toastmasters.eventlist.EventListScreen
+import com.district37.toastmasters.info.InfoScreen
 import com.wongislandd.nexus.navigation.LocalNavHostController
 
 @Composable
@@ -78,6 +79,11 @@ fun AppNavHost(
                         val eventId = it.arguments?.getInt(EVENT_ID_ARG)
                             ?: throw IllegalArgumentException("Navigated to details screen without an event id!")
                         EventDetailsScreen(eventId)
+                    }
+                }
+                NavigationItemKey.INFO -> {
+                    composable(route = navigationItem.completeRoute) {
+                        InfoScreen()
                     }
                 }
             }

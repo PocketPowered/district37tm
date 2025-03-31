@@ -13,8 +13,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,7 +51,20 @@ fun EventListScreen() {
     val viewModel = koinViewModel<EventListViewModel>()
     val coroutineScope = rememberCoroutineScope()
     val screenState by viewModel.screenStateSlice.screenState.collectAsState()
-    StatefulScaffold(resource = screenState) { data ->
+    StatefulScaffold(
+        actions = {
+            IconButton({
+                coroutineScope.launch {
+                    appViewModel.navigate(
+                        navController,
+                        NavigationItemKey.INFO
+                    )
+                }
+            }) {
+                Icon(Icons.Default.Info, contentDescription = "123")
+            }
+        },
+        resource = screenState) { data ->
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)
