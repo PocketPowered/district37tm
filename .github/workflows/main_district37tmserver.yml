@@ -62,5 +62,5 @@ jobs:
         with:
           app-name: 'district37tmserver'
           slot-name: 'Production'
-          package: '*.jar'
+          package: '*-all.jar'
           
