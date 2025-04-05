@@ -47,6 +47,7 @@ kotlin {
             implementation(projects.shared)
             implementation(libs.bundles.gitlive)
             implementation(libs.bundles.landscapist)
+            implementation(libs.accompanist.placeholder)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)

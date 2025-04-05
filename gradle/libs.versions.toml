@@ -11,6 +11,7 @@ junit = "4.13.2"
 kermit="2.0.4"
 kotlin = "2.1.0"
 landscapist="2.4.0"
+accompanist="0.36.0"
 kotlinx-serialization = "1.7.3"
 kotlinx-coroutines = "1.9.0"
 koinCompose = "4.0.0"
@@ -64,6 +65,7 @@ gitlive-firebase-kotlin-performance = { module = "dev.gitlive:firebase-perf", ve
 gitlive-firebase-kotlin-installations = { module = "dev.gitlive:firebase-installations", version.ref = "firebase-gitlive-sdk" }
 landscapist-coil = { module = "com.github.skydoves:landscapist-coil3", version.ref = "landscapist" }
 landscapist-placeholder = { module = "com.github.skydoves:landscapist-placeholder", version.ref = "landscapist" }
+accompanist-placeholder = { module = "com.google.accompanist:accompanist-swiperefresh", version.ref = "accompanist" }
 
 
 
@@ -80,6 +82,7 @@ google-services = { id = "com.google.gms.google-services", version.ref = "google
 buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref="kotlin"}
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+
 
 [bundles]
 nexus = [
