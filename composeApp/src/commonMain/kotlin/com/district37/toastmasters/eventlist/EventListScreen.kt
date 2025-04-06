@@ -38,11 +38,14 @@ import com.district37.toastmasters.models.EventPreview
 import com.district37.toastmasters.navigation.EVENT_ID_ARG
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.navigation.StatefulScaffold
+import com.wongislandd.nexus.events.UiEvent
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
+
+object UserTriggeredRefresh: UiEvent
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
@@ -67,7 +70,7 @@ fun EventListScreen() {
             }
         },
         onRefresh = {
-
+            viewModel.uiEventBus.dEvent(UserTriggeredRefresh)
         },
         isRefreshing = isRefreshing,
         resource = screenState
