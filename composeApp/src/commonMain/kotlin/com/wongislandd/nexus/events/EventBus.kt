@@ -13,11 +13,13 @@ class EventBus<T: Event> {
     private val _events = MutableSharedFlow<T>(replay = 0)
     val events: SharedFlow<T> = _events.asSharedFlow()
 
-    suspend fun sendEvent(event: T) {
-        Logger.i(tag = "EventBus", null) {
-            event.toString()
+    fun sendEvent(coroutineScope: CoroutineScope, event: T) {
+        coroutineScope.launch {
+            Logger.i(tag = "EventBus", null) {
+                event.toString()
+            }
+            _events.emit(event)
         }
-        _events.emit(event)
     }
 }
 
