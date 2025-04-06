@@ -19,7 +19,6 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,14 +37,11 @@ import com.district37.toastmasters.models.EventPreview
 import com.district37.toastmasters.navigation.EVENT_ID_ARG
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.navigation.StatefulScaffold
-import com.wongislandd.nexus.events.UiEvent
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
-
-object UserTriggeredRefresh: UiEvent
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
@@ -70,7 +66,9 @@ fun EventListScreen() {
             }
         },
         onRefresh = {
-            viewModel.uiEventBus.dEvent(UserTriggeredRefresh)
+            viewModel.uiEventBus.sendEvent(
+                coroutineScope, RefreshTriggered
+            )
         },
         isRefreshing = isRefreshing,
         resource = screenState
