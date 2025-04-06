@@ -31,7 +31,19 @@ class EventListScreenStateSlice(
         fetchData()
     }
 
-    fun fetchData() {
+    override fun handleUiEvent(event: UiEvent) {
+        super.handleUiEvent(event)
+        when (event) {
+            RefreshTriggered -> {
+                _screenState.update {
+                    Resource.Loading()
+                }
+                fetchData()
+            }
+        }
+    }
+
+    private fun fetchData() {
         sliceScope.launch(Dispatchers.IO) {
             val events = eventRepository.getEvents()
             _screenState.update {
