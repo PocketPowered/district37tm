@@ -45,8 +45,6 @@ import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
-object UserTriggeredRefresh: UiEvent
-
 @OptIn(KoinExperimentalAPI::class)
 @Composable
 fun EventListScreen() {
@@ -70,7 +68,6 @@ fun EventListScreen() {
             }
         },
         onRefresh = {
-            viewModel.uiEventBus.dEvent(UserTriggeredRefresh)
         },
         isRefreshing = isRefreshing,
         resource = screenState

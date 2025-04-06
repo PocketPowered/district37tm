@@ -1,10 +1,13 @@
 package com.wongislandd.nexus
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -21,10 +24,12 @@ fun GenericErrorScreen(
     errorMessage: String = "Something went wrong!",
     modifier: Modifier = Modifier
 ) {
+    val scrollState = rememberScrollState()
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
-            modifier = Modifier.align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.align(Alignment.Center).fillMaxSize().verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Icon(Icons.Default.Warning, modifier = Modifier.size(128.dp), contentDescription = null)
             Text(
