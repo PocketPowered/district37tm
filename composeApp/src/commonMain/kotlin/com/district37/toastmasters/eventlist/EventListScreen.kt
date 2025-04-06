@@ -39,6 +39,7 @@ import com.district37.toastmasters.navigation.EVENT_ID_ARG
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.navigation.StatefulScaffold
 import com.wongislandd.nexus.navigation.LocalNavHostController
+import com.wongislandd.nexus.util.Resource
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -51,6 +52,7 @@ fun EventListScreen() {
     val viewModel = koinViewModel<EventListViewModel>()
     val coroutineScope = rememberCoroutineScope()
     val screenState by viewModel.screenStateSlice.screenState.collectAsState()
+    val isRefreshing = screenState is Resource.Loading
     StatefulScaffold(
         actions = {
             IconButton({
@@ -64,7 +66,12 @@ fun EventListScreen() {
                 Icon(Icons.Default.Info, contentDescription = "123")
             }
         },
-        resource = screenState) { data ->
+        onRefresh = {
+
+        },
+        isRefreshing = isRefreshing,
+        resource = screenState
+    ) { data ->
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)
