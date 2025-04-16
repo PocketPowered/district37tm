@@ -25,7 +25,7 @@ fun GlobalTopAppBar(
     isTitleShown: Boolean = true,
     showBackButton: Boolean = true,
     homeDestination: String,
-    defaultTitle: String = "District 37 Toastmasters",
+    defaultTitle: String = "District 37 Conference - 2025",
     actions: (@Composable RowScope.() -> Unit) = {},
     modifier: Modifier = Modifier
 ) {
