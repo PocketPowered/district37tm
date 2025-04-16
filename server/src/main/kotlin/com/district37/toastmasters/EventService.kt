@@ -61,7 +61,7 @@ object MockEventDataProvider {
             title = "International Speech Contest",
             description = "Watch the amazing speakers compete for ISC",
             images = listOf(
-                "https://d100tm.org/wp-content/uploads/2023/10/100-years-sparkle-district-100.png",
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
                 "https://example.com/event2/img2.jpg"
             ),
             time = Clock.System.now().epochSeconds + 86400,
@@ -93,10 +93,10 @@ object MockEventDataProvider {
         ),
         BackendEventDetails(
             id = 3,
-            title = "District 37 Evaluation contest",
+            title = "Evaluation contest",
             description = "Join us in San Francisco for workshops, panels, and hands-on experiences in tech.",
             images = listOf(
-                "https://d100tm.org/wp-content/uploads/2023/10/100-years-sparkle-district-100.png",
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
                 "https://example.com/event3/img2.jpg"
             ),
             time = Clock.System.now().epochSeconds + 172800,
