@@ -15,7 +15,7 @@ import kotlinx.serialization.json.Json
 fun createHttpClient(engine: HttpClientEngine): HttpClient {
     return HttpClient(engine) {
         defaultRequest {
-            url("http://localhost:8080")
+            url("https://district37tmserver-a7fgdaageve3g9dx.eastus-01.azurewebsites.net")
         }
         install(Logging) {
             logger = object : Logger {
