@@ -61,6 +61,7 @@ object MockEventDataProvider {
             title = "International Speech Contest",
             description = "Watch the amazing speakers compete for ISC",
             images = listOf(
+                "https://griffithobservatory.org/wp-content/uploads/2021/01/olenka-kotyk-9TUkYXQKXec-unsplash-1200x1200.jpg",
                 "https://example.com/event2/img2.jpg"
             ),
             time = Clock.System.now().epochSeconds + 86400,
@@ -95,6 +96,7 @@ object MockEventDataProvider {
             title = "District 37 Evaluation contest",
             description = "Join us in San Francisco for workshops, panels, and hands-on experiences in tech.",
             images = listOf(
+                "https://vastphotos.com/files/uploads/photos/10401/high-resolution-new-york-city-skyline-vast-xl.jpg?v=20220712043521",
                 "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSymZkmgQ77xxYPLHnd8aqrZ3JNU9TaIw9qBg&s",
                 "https://example.com/event3/img2.jpg"
             ),
