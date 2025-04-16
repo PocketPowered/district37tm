@@ -26,7 +26,7 @@ object MockEventDataProvider {
             title = "First Timers",
             description = "If you are attending for the first time, this is for you",
             images = listOf(
-                "https://d37toastmasters.org/wp-content/uploads/2025/04/2025-D37-Conference-Events_4-1-2025_Promos.pdf",
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
                 "https://example.com/event1/img2.jpg"
             ),
             time = Clock.System.now().epochSeconds,
