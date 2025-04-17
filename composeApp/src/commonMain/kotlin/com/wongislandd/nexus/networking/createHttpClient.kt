@@ -12,10 +12,17 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
+private const val PROD_HOST = "https://district37tmserver-a7fgdaageve3g9dx.eastus-01.azurewebsites.net"
+private const val DEV_HOST = "http://localhost:8080"
+// Adjust this to true to hit local server, never commit with this as true
+private const val useDevHost = false
+
+private val HOST = if (useDevHost) DEV_HOST else PROD_HOST
+
 fun createHttpClient(engine: HttpClientEngine): HttpClient {
     return HttpClient(engine) {
         defaultRequest {
-            url("https://district37tmserver-a7fgdaageve3g9dx.eastus-01.azurewebsites.net")
+            url(HOST)
         }
         install(Logging) {
             logger = object : Logger {
