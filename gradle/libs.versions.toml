@@ -22,6 +22,7 @@ koinCore = "4.0.0"
 koinKtor = "3.5.0"
 okio = "3.9.1"
 kotlin-datetime="0.6.1"
+firebase-messaging="24.1.1"
 
 #Gitlive / Firebase
 firebase-gitlive-sdk = "2.1.0"
@@ -66,7 +67,7 @@ gitlive-firebase-kotlin-installations = { module = "dev.gitlive:firebase-install
 landscapist-coil = { module = "com.github.skydoves:landscapist-coil3", version.ref = "landscapist" }
 landscapist-placeholder = { module = "com.github.skydoves:landscapist-placeholder", version.ref = "landscapist" }
 accompanist-placeholder = { module = "com.google.accompanist:accompanist-swiperefresh", version.ref = "accompanist" }
-
+firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebase-messaging"}
 
 
 [plugins]
