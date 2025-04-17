@@ -62,7 +62,7 @@ fun EventListScreen() {
                     )
                 }
             }) {
-                Icon(Icons.Default.Info, contentDescription = "123")
+                Icon(Icons.Default.Info, contentDescription = "Icon")
             }
         },
         onRefresh = {
@@ -75,7 +75,7 @@ fun EventListScreen() {
     ) { data ->
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)
+            modifier = Modifier.padding(vertical = 8.dp).fillMaxSize().background(MaterialTheme.colors.background)
         ) {
             items(data.events) { event ->
                 EventCard(event, onCardClick = {
@@ -100,14 +100,14 @@ private fun EventCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        shape = RoundedCornerShape(2.dp), modifier = modifier.height(
-            height = 400.dp
+        shape = RoundedCornerShape(8.dp), modifier = modifier.padding(horizontal = 8.dp).height(
+            height = 200.dp
         ), onClick = onCardClick
     ) {
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            EventImage(url = eventPreview.image, modifier = Modifier.fillMaxSize())
+            //EventImage(url = eventPreview.image, modifier = Modifier.fillMaxSize())
             // Gradient overlay at the bottom for readability
             Box(
                 modifier = Modifier
