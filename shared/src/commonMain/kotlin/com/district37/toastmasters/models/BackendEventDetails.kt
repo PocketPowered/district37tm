@@ -11,7 +11,7 @@ data class BackendEventDetails(
     val images: List<String>,
     val title: String,
     val description: String,
-    val time: Long,
+    val time: String,
     val locationInfo: String,
     val agenda: List<BackendAgendaItem>,
     val additionalLinks: List<BackendExternalLink>,

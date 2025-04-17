@@ -13,7 +13,7 @@ class EventPreviewTransformer(
             id = input.id,
             image = input.image,
             title = input.title,
-            time = epochTimeTransformer.transform(input.time),
+            time = input.time,
             locationInfo = input.locationInfo
         )
     }

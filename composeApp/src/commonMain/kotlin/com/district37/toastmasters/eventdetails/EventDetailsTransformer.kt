@@ -16,13 +16,13 @@ class EventDetailsTransformer(
             images = input.images,
             title = input.title,
             description = input.description,
-            time = epochTimeTransformer.transform(input.time),
+            time = input.time,
             locationInfo = input.locationInfo,
             agenda = input.agenda.map {
                 AgendaItem(
                     title = it.title,
                     description = it.description,
-                    time = epochTimeTransformer.transform(it.time),
+                    time = it.time,
                     locationInfo = it.locationInfo
                 )
             },

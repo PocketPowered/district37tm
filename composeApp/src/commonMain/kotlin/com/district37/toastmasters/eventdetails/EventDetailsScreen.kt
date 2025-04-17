@@ -43,7 +43,13 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
                     ) {
                         Text(text = it.event.title, fontWeight = FontWeight.Bold)
                         Text(text = it.event.locationInfo)
-                        Text(text = it.event.time.timeDisplay)
+                        Text(text = it.event.time)
+                        it.event.agenda.forEach { agendaItem ->
+                            Text(text = agendaItem.title)
+                            Text(text = agendaItem.description)
+                            Text(text = agendaItem.locationInfo)
+                            Text(text = agendaItem.time)
+                        }
                     }
                 }
             }

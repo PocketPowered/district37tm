@@ -148,7 +148,7 @@ private fun EventCard(
                     color = MaterialTheme.colors.onPrimary,
                 )
                 Text(
-                    text = eventPreview.time.timeDisplay,
+                    text = eventPreview.time,
                     style = MaterialTheme.typography.body2,
                     color = MaterialTheme.colors.onPrimary,
                 )
