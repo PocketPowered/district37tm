@@ -52,7 +52,7 @@ object MockEventDataProvider {
                 "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
                 "https://example.com/event1/img2.jpg"
             ),
-            time = "Friday, May 2, 2:00 PM - 5:45 PM \n Friday, May 2, 8:30 PM - 10:00 PM",
+            time = "Friday, May 2, 2:00 PM - 5:45 PM \nFriday, May 2, 8:30 PM - 10:00 PM",
             locationInfo = "Noda Room",
             agenda = listOf(),
             additionalLinks = listOf(
@@ -96,7 +96,7 @@ object MockEventDataProvider {
                 "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
                 "https://example.com/event1/img2.jpg"
             ),
-            time = "Friday, May 2, 2:00 PM - 5:30 PM \n Friday, May 2, 7:00 PM - 11:00 PM",
+            time = "Friday, May 2, 2:00 PM - 5:30 PM \nFriday, May 2, 7:00 PM - 11:00 PM",
             locationInfo = "Reach out to Julie Richardt & Valencia Tims, who are in colorful hats",
             agenda = listOf(),
             additionalLinks = listOf()
@@ -109,7 +109,7 @@ object MockEventDataProvider {
                 "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
                 "https://example.com/event1/img2.jpg"
             ),
-            time = "Friday, May 2, 2:00 PM - 3:30 PM \n Friday, May 2, 7:30 PM - 11:00 PM",
+            time = "Friday, May 2, 2:00 PM - 3:30 PM \nFriday, May 2, 7:30 PM - 11:00 PM",
             locationInfo = "Graham Ballroom",
             agenda = listOf(),
             additionalLinks = listOf()
@@ -267,7 +267,7 @@ object MockEventDataProvider {
             id = it.id,
             title = it.title,
             image = it.images.firstOrNull() ?: "no url in mock",
-            time = "12:00 am - 12:00 pm",
+            time = it.time,
             locationInfo = it.locationInfo
         )
     }
