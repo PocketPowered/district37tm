@@ -12,7 +12,6 @@ data class BackendEventDetails(
     val title: String,
     val description: String,
     val time: String,
-    val isDayOne: Boolean = true,
     val locationInfo: String,
     val agenda: List<BackendAgendaItem>,
     val additionalLinks: List<BackendExternalLink>,

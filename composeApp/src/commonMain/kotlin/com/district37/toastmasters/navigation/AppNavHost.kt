@@ -66,13 +66,8 @@ fun AppNavHost(
                 }
 
                 NavigationItemKey.EVENT_LIST -> {
-                    composable(route = navigationItem.completeRoute,
-                        arguments = listOf(
-                            navArgument(EVENT_IS_FRIDAY_ARG) { type = NavType.BoolType }
-                        )) {
-                        val isFriday = it.arguments?.getBoolean(EVENT_IS_FRIDAY_ARG)
-                            ?: throw IllegalArgumentException("Navigated to list screen without knowing the day!")
-                        EventListScreen(isFriday)
+                    composable(route = navigationItem.completeRoute) {
+                        EventListScreen()
                     }
                 }
 

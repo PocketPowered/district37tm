@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
-import androidx.compose.material.Divider
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -44,13 +43,9 @@ import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
-
-// Friday Apr 18
-// Saturday Apr 19
-
 @OptIn(KoinExperimentalAPI::class)
 @Composable
-fun EventListScreen(isFriday: Boolean) {
+fun EventListScreen() {
     val navController = LocalNavHostController.current
     val appViewModel = LocalAppViewModel.current
     val viewModel = koinViewModel<EventListViewModel>()
@@ -78,10 +73,6 @@ fun EventListScreen(isFriday: Boolean) {
         isRefreshing = isRefreshing,
         resource = screenState
     ) { data ->
-        val tabIndex = if (data.isCurrentTabFriday) 0 else 1
-
-        val tabs = listOf("Friday", "Saturday")
-
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -90,25 +81,24 @@ fun EventListScreen(isFriday: Boolean) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                tabs.forEachIndexed { index, title ->
-                    val isSelected = tabIndex == index
+                data.availableTabs.forEach { tab ->
                     item {
                         Tab(
                             text = {
                                 Text(
-                                    title,
+                                    tab.displayName,
                                     modifier = Modifier.padding(horizontal = 36.dp)
                                 )
                             },
-                            selected = isSelected,
+                            selected = tab.isSelected,
                             onClick = {
                                 viewModel.uiEventBus.sendEvent(
                                     coroutineScope,
-                                    TabChanged(index == 0)
+                                    TabChanged(tab)
                                 )
                             },
                             modifier = Modifier.conditionallyChain(
-                                isSelected, Modifier.background(MaterialTheme.colors.secondary)
+                                tab.isSelected, Modifier.background(MaterialTheme.colors.secondary)
                             )
                         )
                     }

@@ -8,6 +8,5 @@ data class BackendEventPreview(
     val image: String,
     val title: String,
     val time: String,
-    val isDayOne: Boolean,
     val locationInfo: String,
 )

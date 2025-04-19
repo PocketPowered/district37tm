@@ -2,10 +2,12 @@ package com.district37.toastmasters
 
 import com.district37.toastmasters.models.BackendEventDetails
 import com.district37.toastmasters.models.BackendEventPreview
+import com.district37.toastmasters.models.BackendTabInfo
 import com.wongislandd.nexus.networking.HttpMethod
 import com.wongislandd.nexus.networking.NetworkClient
 import com.wongislandd.nexus.util.Resource
 import io.ktor.client.HttpClient
+import io.ktor.client.request.HttpRequestBuilder
 
 class EventRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
 
@@ -16,10 +18,20 @@ class EventRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
         )
     }
 
-    suspend fun getEvents(isFriday: Boolean): Resource<List<BackendEventPreview>> {
+    suspend fun getEventsByKey(dateKey: String): Resource<List<BackendEventPreview>> {
         return makeRequest(
-            "events/${isFriday}",
+            "events",
+            HttpMethod.GET,
+        ) {
+            url.parameters.append("date", dateKey)
+        }
+    }
+
+    suspend fun getAvailableTabs(): Resource<List<BackendTabInfo>> {
+        return makeRequest(
+            "availableTabs",
             HttpMethod.GET
         )
+
     }
 }

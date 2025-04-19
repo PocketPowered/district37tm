@@ -14,7 +14,6 @@ import com.district37.toastmasters.models.BackendEventDetails
             "https://example.com/event2/img2.jpg"
         ),
         time = "Saturday, May 3, 2:30 PM - 3:30 PM",
-        isDayOne = false,
         locationInfo = "Graham Ballroom / Dilworth Room",
         agenda = listOf(
             BackendAgendaItem(
@@ -41,7 +40,6 @@ import com.district37.toastmasters.models.BackendEventDetails
             "https://example.com/event2/img2.jpg"
         ),
         time = "Saturday, May 3, 4:00 PM - 5:30 PM",
-        isDayOne = false,
         locationInfo = "Graham Ballroom",
         agenda = listOf(),
         additionalLinks = listOf()

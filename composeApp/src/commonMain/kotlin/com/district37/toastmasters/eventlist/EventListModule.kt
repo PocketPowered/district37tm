@@ -9,4 +9,5 @@ val eventListModule = module {
     viewModelOf(::EventListViewModel)
     factoryOf(::EventListScreenStateSlice)
     singleOf(::EventPreviewTransformer)
+    singleOf(::TabInfoTransformer)
 }

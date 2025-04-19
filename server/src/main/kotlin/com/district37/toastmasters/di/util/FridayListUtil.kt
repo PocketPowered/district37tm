@@ -5,7 +5,6 @@ import com.district37.toastmasters.models.BackendEventDetails
 import com.district37.toastmasters.models.BackendExternalLink
 
 val fridayList = listOf(
-    //Friday List
     BackendEventDetails(
         id = 1,
         title = "Registration / First Timers Check-In",
@@ -15,7 +14,6 @@ val fridayList = listOf(
             "https://example.com/event1/img2.jpg"
         ),
         time = "Friday, May 2, 2:00 PM - 5:45 PM",
-        isDayOne = true,
         locationInfo = "Near Queens Ballroom",
         agenda = listOf(),
         additionalLinks = listOf(
