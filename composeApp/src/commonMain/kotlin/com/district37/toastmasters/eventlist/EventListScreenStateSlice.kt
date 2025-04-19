@@ -40,10 +40,11 @@ class EventListScreenStateSlice(
         super.handleUiEvent(event)
         when (event) {
             RefreshTriggered -> {
+                val currentTabSelection = _screenState.value.data?.isCurrentTabFriday ?: true
                 _screenState.update {
                     Resource.Loading()
                 }
-                fetchData(isFriday = _screenState.value.data?.isCurrentTabFriday ?: true)
+                fetchData(isFriday = currentTabSelection)
             }
             is TabChanged -> {
                 _screenState.update {

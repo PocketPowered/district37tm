@@ -13,21 +13,21 @@ import androidx.compose.ui.graphics.Color
 import org.koin.core.annotation.KoinExperimentalAPI
 
 @OptIn(KoinExperimentalAPI::class)
-    @Composable
-    fun TabRow(
-        selectedTabIndex: Int,
-        modifier: Modifier = Modifier,
-        backgroundColor: Color = MaterialTheme.colors.primarySurface,
-        contentColor: Color = contentColorFor(backgroundColor),
-        indicator: @Composable @UiComposable (tabPositions: List<TabPosition>) -> Unit = @Composable { tabPositions ->
-            TabRowDefaults.Indicator(
-                Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex])
-            )
-        },
-        divider: @Composable @UiComposable () -> Unit = @Composable {
-            TabRowDefaults.Divider()
-        },
-        tabs: @Composable @UiComposable () -> Unit
-    ): Unit {
+@Composable
+fun TabRow(
+    selectedTabIndex: Int,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = MaterialTheme.colors.primarySurface,
+    contentColor: Color = contentColorFor(backgroundColor),
+    indicator: @Composable @UiComposable (tabPositions: List<TabPosition>) -> Unit = @Composable { tabPositions ->
+        TabRowDefaults.Indicator(
+            Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex])
+        )
+    },
+    divider: @Composable @UiComposable () -> Unit = @Composable {
+        TabRowDefaults.Divider()
+    },
+    tabs: @Composable @UiComposable () -> Unit
+) {
 
-    }
+}

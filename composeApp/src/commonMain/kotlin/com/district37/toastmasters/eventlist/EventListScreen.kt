@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,10 +24,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -36,13 +34,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
-import com.district37.toastmasters.components.EventImage
 import com.district37.toastmasters.models.EventPreview
 import com.district37.toastmasters.navigation.EVENT_ID_ARG
-import com.district37.toastmasters.navigation.EVENT_IS_FRIDAY_ARG
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.navigation.StatefulScaffold
-import com.district37.toastmasters.tabs.TabRow
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
 import kotlinx.coroutines.launch
@@ -83,34 +78,40 @@ fun EventListScreen(isFriday: Boolean) {
 
         val tabs = listOf("Friday", "Saturday")
 
-        Column(modifier = Modifier.fillMaxWidth()) {
-            TabRow(selectedTabIndex = tabIndex) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row {
                 tabs.forEachIndexed { index, title ->
                     Tab(text = { Text(title) },
                         selected = tabIndex == index,
                         onClick = {
                             viewModel.uiEventBus.sendEvent(coroutineScope, TabChanged(index == 0))
-                        }
+                        },
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
-        }
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(vertical = 8.dp).fillMaxSize().background(MaterialTheme.colors.background)
-        ) {
-            items(data.events) { event ->
-                EventCard(event, onCardClick = {
-                    coroutineScope.launch {
-                        appViewModel.navigate(
-                            navController,
-                            NavigationItemKey.EVENT_DETAILS,
-                            mapOf(EVENT_ID_ARG to event.id)
-                        )
-                    }
-                })
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(vertical = 8.dp).fillMaxSize()
+                    .background(MaterialTheme.colors.background)
+            ) {
+                items(data.events) { event ->
+                    EventCard(event, onCardClick = {
+                        coroutineScope.launch {
+                            appViewModel.navigate(
+                                navController,
+                                NavigationItemKey.EVENT_DETAILS,
+                                mapOf(EVENT_ID_ARG to event.id)
+                            )
+                        }
+                    })
+                }
             }
         }
+
     }
 }
 

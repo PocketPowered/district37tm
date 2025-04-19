@@ -16,7 +16,7 @@ import kotlinx.serialization.json.Json
 private const val PROD_HOST = "https://christopher-wong.com/server/"
 private const val DEV_HOST = "http://localhost:8080"
 // Adjust this to true to hit local server, never commit with this as true
-private const val useDevHost = false
+private const val useDevHost = true
 
 private val HOST = if (useDevHost) DEV_HOST else PROD_HOST
 
