@@ -4,15 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
+import androidx.compose.material.Divider
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -27,9 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -40,9 +39,14 @@ import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.navigation.StatefulScaffold
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
+import com.wongislandd.nexus.util.conditionallyChain
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
+
+
+// Friday Apr 18
+// Saturday Apr 19
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
@@ -82,15 +86,32 @@ fun EventListScreen(isFriday: Boolean) {
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
                 tabs.forEachIndexed { index, title ->
-                    Tab(text = { Text(title) },
-                        selected = tabIndex == index,
-                        onClick = {
-                            viewModel.uiEventBus.sendEvent(coroutineScope, TabChanged(index == 0))
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
+                    val isSelected = tabIndex == index
+                    item {
+                        Tab(
+                            text = {
+                                Text(
+                                    title,
+                                    modifier = Modifier.padding(horizontal = 36.dp)
+                                )
+                            },
+                            selected = isSelected,
+                            onClick = {
+                                viewModel.uiEventBus.sendEvent(
+                                    coroutineScope,
+                                    TabChanged(index == 0)
+                                )
+                            },
+                            modifier = Modifier.conditionallyChain(
+                                isSelected, Modifier.background(MaterialTheme.colors.secondary)
+                            )
+                        )
+                    }
                 }
             }
             LazyColumn(
@@ -123,57 +144,38 @@ private fun EventCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        shape = RoundedCornerShape(8.dp), modifier = modifier.padding(horizontal = 8.dp).height(
+        shape = RoundedCornerShape(8.dp),
+        backgroundColor = MaterialTheme.colors.secondary.copy(alpha = .7f),
+        modifier = modifier.padding(horizontal = 8.dp).height(
             height = 200.dp
-        ), onClick = onCardClick
+        ),
+        onClick = onCardClick
     ) {
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            // EventImage(url = eventPreview.image, modifier = Modifier.height(100.dp).fillMaxWidth())
-            // Gradient overlay at the bottom for readability
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .height(100.dp)
-                    .blur(8.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                MaterialTheme.colors.primary.copy(alpha = 0.4f),
-                                MaterialTheme.colors.primary.copy(alpha = 0.6f),
-                                MaterialTheme.colors.primary.copy(alpha = 0.7f),
-                                MaterialTheme.colors.primary.copy(alpha = 0.9f)
-                            ),
-                            startY = 0f,
-                            endY = 180f
-                        )
-                    )
-            )
             Column(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp, start = 8.dp)
-                    .align(Alignment.BottomStart)
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp, start = 16.dp)
+                    .align(Alignment.CenterStart)
             ) {
                 Text(
                     text = eventPreview.title,
                     style = MaterialTheme.typography.body1,
-                    color = MaterialTheme.colors.onPrimary,
-                    modifier = Modifier,
+                    color = MaterialTheme.colors.onSurface,
+                    fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 2
                 )
                 Text(
                     text = eventPreview.locationInfo,
-                    style = MaterialTheme.typography.body2,
-                    color = MaterialTheme.colors.onPrimary,
+                    style = MaterialTheme.typography.body1,
+                    color = MaterialTheme.colors.onSurface,
                 )
                 Text(
                     text = eventPreview.time,
-                    style = MaterialTheme.typography.body2,
-                    color = MaterialTheme.colors.onPrimary,
+                    style = MaterialTheme.typography.body1,
+                    color = MaterialTheme.colors.onSurface,
                 )
             }
         }
