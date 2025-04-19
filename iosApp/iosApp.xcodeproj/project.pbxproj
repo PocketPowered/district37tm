@@ -11,6 +11,8 @@
 		058557D9273AAEEB004C7B11 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557D8273AAEEB004C7B11 /* Preview Assets.xcassets */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
 		7555FF83242A565900829871 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555FF82242A565900829871 /* ContentView.swift */; };
+		E76DC4452DB08FC700C85611 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = E76DC4442DB08FC700C85611 /* FirebaseMessaging */; };
+		E76DC4482DB0953200C85611 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E76DC4472DB0953200C85611 /* AppDelegate.swift */; };
 		E79F08442D99A32300360AA2 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E79F08432D99A32300360AA2 /* GoogleService-Info.plist */; };
 		E79F08472D99A3B400360AA2 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = E79F08462D99A3B400360AA2 /* FirebaseAnalytics */; };
 		E79F08492D99A3B400360AA2 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = E79F08482D99A3B400360AA2 /* FirebaseCore */; };
@@ -28,6 +30,7 @@
 		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AB3632DC29227652001CCB65 /* Config.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		E76DC4472DB0953200C85611 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		E79F08432D99A32300360AA2 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -38,6 +41,7 @@
 			files = (
 				E79F084B2D99A3B400360AA2 /* FirebaseCrashlytics in Frameworks */,
 				E79F084D2D99A3B400360AA2 /* FirebaseFirestore in Frameworks */,
+				E76DC4452DB08FC700C85611 /* FirebaseMessaging in Frameworks */,
 				E79F08512D99A3B400360AA2 /* FirebasePerformance in Frameworks */,
 				E79F08492D99A3B400360AA2 /* FirebaseCore in Frameworks */,
 				E79F08472D99A3B400360AA2 /* FirebaseAnalytics in Frameworks */,
@@ -84,6 +88,7 @@
 		7555FF7D242A565900829871 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				E76DC4472DB0953200C85611 /* AppDelegate.swift */,
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
 				7555FF82242A565900829871 /* ContentView.swift */,
 				7555FF8C242A565B00829871 /* Info.plist */,
@@ -126,6 +131,7 @@
 				E79F084C2D99A3B400360AA2 /* FirebaseFirestore */,
 				E79F084E2D99A3B400360AA2 /* FirebaseInstallations */,
 				E79F08502D99A3B400360AA2 /* FirebasePerformance */,
+				E76DC4442DB08FC700C85611 /* FirebaseMessaging */,
 			);
 			productName = iosApp;
 			productReference = 7555FF7B242A565900829871 /* District37ToastMasters.app */;
@@ -207,6 +213,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E76DC4482DB0953200C85611 /* AppDelegate.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
 			);
@@ -424,6 +431,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		E76DC4442DB08FC700C85611 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E79F08452D99A3B400360AA2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
 		E79F08462D99A3B400360AA2 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E79F08452D99A3B400360AA2 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

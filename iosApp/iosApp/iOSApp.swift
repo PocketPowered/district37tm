@@ -1,13 +1,14 @@
 import SwiftUI
 import ComposeApp
-import Firebase // Add this line
+import Firebase
 
 @main
 struct iOSApp: App {
 
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     init() {
         AppModuleKt.initializeKoin(context: nil)
-        FirebaseApp.configure()
     }
 
     var body: some Scene {
