@@ -15,8 +15,9 @@ fun Application.eventsController() {
             call.respond(eventService.getEvent(id))
         }
 
-        get("/events") {
-            call.respond(eventService.getEventPreviews())
+        get("/events/{isFriday}") {
+            val isFriday = call.parameters["isFriday"]?.toBoolean() ?: throw IllegalArgumentException("Invalid ID")
+            call.respond(eventService.getEventPreviews(isFriday))
         }
     }
 }

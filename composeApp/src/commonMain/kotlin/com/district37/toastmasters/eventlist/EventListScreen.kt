@@ -16,13 +16,17 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Tab
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -35,8 +39,10 @@ import com.district37.toastmasters.LocalAppViewModel
 import com.district37.toastmasters.components.EventImage
 import com.district37.toastmasters.models.EventPreview
 import com.district37.toastmasters.navigation.EVENT_ID_ARG
+import com.district37.toastmasters.navigation.EVENT_IS_FRIDAY_ARG
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.navigation.StatefulScaffold
+import com.district37.toastmasters.tabs.TabRow
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
 import kotlinx.coroutines.launch
@@ -45,7 +51,7 @@ import org.koin.core.annotation.KoinExperimentalAPI
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
-fun EventListScreen() {
+fun EventListScreen(isFriday: Boolean) {
     val navController = LocalNavHostController.current
     val appViewModel = LocalAppViewModel.current
     val viewModel = koinViewModel<EventListViewModel>()
@@ -73,6 +79,22 @@ fun EventListScreen() {
         isRefreshing = isRefreshing,
         resource = screenState
     ) { data ->
+        val tabIndex = if (data.isCurrentTabFriday) 0 else 1
+
+        val tabs = listOf("Friday", "Saturday")
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            TabRow(selectedTabIndex = tabIndex) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(text = { Text(title) },
+                        selected = tabIndex == index,
+                        onClick = {
+                            viewModel.uiEventBus.sendEvent(coroutineScope, TabChanged(index == 0))
+                        }
+                    )
+                }
+            }
+        }
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(vertical = 8.dp).fillMaxSize().background(MaterialTheme.colors.background)
@@ -107,7 +129,7 @@ private fun EventCard(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            //EventImage(url = eventPreview.image, modifier = Modifier.fillMaxSize())
+            // EventImage(url = eventPreview.image, modifier = Modifier.height(100.dp).fillMaxWidth())
             // Gradient overlay at the bottom for readability
             Box(
                 modifier = Modifier

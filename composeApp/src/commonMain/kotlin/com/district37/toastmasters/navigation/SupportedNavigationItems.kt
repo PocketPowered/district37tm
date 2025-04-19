@@ -4,6 +4,8 @@ import com.wongislandd.nexus.navigation.NavigationItem
 
 val EVENT_ID_ARG = "eventId"
 
+val EVENT_IS_FRIDAY_ARG = "isFriday"
+
 val supportedNavigationItems = mutableMapOf(
     NavigationItemKey.LANDING_PAGE to NavigationItem(
         NavigationItemKey.LANDING_PAGE.name,
@@ -13,7 +15,8 @@ val supportedNavigationItems = mutableMapOf(
     NavigationItemKey.EVENT_LIST to NavigationItem(
         NavigationItemKey.EVENT_LIST.name,
         "Events",
-        "eventlist"
+        "eventlist",
+        supportedArgs = listOf(EVENT_IS_FRIDAY_ARG)
     ),
     NavigationItemKey.EVENT_DETAILS to NavigationItem(
         NavigationItemKey.EVENT_DETAILS.name,

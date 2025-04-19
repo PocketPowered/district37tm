@@ -13,9 +13,14 @@ import kotlinx.coroutines.launch
 
 data class EventListScreenState(
     val events: List<EventPreview> = emptyList(),
+    val isCurrentTabFriday: Boolean
 )
 
 object RefreshTriggered: UiEvent
+
+data class TabChanged(
+    val isFriday: Boolean
+): UiEvent
 
 class EventListScreenStateSlice(
     private val eventRepository: EventRepository,
@@ -28,7 +33,7 @@ class EventListScreenStateSlice(
 
     override fun afterInit() {
         super.afterInit()
-        fetchData()
+        fetchData(isFriday = true)
     }
 
     override fun handleUiEvent(event: UiEvent) {
@@ -38,18 +43,24 @@ class EventListScreenStateSlice(
                 _screenState.update {
                     Resource.Loading()
                 }
-                fetchData()
+                fetchData(isFriday = _screenState.value.data?.isCurrentTabFriday ?: true)
+            }
+            is TabChanged -> {
+                _screenState.update {
+                    Resource.Loading()
+                }
+                fetchData(isFriday = event.isFriday)
             }
         }
     }
 
-    private fun fetchData() {
+    private fun fetchData(isFriday: Boolean) {
         sliceScope.launch(Dispatchers.IO) {
-            val events = eventRepository.getEvents()
+            val events = eventRepository.getEvents(isFriday)
             _screenState.update {
                 events.map { backendEventPreviews ->
                     val mappedEvents = backendEventPreviews.map(eventPreviewTransformer::transform)
-                    EventListScreenState(mappedEvents)
+                    EventListScreenState(mappedEvents, isFriday)
                 }
             }
         }

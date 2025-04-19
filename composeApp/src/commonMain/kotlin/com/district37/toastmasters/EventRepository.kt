@@ -16,9 +16,9 @@ class EventRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
         )
     }
 
-    suspend fun getEvents(): Resource<List<BackendEventPreview>> {
+    suspend fun getEvents(isFriday: Boolean): Resource<List<BackendEventPreview>> {
         return makeRequest(
-            "events",
+            "events/${isFriday}",
             HttpMethod.GET
         )
     }
