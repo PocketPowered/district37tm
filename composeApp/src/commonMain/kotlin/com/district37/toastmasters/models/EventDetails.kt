@@ -8,7 +8,7 @@ data class EventDetails(
     val images: List<String>,
     val title: String,
     val description: String,
-    val time: TimeReference,
+    val time: String,
     val locationInfo: String,
     val agenda: List<AgendaItem>,
     val additionalLinks: List<ExternalLink>,
@@ -18,14 +18,14 @@ data class EventPreview(
     val id: Int,
     val image: String,
     val title: String,
-    val time: TimeReference,
+    val time: String,
     val locationInfo: String,
 )
 
 data class AgendaItem(
     val title: String,
     val description: String,
-    val time: TimeReference,
+    val time: String,
     val locationInfo: String
 )
 

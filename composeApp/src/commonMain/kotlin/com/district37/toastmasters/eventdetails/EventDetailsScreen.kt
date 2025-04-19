@@ -2,6 +2,7 @@ package com.district37.toastmasters.eventdetails
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -43,7 +44,15 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
                     ) {
                         Text(text = it.event.title, fontWeight = FontWeight.Bold)
                         Text(text = it.event.locationInfo)
-                        Text(text = it.event.time.timeDisplay)
+                        Text(text = it.event.time)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        it.event.agenda.forEach { agendaItem ->
+                            Text(text = agendaItem.title)
+                            Text(text = agendaItem.description)
+                            Text(text = agendaItem.locationInfo)
+                            Text(text = agendaItem.time)
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
                     }
                 }
             }

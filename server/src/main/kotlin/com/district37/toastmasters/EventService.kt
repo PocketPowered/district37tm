@@ -21,30 +21,18 @@ class EventService {
 object MockEventDataProvider {
 
     private val eventsSource = listOf(
+        //Friday List
         BackendEventDetails(
             id = 1,
-            title = "First Timers",
+            title = "Registration / First Timers Check-In",
             description = "If you are attending for the first time, this is for you",
             images = listOf(
                 "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
                 "https://example.com/event1/img2.jpg"
             ),
-            time = Clock.System.now().epochSeconds,
-            locationInfo = "Charlotte NC",
-            agenda = listOf(
-                BackendAgendaItem(
-                    title = "Opening Ceremony",
-                    description = "Welcome speech and introduction to the event.",
-                    time = Clock.System.now().epochSeconds + 3600,
-                    locationInfo = "Main Hall"
-                ),
-                BackendAgendaItem(
-                    title = "Keynote Speech",
-                    description = "A talk on the future of technology.",
-                    time = Clock.System.now().epochSeconds + 7200,
-                    locationInfo = "Conference Room A"
-                )
-            ),
+            time = "Friday, May 2, 2:00 PM - 5:45 PM",
+            locationInfo = "Near Queens Ballroom",
+            agenda = listOf(),
             additionalLinks = listOf(
                 BackendExternalLink(
                     displayName = "Event Website",
@@ -58,73 +46,217 @@ object MockEventDataProvider {
         ),
         BackendEventDetails(
             id = 2,
-            title = "International Speech Contest",
-            description = "Watch the amazing speakers compete for ISC",
+            title = "D37 Store / Silent Auction Treasures",
+            description = "Buy stuff here",
             images = listOf(
                 "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
-                "https://example.com/event2/img2.jpg"
+                "https://example.com/event1/img2.jpg"
             ),
-            time = Clock.System.now().epochSeconds + 86400,
-            locationInfo = "Los Angeles, CA",
-            agenda = listOf(
-                BackendAgendaItem(
-                    title = "Networking Session",
-                    description = "An opportunity to connect with industry professionals.",
-                    time = Clock.System.now().epochSeconds + 90000,
-                    locationInfo = "Lobby Area"
-                ),
-                BackendAgendaItem(
-                    title = "Panel Discussion",
-                    description = "Experts discuss trends in AI and Machine Learning.",
-                    time = Clock.System.now().epochSeconds + 93600,
-                    locationInfo = "Main Auditorium"
-                )
-            ),
+            time = "Friday, May 2, 2:00 PM - 5:45 PM \nFriday, May 2, 8:30 PM - 10:00 PM",
+            locationInfo = "Noda Room",
+            agenda = listOf(),
             additionalLinks = listOf(
                 BackendExternalLink(
-                    displayName = "Speaker List",
-                    url = "https://example.com/event2/speakers"
+                    displayName = "Event Website",
+                    url = "https://example.com/event1"
                 ),
                 BackendExternalLink(
-                    displayName = "Live Stream",
-                    url = "https://example.com/event2/live"
+                    displayName = "Register Here",
+                    url = "https://example.com/event1/register"
                 )
             )
         ),
         BackendEventDetails(
             id = 3,
-            title = "Evaluation contest",
-            description = "Join us in San Francisco for workshops, panels, and hands-on experiences in tech.",
+            title = "D37 Author's Showcase",
+            description = "Books, Books and More Books",
+            images = listOf(
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
+                "https://example.com/event1/img2.jpg"
+            ),
+            time = "Friday, May 2, 2:00 PM - 6:00 PM",
+            locationInfo = "Midwood Room",
+            agenda = listOf(),
+            additionalLinks = listOf(
+                BackendExternalLink(
+                    displayName = "Event Website",
+                    url = "https://example.com/event1"
+                ),
+                BackendExternalLink(
+                    displayName = "Register Here",
+                    url = "https://example.com/event1/register"
+                )
+            )
+        ),
+        BackendEventDetails(
+            id = 4,
+            title = "50/50 Raffle Purchases",
+            description = "Buy for the Raffle here",
+            images = listOf(
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
+                "https://example.com/event1/img2.jpg"
+            ),
+            time = "Friday, May 2, 2:00 PM - 5:30 PM \nFriday, May 2, 7:00 PM - 11:00 PM",
+            locationInfo = "Reach out to Julie Richardt & Valencia Tims, who are in colorful hats",
+            agenda = listOf(),
+            additionalLinks = listOf()
+        ),
+        BackendEventDetails(
+            id = 5,
+            title = "Club Pride Baskets",
+            description = "Cheer for your Clubs",
+            images = listOf(
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
+                "https://example.com/event1/img2.jpg"
+            ),
+            time = "Friday, May 2, 2:00 PM - 3:30 PM \nFriday, May 2, 7:30 PM - 11:00 PM",
+            locationInfo = "Graham Ballroom",
+            agenda = listOf(),
+            additionalLinks = listOf()
+        ),
+        BackendEventDetails(
+            id = 6,
+            title = "Evaluation contest Briefings",
+            description = "Evaluation Contest functionaries",
             images = listOf(
                 "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
                 "https://example.com/event3/img2.jpg"
             ),
-            time = Clock.System.now().epochSeconds + 172800,
-            locationInfo = "San Francisco, CA",
+            time = "Friday, May 2, 4:00 PM - 5:00 PM",
+            locationInfo = "Graham Ballroom and Dilworth Room",
             agenda = listOf(
                 BackendAgendaItem(
-                    title = "Workshop: Kotlin for Android",
-                    description = "A hands-on coding session on modern Android development.",
-                    time = Clock.System.now().epochSeconds + 175200,
-                    locationInfo = "Tech Hub Room B"
+                    title = "Evaluation Contest Contestant Briefing",
+                    description = "Briefing details",
+                    time = "Friday, May 2, 4:00 PM - 5:00 PM",
+                    locationInfo = "Graham Ballroom"
                 ),
                 BackendAgendaItem(
-                    title = "Closing Remarks",
-                    description = "A summary of the event and future initiatives.",
-                    time = Clock.System.now().epochSeconds + 180000,
-                    locationInfo = "Grand Hall"
+                    title = "Evaluation Contest Judge's Briefing",
+                    description = "Judges assemble!",
+                    time = "Friday, May 2, 4:00 PM - 5:00 PM",
+                    locationInfo = "Dilworth Room"
                 )
             ),
-            additionalLinks = listOf(
-                BackendExternalLink(
-                    displayName = "Kotlin Docs",
-                    url = "https://kotlinlang.org/docs/"
+            additionalLinks = listOf()
+        ),
+        BackendEventDetails(
+            id = 7,
+            title = "Opening Ceremony / Welcome",
+            description = "Let's have some fun",
+            images = listOf(
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
+                "https://example.com/event1/img2.jpg"
+            ),
+            time = "Friday, May 2, 5:30 PM - 6:00 PM",
+            locationInfo = "Graham Ballroom",
+            agenda = listOf(),
+            additionalLinks = listOf()
+        ),
+        BackendEventDetails(
+            id = 8,
+            title = "Evaluation Speech Contest",
+            description = "Contest Time",
+            images = listOf(
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
+                "https://example.com/event1/img2.jpg"
+            ),
+            time = "Friday, May 2, 6:00 PM - 7:00 PM",
+            locationInfo = "Graham Ballroom",
+            agenda = listOf(),
+            additionalLinks = listOf()
+        ),
+        BackendEventDetails(
+            id = 9,
+            title = "Registration Desk & First Timers Check IN",
+            description = "Register!",
+            images = listOf(
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
+                "https://example.com/event1/img2.jpg"
+            ),
+            time = "Friday, May 2, 7:00 PM - 7:30 PM",
+            locationInfo = "Near Queens Ballroom",
+            agenda = listOf(),
+            additionalLinks = listOf()
+        ),
+        BackendEventDetails(
+            id = 10,
+            title = "Dinner / Registration",
+            description = "look for text message",
+            images = listOf(
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
+                "https://example.com/event1/img2.jpg"
+            ),
+            time = "Friday, May 2, 7:30 PM - 9:00 PM",
+            locationInfo = "Queens Ballroom / Text Message",
+            agenda = listOf(
+                BackendAgendaItem(
+                    title = "Buffet Dinner",
+                    description = "Let's Eat",
+                    time = "Friday, May 2, 7:30 PM - 9:00 PM",
+                    locationInfo = "Queens Ballroom"
                 ),
-                BackendExternalLink(
-                    displayName = "Event Recap",
-                    url = "https://example.com/event3/recap"
+                BackendAgendaItem(
+                    title = "Registration & First Timers",
+                    description = "Check your phones",
+                    time = "Friday, May 2, 7:30 PM - 9:00 PM",
+                    locationInfo = "Contact via TEXT MESSAGE"
                 )
-            )
+            ),
+            additionalLinks = listOf()
+        ),
+        BackendEventDetails(
+            id = 11,
+            title = "Toastpardy",
+            description = "Clash of the Toastmasters & Toasted Tales",
+            images = listOf(
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
+                "https://example.com/event1/img2.jpg"
+            ),
+            time = "Friday, May 2, 9:00 PM - 11:30 PM",
+            locationInfo = "Hospitality Suite Room",
+            agenda = listOf(),
+            additionalLinks = listOf()
+        ),
+        //Saturday List
+        BackendEventDetails(
+            id = 12,
+            title = "International Speech Contest Briefings",
+            description = "Briefing time",
+            images = listOf(
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
+                "https://example.com/event2/img2.jpg"
+            ),
+            time = "Saturday, May 3, 2:30 PM - 3:30 PM",
+            locationInfo = "Graham Ballroom / Dilworth Room",
+            agenda = listOf(
+                BackendAgendaItem(
+                    title = "ISC Contestant Briefing",
+                    description = "Contestants, get ready!",
+                    time = "Saturday, May 3, 2:30 PM - 3:30 PM",
+                    locationInfo = "Graham Ballroom"
+                ),
+                BackendAgendaItem(
+                    title = "ISC Judge's Briefing",
+                    description = "Judges are briefed",
+                    time = "Saturday, May 3, 2:30 PM - 3:30 PM",
+                    locationInfo = "Dilworth Room"
+                )
+            ),
+            additionalLinks = listOf()
+        ),
+        BackendEventDetails(
+            id = 13,
+            title = "International Speech Contest",
+            description = "Watch the amazing speakers compete in ISC",
+            images = listOf(
+                "https://d37toastmasters.org/wp-content/uploads/2025/04/100-years-sparkle-district-37.png",
+                "https://example.com/event2/img2.jpg"
+            ),
+            time = "Saturday, May 3, 4:00 PM - 5:30 PM",
+            locationInfo = "Graham Ballroom",
+            agenda = listOf(),
+            additionalLinks = listOf()
         )
     )
 

@@ -6,6 +6,6 @@ import kotlinx.serialization.Serializable
 data class BackendAgendaItem(
     val title: String,
     val description: String,
-    val time: Long,
+    val time: String,
     val locationInfo: String
 )

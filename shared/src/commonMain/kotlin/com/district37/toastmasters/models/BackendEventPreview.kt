@@ -7,6 +7,6 @@ data class BackendEventPreview(
     val id: Int,
     val image: String,
     val title: String,
-    val time: Long,
+    val time: String,
     val locationInfo: String,
 )
