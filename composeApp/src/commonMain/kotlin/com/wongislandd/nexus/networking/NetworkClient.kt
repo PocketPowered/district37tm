@@ -11,6 +11,7 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.url
+import io.ktor.http.path
 import io.ktor.util.network.UnresolvedAddressException
 import kotlinx.serialization.SerializationException
 
@@ -36,7 +37,9 @@ abstract class NetworkClient(val httpClient: HttpClient) {
         try {
             val response = when (httpMethod) {
                 HttpMethod.GET -> httpClient.get {
-                    url(endpoint)
+                    url {
+                       path(endpoint)
+                    }
                     builder()
                 }
 

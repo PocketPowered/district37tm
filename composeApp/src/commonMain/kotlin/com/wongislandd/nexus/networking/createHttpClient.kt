@@ -9,10 +9,11 @@ import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.http.takeFrom
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
-private const val PROD_HOST = "https://christopher-wong.com/server"
+private const val PROD_HOST = "https://christopher-wong.com/server/"
 private const val DEV_HOST = "http://localhost:8080"
 // Adjust this to true to hit local server, never commit with this as true
 private const val useDevHost = false
@@ -22,7 +23,7 @@ private val HOST = if (useDevHost) DEV_HOST else PROD_HOST
 fun createHttpClient(engine: HttpClientEngine): HttpClient {
     return HttpClient(engine) {
         defaultRequest {
-            url(HOST)
+            url.takeFrom(HOST)
         }
         install(Logging) {
             logger = object : Logger {
