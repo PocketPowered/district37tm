@@ -1,0 +1,22 @@
+CREATE TABLE favorites (
+    event_id INTEGER NOT NULL PRIMARY KEY,
+    created_at INTEGER NOT NULL
+);
+
+insertFavorite:
+INSERT INTO favorites(event_id, created_at)
+VALUES (?, ?);
+
+deleteFavorite:
+DELETE FROM favorites
+WHERE event_id = ?;
+
+getAllFavorites:
+SELECT event_id, created_at
+FROM favorites
+ORDER BY created_at DESC;
+
+isFavorite:
+SELECT COUNT(*) > 0
+FROM favorites
+WHERE event_id = ?; 

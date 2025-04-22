@@ -3,6 +3,7 @@ package com.district37.toastmasters
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.NavController
 import co.touchlab.kermit.Logger
+import com.district37.toastmasters.favorites.FavoritesSlice
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.notifications.NotificationsSlice
 import com.wongislandd.nexus.events.BackChannelEvent
@@ -14,13 +15,13 @@ import com.wongislandd.nexus.viewmodel.SliceableViewModel
 class AppViewModel(
     private val navigationSlice: NavigationSlice,
     val notificationsSlice: NotificationsSlice,
+    val favoritesSlice: FavoritesSlice,
     uiEventBus: EventBus<UiEvent>,
     backChannelEventBus: EventBus<BackChannelEvent>
 ) : SliceableViewModel(uiEventBus, backChannelEventBus) {
 
-
     init {
-        registerSlices(navigationSlice, notificationsSlice)
+        registerSlices(navigationSlice, notificationsSlice, favoritesSlice)
     }
 
     fun navigate(

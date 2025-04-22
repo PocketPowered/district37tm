@@ -92,7 +92,7 @@ dependencies {
 
 sqldelight {
     databases {
-        create("NotificationDatabase") {
+        create("TMDatabase") {
             packageName.set("com.district37.toastmasters.database")
         }
     }
