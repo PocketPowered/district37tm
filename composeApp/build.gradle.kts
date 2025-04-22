@@ -34,7 +34,6 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.firebase.messaging)
             implementation(libs.android.driver)
-            implementation(libs.androidx.core.splashscreen)
         }
         commonMain.dependencies {
             implementation(compose.runtime)

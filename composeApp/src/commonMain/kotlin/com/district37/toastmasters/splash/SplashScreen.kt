@@ -29,7 +29,8 @@ fun SplashScreen(modifier: Modifier = Modifier) {
         delay(3000)
         appViewModel.navigate(
             navController,
-            NavigationItemKey.EVENT_LIST
+            NavigationItemKey.EVENT_LIST,
+            removeSelfFromStack = true
         )
     }
 
