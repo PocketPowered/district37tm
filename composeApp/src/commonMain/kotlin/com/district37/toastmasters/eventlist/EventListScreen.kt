@@ -6,11 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.ExperimentalMaterialApi
@@ -27,13 +27,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
 import com.district37.toastmasters.models.EventPreview
+import com.district37.toastmasters.models.TabInfo
 import com.district37.toastmasters.navigation.EVENT_ID_ARG
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.navigation.StatefulScaffold
@@ -75,40 +76,42 @@ fun EventListScreen() {
         resource = screenState
     ) { data ->
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp).background(MaterialTheme.colors.surface),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Text(
+                text = "Events",
+                style = MaterialTheme.typography.h5,
+                color = MaterialTheme.colors.secondary,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
             LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             ) {
                 data.availableTabs.forEach { tab ->
                     item {
-                        Tab(
-                            text = {
-                                Text(
-                                    tab.displayName,
-                                    modifier = Modifier.padding(horizontal = 36.dp)
-                                )
-                            },
-                            selected = tab.isSelected,
-                            onClick = {
-                                viewModel.uiEventBus.sendEvent(
-                                    coroutineScope,
-                                    TabChanged(tab)
-                                )
-                            },
-                            modifier = Modifier.conditionallyChain(
-                                tab.isSelected, Modifier.background(MaterialTheme.colors.secondary)
+                        CustomTab(tab, onTabClick = {
+                            viewModel.uiEventBus.sendEvent(
+                                coroutineScope,
+                                TabChanged(tab)
                             )
-                        )
+                        }, modifier = Modifier)
                     }
                 }
             }
+            Text(
+                text = "Agenda",
+                style = MaterialTheme.typography.body1,
+                color = MaterialTheme.colors.secondary,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp)
+            )
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(vertical = 8.dp).fillMaxSize()
-                    .background(MaterialTheme.colors.background)
             ) {
                 items(data.events) { event ->
                     EventCard(event, onCardClick = {
@@ -127,6 +130,30 @@ fun EventListScreen() {
     }
 }
 
+@Composable
+private fun CustomTab(
+    tab: TabInfo,
+    onTabClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Tab(
+        text = {
+            Text(
+                tab.displayName,
+                color = if (tab.isSelected) MaterialTheme.colors.onSecondary else MaterialTheme.colors.secondary,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        selected = tab.isSelected,
+        onClick = onTabClick,
+        modifier = modifier.clip(
+            CircleShape
+        ).conditionallyChain(
+            tab.isSelected, Modifier.background(MaterialTheme.colors.secondary)
+        )
+    )
+}
+
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun EventCard(
@@ -135,18 +162,16 @@ private fun EventCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        shape = RoundedCornerShape(8.dp),
-        backgroundColor = Color.White,
-        modifier = modifier.padding(horizontal = 8.dp).height(
-            height = 200.dp
-        ),
+        shape = RoundedCornerShape(16.dp),
+        backgroundColor = MaterialTheme.colors.onSecondary,
+        modifier = modifier.padding(horizontal = 8.dp),
         onClick = onCardClick
     ) {
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp, start = 16.dp)
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
                     .align(Alignment.CenterStart)
             ) {
                 Text(
@@ -160,17 +185,16 @@ private fun EventCard(
                 )
                 Text(
                     text = eventPreview.locationInfo,
-                    style = MaterialTheme.typography.body1,
+                    style = MaterialTheme.typography.body2,
                     color = MaterialTheme.colors.onSurface,
                 )
                 Text(
                     text = eventPreview.time,
-                    style = MaterialTheme.typography.body1,
+                    style = MaterialTheme.typography.body2,
                     color = MaterialTheme.colors.onSurface,
                 )
             }
         }
 
     }
-
 }
