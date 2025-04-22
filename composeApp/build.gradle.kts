@@ -1,3 +1,5 @@
+import org.apache.tools.ant.util.JavaEnvUtils.VERSION_11
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
@@ -11,11 +13,7 @@ plugins {
 
 kotlin {
     androidTarget {
-        compilations.all {
-            kotlinOptions {
-                jvmTarget = "17"
-            }
-        }
+
     }
 
     listOf(
@@ -52,7 +50,7 @@ kotlin {
             implementation(libs.bundles.landscapist)
             implementation(libs.accompanist.placeholder)
             implementation(libs.coroutines.extensions)
-            implementation(libs.androidx.compose.material3)
+//            implementation(libs.androidx.compose.material3)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -83,8 +81,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 }
 
