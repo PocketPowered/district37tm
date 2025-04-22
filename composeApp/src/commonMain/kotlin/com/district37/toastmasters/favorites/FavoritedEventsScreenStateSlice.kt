@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+data class FavoriteEventToggle(val eventId: Int, val isFavorited: Boolean) : UiEvent
+
 class FavoritedEventsScreenStateSlice(
     private val favoritesRepository: FavoritesRepository,
     private val eventsRepository: EventRepository,
@@ -25,7 +27,6 @@ class FavoritedEventsScreenStateSlice(
     override fun afterInit() {
         super.afterInit()
 
-        // Combine favorites with events to get favorited events
         sliceScope.launch(Dispatchers.IO) {
             favoritesRepository.getAllFavorites().collect { favorites ->
                 if (favorites.isNotEmpty()) {
@@ -35,6 +36,19 @@ class FavoritedEventsScreenStateSlice(
                                 favoritedEvents.map { eventPreviewTransformer.transform(it) }
                             }
                     }
+                }
+            }
+        }
+    }
+
+    override fun handleUiEvent(event: UiEvent) {
+        super.handleUiEvent(event)
+        when (event) {
+            is FavoriteEventToggle -> {
+                if (event.isFavorited) {
+                    favoritesRepository.addFavorite(event.eventId.toLong())
+                } else {
+                    favoritesRepository.removeFavorite(event.eventId.toLong())
                 }
             }
         }

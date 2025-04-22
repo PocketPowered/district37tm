@@ -17,17 +17,13 @@ import com.district37.toastmasters.navigation.StatefulScaffold
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
 import kotlinx.coroutines.launch
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.annotation.KoinExperimentalAPI
 
-@OptIn(KoinExperimentalAPI::class)
 @Composable
-fun FavoritedEventList() {
+fun FavoritedEventsList() {
     val navController = LocalNavHostController.current
     val appViewModel = LocalAppViewModel.current
-    val viewModel = koinViewModel<FavoriteEventsViewModel>()
     val coroutineScope = rememberCoroutineScope()
-    val screenState by viewModel.favoritesSlice.screenState.collectAsState()
+    val screenState by appViewModel.favoritesSlice.screenState.collectAsState()
     val isRefreshing = screenState is Resource.Loading
 
     StatefulScaffold(
@@ -58,7 +54,13 @@ fun FavoritedEventList() {
                                 )
                             }
                         },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        onFavoriteClick = {
+                            appViewModel.uiEventBus.sendEvent(
+                                coroutineScope,
+                                FavoriteEventToggle(eventPreview.id, !eventPreview.isFavorited)
+                            )
+                        }
                     )
                 }
             }

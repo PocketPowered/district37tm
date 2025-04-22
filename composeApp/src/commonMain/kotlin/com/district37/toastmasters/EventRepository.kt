@@ -11,7 +11,7 @@ import io.ktor.client.request.HttpRequestBuilder
 
 class EventRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
 
-    suspend fun getEventDetails(id: Int): Resource<BackendEventDetails> {
+        suspend fun getEventDetails(id: Int): Resource<BackendEventDetails> {
         return makeRequest(
             "event/${id}",
             HttpMethod.GET

@@ -25,6 +25,7 @@ import com.district37.toastmasters.models.EventPreview
 fun EventCard(
     eventPreview: EventPreview,
     onCardClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(

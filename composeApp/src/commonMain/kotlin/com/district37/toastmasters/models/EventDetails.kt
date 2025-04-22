@@ -20,6 +20,7 @@ data class EventPreview(
     val title: String,
     val time: String,
     val locationInfo: String,
+    val isFavorited: Boolean = false,
 )
 
 data class AgendaItem(

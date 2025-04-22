@@ -76,7 +76,8 @@ fun EventListScreen() {
         resource = screenState
     ) { data ->
         Column(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp).background(MaterialTheme.colors.surface),
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                .background(MaterialTheme.colors.surface),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -122,7 +123,10 @@ fun EventListScreen() {
                                 mapOf(EVENT_ID_ARG to event.id)
                             )
                         }
-                    })
+                    },
+                        onFavoriteClick = {
+
+                        })
                 }
             }
         }
