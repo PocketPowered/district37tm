@@ -102,17 +102,9 @@ fun EventListScreen() {
                     )
                 }
             )
-            Text(
-                text = "Agenda",
-                style = MaterialTheme.typography.body1,
-                color = MaterialTheme.colors.secondary,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Start,
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp)
-            )
             if (data.events.isEmpty()) {
                 Text(
-                    text = "No events found",
+                    text = if (data.agendaOption == AgendaOption.FAVORITES_AGENDA) "No favorites found" else "No events found",
                     style = MaterialTheme.typography.body1,
                     color = MaterialTheme.colors.secondary,
                 )
@@ -147,7 +139,7 @@ fun AgendaSelector(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = "Full Agenda",
+            text = "Agenda",
             modifier = Modifier
                 .weight(1f)
                 .clip(CircleShape)
@@ -164,7 +156,7 @@ fun AgendaSelector(
             fontWeight = FontWeight.Medium
         )
         Text(
-            text = "My Agenda",
+            text = "Favorites",
             modifier = Modifier
                 .weight(1f)
                 .clip(CircleShape)

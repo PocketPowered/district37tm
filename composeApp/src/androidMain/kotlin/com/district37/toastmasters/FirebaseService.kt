@@ -56,7 +56,7 @@ class FirebaseService : FirebaseMessagingService() {
             val channel = NotificationChannel(
                 "default",
                 "Default Channel",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             )
             notificationManager.createNotificationChannel(channel)
         }
@@ -74,6 +74,7 @@ class FirebaseService : FirebaseMessagingService() {
             .setContentText(body)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setAutoCancel(true)
             .build()
 
