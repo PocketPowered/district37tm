@@ -8,7 +8,7 @@ import com.district37.toastmasters.database.NotificationRepository
 import com.district37.toastmasters.database.TMDatabase
 import com.district37.toastmasters.eventdetails.eventDetailsModule
 import com.district37.toastmasters.eventlist.eventListModule
-import com.district37.toastmasters.favorites.FavoritedEventsScreenStateSlice
+import com.district37.toastmasters.favorites.FavoritedEventsSlice
 import com.district37.toastmasters.navigation.supportedNavigationItems
 import com.district37.toastmasters.notifications.NotificationsSlice
 import com.district37.toastmasters.util.EpochTimeTransformer
@@ -33,7 +33,7 @@ fun appModule(appContext: Any? = null) = module {
     single { TMDatabase(get<DatabaseFactory>().createDriver()) }
     singleOf(::NotificationRepository)
     singleOf(::FavoritesRepository)
-    singleOf(::FavoritedEventsScreenStateSlice)
+    singleOf(::FavoritedEventsSlice)
 }
 
 fun initializeKoin(context: Any? = null) =

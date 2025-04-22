@@ -2,8 +2,8 @@ package com.district37.toastmasters.eventlist
 
 import com.district37.toastmasters.EventRepository
 import com.district37.toastmasters.database.FavoritesRepository
+import com.district37.toastmasters.models.DateTabInfo
 import com.district37.toastmasters.models.EventPreview
-import com.district37.toastmasters.models.TabInfo
 import com.district37.toastmasters.models.findSelectedTab
 import com.wongislandd.nexus.events.UiEvent
 import com.wongislandd.nexus.util.ErrorType
@@ -23,14 +23,24 @@ import kotlinx.coroutines.launch
 
 data class EventListScreenState(
     val events: List<EventPreview> = emptyList(),
-    val availableTabs: List<TabInfo>
+    val agendaOption: AgendaOption = AgendaOption.FULL_AGENDA,
+    val availableTabs: List<DateTabInfo>
 )
 
 object RefreshTriggered : UiEvent
 
-data class TabChanged(
-    val selectedTab: TabInfo
+data class AgendaChanged(
+    val selectedAgenda: AgendaOption
 ) : UiEvent
+
+data class DateChanged(
+    val selectedDateTab: DateTabInfo
+) : UiEvent
+
+enum class AgendaOption {
+    FULL_AGENDA,
+    FAVORITES_AGENDA
+}
 
 class EventListScreenStateSlice(
     private val eventRepository: EventRepository,
@@ -39,14 +49,16 @@ class EventListScreenStateSlice(
     private val tabInfoTransformer: TabInfoTransformer,
 ) : ViewModelSlice() {
 
-    private val _availableTabs: MutableStateFlow<Resource<List<TabInfo>>> =
+    private val _agendaSelection: MutableStateFlow<AgendaOption> =
+        MutableStateFlow(AgendaOption.FULL_AGENDA)
+    private val _availableTabs: MutableStateFlow<Resource<List<DateTabInfo>>> =
         MutableStateFlow(Resource.Loading)
     private val _eventsList: MutableStateFlow<Resource<List<EventPreview>>> =
         MutableStateFlow(Resource.NotLoading)
 
     private val _screenState: StateFlow<Resource<EventListScreenState>> = combine(
-        _availableTabs, _eventsList, favoritesRepository.getAllFavorites(),
-    ) { availableTabs, eventList, favoritedEventIds ->
+        _availableTabs, _eventsList, favoritesRepository.getAllFavorites(), _agendaSelection
+    ) { availableTabs, eventList, favoritedEventIds, agendaOption ->
         if (availableTabs is Resource.Loading || eventList is Resource.Loading) {
             return@combine Resource.Loading
         }
@@ -59,17 +71,22 @@ class EventListScreenStateSlice(
             return@combine Resource.Loading
         }
         if (availableTabs is Resource.Success && eventList is Resource.Success) {
-            val favoritedTaggedEvents = eventList.data.map { eventPreview ->
-                eventPreview.copy(
-                    isFavorited = favoritedEventIds.contains(
-                        eventPreview.id.toLong()
+            val favoritedTaggedEvents =
+                eventList.data.map { eventPreview ->
+                    eventPreview.copy(
+                        isFavorited = favoritedEventIds.contains(
+                            eventPreview.id.toLong()
+                        )
                     )
-                )
+                }
+            val filteredByFavorites = favoritedTaggedEvents.filter {
+                it.isFavorited
             }
             return@combine Resource.Success(
                 EventListScreenState(
-                    events = favoritedTaggedEvents,
-                    availableTabs = availableTabs.data
+                    events = if (agendaOption == AgendaOption.FULL_AGENDA) favoritedTaggedEvents else filteredByFavorites,
+                    availableTabs = availableTabs.data,
+                    agendaOption = agendaOption
                 )
             )
         }
@@ -100,15 +117,19 @@ class EventListScreenStateSlice(
                 )
             }
 
-            is TabChanged -> {
+            is DateChanged -> {
                 _availableTabs.update { availableTabsRes ->
                     availableTabsRes.map { availableTabs ->
                         availableTabs.map { tab ->
-                            tab.copy(isSelected = tab.dateKey == event.selectedTab.dateKey)
+                            tab.copy(isSelected = tab.dateKey == event.selectedDateTab.dateKey)
                         }
                     }
                 }
-                fetchEventsByKey(event.selectedTab.dateKey)
+                fetchEventsByKey(event.selectedDateTab.dateKey)
+            }
+
+            is AgendaChanged -> {
+                _agendaSelection.update { event.selectedAgenda }
             }
         }
     }

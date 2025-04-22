@@ -11,8 +11,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.district37.toastmasters.eventdetails.EventDetailsScreen
 import com.district37.toastmasters.eventlist.EventListScreen
-import com.district37.toastmasters.favorites.FavoritedEventsList
 import com.district37.toastmasters.info.InfoScreen
+import com.district37.toastmasters.notifications.NotificationsScreen
 import com.wongislandd.nexus.navigation.LocalNavHostController
 
 @Composable
@@ -82,15 +82,16 @@ fun AppNavHost(
                         EventDetailsScreen(eventId)
                     }
                 }
+
                 NavigationItemKey.INFO -> {
                     composable(route = navigationItem.completeRoute) {
                         InfoScreen()
                     }
                 }
+
                 NavigationItemKey.NOTIFICATIONS -> {
                     composable(route = navigationItem.completeRoute) {
-                        FavoritedEventsList()
-//                        NotificationsScreen()
+                        NotificationsScreen()
                     }
                 }
             }

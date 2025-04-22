@@ -1,8 +1,10 @@
 package com.district37.toastmasters.eventlist
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,15 +30,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
-import com.district37.toastmasters.models.TabInfo
-import com.district37.toastmasters.navigation.EVENT_ID_ARG
+import com.district37.toastmasters.models.DateTabInfo
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.navigation.StatefulScaffold
 import com.district37.toastmasters.notifications.NotificationsEntry
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
 import com.wongislandd.nexus.util.conditionallyChain
-import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
@@ -81,6 +81,21 @@ fun EventListScreen() {
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
+            AgendaSelector(
+                agendaSelection = data.agendaOption,
+                onFullAgendaClicked = {
+                    viewModel.uiEventBus.sendEvent(
+                        coroutineScope,
+                        AgendaChanged(AgendaOption.FULL_AGENDA)
+                    )
+                },
+                onMyAgendaClicked = {
+                    viewModel.uiEventBus.sendEvent(
+                        coroutineScope,
+                        AgendaChanged(AgendaOption.FAVORITES_AGENDA)
+                    )
+                }
+            )
             LazyRow(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
@@ -90,7 +105,7 @@ fun EventListScreen() {
                         CustomTab(tab, onTabClick = {
                             viewModel.uiEventBus.sendEvent(
                                 coroutineScope,
-                                TabChanged(tab)
+                                DateChanged(tab)
                             )
                         }, modifier = Modifier)
                     }
@@ -104,23 +119,19 @@ fun EventListScreen() {
                 textAlign = TextAlign.Start,
                 modifier = Modifier.fillMaxWidth().padding(start = 16.dp)
             )
+            if (data.events.isEmpty()) {
+                Text(
+                    text = "No events found",
+                    style = MaterialTheme.typography.body1,
+                    color = MaterialTheme.colors.secondary,
+                )
+            }
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(vertical = 8.dp).fillMaxSize()
             ) {
                 items(data.events) { event ->
-                    EventCard(event, onCardClick = {
-                        coroutineScope.launch {
-                            appViewModel.navigate(
-                                navController,
-                                NavigationItemKey.EVENT_DETAILS,
-                                mapOf(EVENT_ID_ARG to event.id)
-                            )
-                        }
-                    },
-                        onFavoriteClick = {
-
-                        })
+                    EventCard(event)
                 }
             }
         }
@@ -128,9 +139,63 @@ fun EventListScreen() {
     }
 }
 
+
+@Composable
+fun AgendaSelector(
+    agendaSelection: AgendaOption,
+    onFullAgendaClicked: () -> Unit,
+    onMyAgendaClicked: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colors.onSurface.copy(alpha = 0.05f)),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = "Full Agenda",
+            modifier = Modifier
+                .weight(1f)
+                .clip(CircleShape)
+                .background(
+                    if (agendaSelection == AgendaOption.FULL_AGENDA) MaterialTheme.colors.secondary.copy(
+                        alpha = 0.8f
+                    )
+                    else MaterialTheme.colors.surface
+                )
+                .clickable { onFullAgendaClicked() }
+                .padding(vertical = 8.dp),
+            color = if (agendaSelection == AgendaOption.FULL_AGENDA) MaterialTheme.colors.onSecondary else MaterialTheme.colors.onSurface,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Medium
+        )
+        Text(
+            text = "My Agenda",
+            modifier = Modifier
+                .weight(1f)
+                .clip(CircleShape)
+                .background(
+                    if (agendaSelection == AgendaOption.FAVORITES_AGENDA) MaterialTheme.colors.secondary.copy(
+                        alpha = 0.8f
+                    )
+                    else MaterialTheme.colors.surface
+                )
+                .clickable { onMyAgendaClicked() }
+                .padding(vertical = 8.dp),
+            color = if (agendaSelection == AgendaOption.FAVORITES_AGENDA) MaterialTheme.colors.onSecondary else MaterialTheme.colors.onSurface,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+
 @Composable
 private fun CustomTab(
-    tab: TabInfo,
+    tab: DateTabInfo,
     onTabClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
