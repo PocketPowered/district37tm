@@ -3,15 +3,21 @@ package com.district37.toastmasters
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import co.touchlab.kermit.Logger
+import com.district37.toastmasters.database.NotificationRepository
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import org.koin.java.KoinJavaComponent.inject
 
 class FirebaseService : FirebaseMessagingService() {
+    private val notificationRepository: NotificationRepository by inject(NotificationRepository::class.java)
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
@@ -23,35 +29,50 @@ class FirebaseService : FirebaseMessagingService() {
         super.onMessageReceived(remoteMessage)
         val title = remoteMessage.notification?.title
         val body = remoteMessage.notification?.body
-        // Can use this eventId to navigate to the right event
         val relatedEventId = remoteMessage.data["relatedEventId"]
 
-        Logger.d("[FCM] Notification: $title - $body")
+        Logger.d("[FCM] Received notification - Title: $title, Body: $body, EventId: $relatedEventId")
+
+        if (title != null && body != null) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    notificationRepository.insertNotification(title, body)
+                    Logger.d("[FCM] Successfully inserted notification into database")
+                } catch (e: Exception) {
+                    Logger.e("[FCM] Failed to insert notification: ${e.message}")
+                }
+            }
+        }
 
         showNotification(title ?: "Notification", body ?: "")
     }
 
-    private fun showNotification(title: String, message: String) {
-        val channelId = "default_channel"
+    private fun showNotification(title: String, body: String) {
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        // Create notification channel for Android O and above
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                channelId,
+                "default",
                 "Default Channel",
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_DEFAULT
             )
             notificationManager.createNotificationChannel(channel)
         }
 
-        val intent = Intent(this, MainActivity::class.java) // Change MainActivity to your target activity
-        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val intent = Intent(this, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
-        val notification = NotificationCompat.Builder(this, channelId)
+        val notification = NotificationCompat.Builder(this, "default")
             .setContentTitle(title)
-            .setContentText(message)
-            .setSmallIcon(R.drawable.conference) // Replace with an actual valid icon if this doesn't exist
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentText(body)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()

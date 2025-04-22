@@ -1,11 +1,14 @@
 package com.district37.toastmasters.notifications
 
+import com.district37.toastmasters.database.NotificationRepository
 import com.wongislandd.nexus.viewmodel.ViewModelSlice
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class NotificationsSlice : ViewModelSlice() {
+class NotificationsSlice : ViewModelSlice(), KoinComponent {
+    private val notificationRepository: NotificationRepository by inject()
 
     private val _notificationsFlow = MutableStateFlow<List<Notification>>(emptyList())
     val notificationsFlow = _notificationsFlow
@@ -15,22 +18,49 @@ class NotificationsSlice : ViewModelSlice() {
 
     override fun afterInit() {
         super.afterInit()
+
+        // Collect all notifications
         sliceScope.launch {
-            _notificationsFlow.collect { notifications ->
-                _unseenNotificationCount.value = notifications.count { !it.seen }
-            }
+            notificationRepository.getAllNotifications()
+                .collect { notifications ->
+                    _notificationsFlow.value = notifications.map { dbNotification ->
+                        Notification(
+                            id = dbNotification.id,
+                            header = dbNotification.header_,
+                            description = dbNotification.description,
+                            seen = dbNotification.seen == 1L,
+                            timeReceived = kotlinx.datetime.Instant.fromEpochMilliseconds(
+                                dbNotification.time_received
+                            )
+                        )
+                    }
+                }
         }
-        _notificationsFlow.update {
-            listOf(
-                Notification(
-                    "Registration is happening now!",
-                    "Head to the Near Queens Ballroom"
-                ),
-                Notification(
-                    "Event moved",
-                    "Event moved to somewhere else"
-                )
-            )
+
+        // Collect unseen notifications count
+        sliceScope.launch {
+            notificationRepository.getUnseenNotifications()
+                .collect { notifications ->
+                    _unseenNotificationCount.value = notifications.size
+                }
+        }
+    }
+
+    fun markAllNotificationsAsSeen() {
+        notificationRepository.markAllNotificationsAsSeen()
+    }
+
+    fun clearAllNotifications() {
+        notificationRepository.clearAllNotifications()
+    }
+
+    fun markNotificationAsSeen(id: Long) {
+        notificationRepository.markNotificationAsSeen(id)
+    }
+
+    fun deleteNotification(id: Long) {
+        sliceScope.launch {
+            notificationRepository.deleteNotification(id)
         }
     }
 }

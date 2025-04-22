@@ -23,6 +23,11 @@ koinKtor = "3.5.0"
 okio = "3.9.1"
 kotlin-datetime="0.6.1"
 firebase-messaging="24.1.1"
+sqlDelight = "2.0.1"
+coroutinesVersion = "1.7.3"
+koin = "3.5.3"
+lifecycleViewmodelCompose = "2.7.0"
+material3 = "1.2.0"
 
 #Gitlive / Firebase
 firebase-gitlive-sdk = "2.1.0"
@@ -68,6 +73,15 @@ landscapist-coil = { module = "com.github.skydoves:landscapist-coil3", version.r
 landscapist-placeholder = { module = "com.github.skydoves:landscapist-placeholder", version.ref = "landscapist" }
 accompanist-placeholder = { module = "com.google.accompanist:accompanist-swiperefresh", version.ref = "accompanist" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging", version.ref = "firebase-messaging"}
+android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqlDelight" }
+koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutinesVersion" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
+native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqlDelight" }
+runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqlDelight" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref="material3" }
+
 
 
 [plugins]
@@ -81,7 +95,8 @@ crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlyti
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 # Nexus
 buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig" }
-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref="kotlin"}
+kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqlDelight" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 
 

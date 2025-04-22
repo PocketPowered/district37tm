@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.wongislandd.nexus.GenericErrorScreen
-import com.wongislandd.nexus.GenericLoadingScreen
 import com.wongislandd.nexus.navigation.GlobalTopAppBar
 import com.wongislandd.nexus.util.PullToRefreshWrapper
 import com.wongislandd.nexus.util.Resource
@@ -42,7 +41,7 @@ fun <T> StatefulScaffold(
                     }
 
                     is Resource.Loading -> {
-                        GenericLoadingScreen()
+                        //GenericLoadingScreen()
                     }
 
                     is Resource.Success -> {
