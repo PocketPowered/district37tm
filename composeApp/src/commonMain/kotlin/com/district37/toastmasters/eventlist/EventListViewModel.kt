@@ -6,12 +6,12 @@ import com.wongislandd.nexus.events.UiEvent
 import com.wongislandd.nexus.viewmodel.SliceableViewModel
 
 class EventListViewModel(
-    val screenStateSlice: EventListScreenStateSlice,
+    val eventListScreenStateSlice: EventListScreenStateSlice,
     uiEvent: EventBus<UiEvent>,
     backChannelEventBus: EventBus<BackChannelEvent>
 ) : SliceableViewModel(uiEvent, backChannelEventBus) {
 
     init {
-        registerSlices(screenStateSlice)
+        registerSlices(eventListScreenStateSlice)
     }
 }

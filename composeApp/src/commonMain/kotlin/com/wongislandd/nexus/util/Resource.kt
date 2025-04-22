@@ -7,6 +7,7 @@ object Empty
 
 sealed class Resource<out T> {
 
+    object NotLoading: Resource<Nothing>()
     object Loading : Resource<Nothing>()
     data class Success<out T>(val data: T) : Resource<T>()
     data class Error(
@@ -26,6 +27,7 @@ sealed class Resource<out T> {
             }
             is Error -> this
             is Loading -> this
+            is NotLoading -> this
         }
     }
 

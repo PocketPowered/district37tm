@@ -51,6 +51,7 @@ fun <T> StatefulScaffold(
                             GenericErrorScreen("Successful response but no data!")
                         }
                     }
+                    else -> {}
                 }
             }
         }

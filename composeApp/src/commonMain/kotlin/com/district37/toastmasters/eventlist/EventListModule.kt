@@ -1,5 +1,6 @@
 package com.district37.toastmasters.eventlist
 
+import kotlinx.coroutines.CoroutineScope
 import org.koin.compose.viewmodel.dsl.viewModelOf
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf

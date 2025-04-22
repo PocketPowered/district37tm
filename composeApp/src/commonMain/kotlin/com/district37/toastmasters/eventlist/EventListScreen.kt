@@ -2,7 +2,6 @@ package com.district37.toastmasters.eventlist
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,9 +10,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
@@ -30,10 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
-import com.district37.toastmasters.models.EventPreview
 import com.district37.toastmasters.models.TabInfo
 import com.district37.toastmasters.navigation.EVENT_ID_ARG
 import com.district37.toastmasters.navigation.NavigationItemKey
@@ -53,7 +47,7 @@ fun EventListScreen() {
     val appViewModel = LocalAppViewModel.current
     val viewModel = koinViewModel<EventListViewModel>()
     val coroutineScope = rememberCoroutineScope()
-    val screenState by viewModel.screenStateSlice.screenState.collectAsState()
+    val screenState by viewModel.eventListScreenStateSlice.screenState.collectAsState()
     val isRefreshing = screenState is Resource.Loading
     StatefulScaffold(
         actions = {
