@@ -21,6 +21,7 @@ import androidx.compose.material.Tab
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,6 +37,7 @@ import com.district37.toastmasters.models.EventPreview
 import com.district37.toastmasters.navigation.EVENT_ID_ARG
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.navigation.StatefulScaffold
+import com.district37.toastmasters.notifications.NotificationsEntry
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
 import com.wongislandd.nexus.util.conditionallyChain
@@ -55,15 +57,14 @@ fun EventListScreen() {
     StatefulScaffold(
         actions = {
             IconButton({
-                coroutineScope.launch {
-                    appViewModel.navigate(
-                        navController,
-                        NavigationItemKey.INFO
-                    )
-                }
+                appViewModel.navigate(
+                    navController,
+                    NavigationItemKey.INFO
+                )
             }) {
-                Icon(Icons.Default.Info, contentDescription = "Icon")
+                Icon(Icons.Default.Info, contentDescription = "Info")
             }
+            NotificationsEntry()
         },
         onRefresh = {
             viewModel.uiEventBus.sendEvent(
