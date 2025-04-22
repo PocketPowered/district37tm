@@ -27,11 +27,19 @@ class EventRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
         }
     }
 
+    suspend fun getEventsByIds(ids: List<Int>): Resource<List<BackendEventPreview>> {
+        return makeRequest(
+            "events/favorites",
+            HttpMethod.GET,
+        ) {
+            url.parameters.append("ids", ids.joinToString(","))
+        }
+    }
+
     suspend fun getAvailableTabs(): Resource<List<BackendTabInfo>> {
         return makeRequest(
             "availableTabs",
             HttpMethod.GET
         )
-
     }
 }
