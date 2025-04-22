@@ -90,11 +90,13 @@ fun AppNavHost(
                         EventDetailsScreen(eventId)
                     }
                 }
+
                 NavigationItemKey.INFO -> {
                     composable(route = navigationItem.completeRoute) {
                         InfoScreen()
                     }
                 }
+
                 NavigationItemKey.NOTIFICATIONS -> {
                     composable(route = navigationItem.completeRoute) {
                         NotificationsScreen()

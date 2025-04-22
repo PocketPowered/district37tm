@@ -11,7 +11,7 @@ import io.ktor.client.request.HttpRequestBuilder
 
 class EventRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
 
-    suspend fun getEventDetails(id: Int): Resource<BackendEventDetails> {
+        suspend fun getEventDetails(id: Int): Resource<BackendEventDetails> {
         return makeRequest(
             "event/${id}",
             HttpMethod.GET
@@ -27,11 +27,19 @@ class EventRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
         }
     }
 
+    suspend fun getEventsByIds(ids: List<Int>): Resource<List<BackendEventPreview>> {
+        return makeRequest(
+            "events/favorites",
+            HttpMethod.GET,
+        ) {
+            url.parameters.append("ids", ids.joinToString(","))
+        }
+    }
+
     suspend fun getAvailableTabs(): Resource<List<BackendTabInfo>> {
         return makeRequest(
             "availableTabs",
             HttpMethod.GET
         )
-
     }
 }

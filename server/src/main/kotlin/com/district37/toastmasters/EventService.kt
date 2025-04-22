@@ -21,6 +21,10 @@ class EventService {
             ?: throw NotFoundException("Event key not found")
     }
 
+    fun getEventsByIds(ids: List<Int>): List<BackendEventPreview> {
+        return MockEventDataProvider.allEventPreviews.filter { it.id in ids }
+    }
+
     fun getAvailableTabsInfo(): List<BackendTabInfo> {
         return listOf(
             BackendTabInfo("May 2nd, 2025", "050225"),

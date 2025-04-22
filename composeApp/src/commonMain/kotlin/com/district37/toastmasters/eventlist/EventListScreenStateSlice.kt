@@ -1,43 +1,104 @@
 package com.district37.toastmasters.eventlist
 
 import com.district37.toastmasters.EventRepository
+import com.district37.toastmasters.database.FavoritesRepository
+import com.district37.toastmasters.models.DateTabInfo
 import com.district37.toastmasters.models.EventPreview
-import com.district37.toastmasters.models.TabInfo
 import com.district37.toastmasters.models.findSelectedTab
 import com.wongislandd.nexus.events.UiEvent
+import com.wongislandd.nexus.util.ErrorType
 import com.wongislandd.nexus.util.Resource
 import com.wongislandd.nexus.util.Resource.Loading.handle
 import com.wongislandd.nexus.viewmodel.ViewModelSlice
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class EventListScreenState(
     val events: List<EventPreview> = emptyList(),
-    val availableTabs: List<TabInfo>
+    val agendaOption: AgendaOption = AgendaOption.FULL_AGENDA,
+    val availableTabs: List<DateTabInfo>
 )
 
 object RefreshTriggered : UiEvent
 
-data class TabChanged(
-    val selectedTab: TabInfo
+data class AgendaChanged(
+    val selectedAgenda: AgendaOption
 ) : UiEvent
+
+data class DateChanged(
+    val selectedDateTab: DateTabInfo
+) : UiEvent
+
+enum class AgendaOption {
+    FULL_AGENDA,
+    FAVORITES_AGENDA
+}
 
 class EventListScreenStateSlice(
     private val eventRepository: EventRepository,
     private val eventPreviewTransformer: EventPreviewTransformer,
-    private val tabInfoTransformer: TabInfoTransformer
+    private val favoritesRepository: FavoritesRepository,
+    private val tabInfoTransformer: TabInfoTransformer,
 ) : ViewModelSlice() {
 
-    private val _screenState: MutableStateFlow<Resource<EventListScreenState>> =
+    private val _agendaSelection: MutableStateFlow<AgendaOption> =
+        MutableStateFlow(AgendaOption.FULL_AGENDA)
+    private val _availableTabs: MutableStateFlow<Resource<List<DateTabInfo>>> =
         MutableStateFlow(Resource.Loading)
+    private val _eventsList: MutableStateFlow<Resource<List<EventPreview>>> =
+        MutableStateFlow(Resource.NotLoading)
+
+    private val _screenState: StateFlow<Resource<EventListScreenState>> = combine(
+        _availableTabs, _eventsList, favoritesRepository.getAllFavorites(), _agendaSelection
+    ) { availableTabs, eventList, favoritedEventIds, agendaOption ->
+        if (availableTabs is Resource.Loading || eventList is Resource.Loading) {
+            return@combine Resource.Loading
+        }
+        if (availableTabs is Resource.Error || eventList is Resource.Error) {
+            return@combine Resource.Error(ErrorType.CLIENT_ERROR)
+        }
+        if (availableTabs is Resource.Success && eventList is Resource.NotLoading) {
+            val selectedTabKey = availableTabs.data.findSelectedTab().dateKey
+            fetchEventsByKey(selectedTabKey)
+            return@combine Resource.Loading
+        }
+        if (availableTabs is Resource.Success && eventList is Resource.Success) {
+            val favoritedTaggedEvents =
+                eventList.data.map { eventPreview ->
+                    eventPreview.copy(
+                        isFavorited = favoritedEventIds.contains(
+                            eventPreview.id.toLong()
+                        )
+                    )
+                }
+            val filteredByFavorites = favoritedTaggedEvents.filter {
+                it.isFavorited
+            }
+            return@combine Resource.Success(
+                EventListScreenState(
+                    events = if (agendaOption == AgendaOption.FULL_AGENDA) favoritedTaggedEvents else filteredByFavorites,
+                    availableTabs = availableTabs.data,
+                    agendaOption = agendaOption
+                )
+            )
+        }
+        Resource.Error(ErrorType.CLIENT_ERROR)
+    }.stateIn(CoroutineScope(Dispatchers.IO), SharingStarted.Lazily, Resource.Loading)
+
+
     val screenState = _screenState
 
     override fun afterInit() {
         super.afterInit()
-        fetchInitialData()
+        fetchAvailableTabs()
     }
 
     override fun handleUiEvent(event: UiEvent) {
@@ -51,22 +112,24 @@ class EventListScreenStateSlice(
                         fetchEventsByKey(currentlySelectedKey)
                     },
                     onError = { _, _ ->
-                        fetchInitialData()
+                        fetchAvailableTabs()
                     }
                 )
             }
 
-            is TabChanged -> {
-                _screenState.update { currentValue ->
-                    currentValue.map {
-                        it.copy(
-                            availableTabs = it.availableTabs.map { tab ->
-                                tab.copy(isSelected = tab.dateKey == event.selectedTab.dateKey)
-                            }
-                        )
+            is DateChanged -> {
+                _availableTabs.update { availableTabsRes ->
+                    availableTabsRes.map { availableTabs ->
+                        availableTabs.map { tab ->
+                            tab.copy(isSelected = tab.dateKey == event.selectedDateTab.dateKey)
+                        }
                     }
                 }
-                fetchEventsByKey(event.selectedTab.dateKey)
+                fetchEventsByKey(event.selectedDateTab.dateKey)
+            }
+
+            is AgendaChanged -> {
+                _agendaSelection.update { event.selectedAgenda }
             }
         }
     }
@@ -75,49 +138,38 @@ class EventListScreenStateSlice(
     private fun fetchEventsByKey(key: String) {
         sliceScope.launch(Dispatchers.IO) {
             val previousState = _screenState.value
-            _screenState.update { Resource.Loading }
+            _eventsList.update {
+                Resource.Loading
+            }
             eventRepository.getEventsByKey(key).map { events ->
                 events.map {
                     eventPreviewTransformer.transform(it)
                 }
             }.handle(
                 onSuccess = { availableEvents ->
-                    previousState.handle(
-                        onSuccess = { currentValue ->
-                            _screenState.update {
-                                Resource.Success(currentValue.copy(events = availableEvents))
-                            }
-                        },
-                        onError = { error, _ ->
-                            _screenState.update { Resource.Error(error) }
-                        }
-                    )
+                    _eventsList.update {
+                        Resource.Success(availableEvents)
+                    }
                 },
                 onError = { error, _ ->
-                    _screenState.update { Resource.Error(error) }
+                    _eventsList.update { Resource.Error(error) }
                 }
             )
         }
     }
 
-    private fun fetchInitialData() {
+    private fun fetchAvailableTabs() {
         sliceScope.launch(Dispatchers.IO) {
-            _screenState.update { Resource.Loading }
+            _availableTabs.update { Resource.Loading }
             eventRepository.getAvailableTabs().map { tabInfoTransformer.transform(it) }
                 .handle(
                     onSuccess = { availableTabs ->
-                        _screenState.update {
-                            Resource.Success(
-                                EventListScreenState(
-                                    availableTabs = availableTabs
-                                )
-                            )
+                        _availableTabs.update {
+                            Resource.Success(availableTabs)
                         }
-                        val currentlySelectedTab = availableTabs.findSelectedTab()
-                        fetchEventsByKey(currentlySelectedTab.dateKey)
                     },
                     onError = { error, _ ->
-                        _screenState.update { Resource.Error(error) }
+                        _availableTabs.update { Resource.Error(error) }
                     }
                 )
         }

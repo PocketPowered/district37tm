@@ -8,9 +8,9 @@ actual class DatabaseFactory actual constructor(private val appContext: Any?) {
     actual fun createDriver(): SqlDriver {
         val appContext = requireNotNull(appContext as? Context)
         return AndroidSqliteDriver(
-            schema = NotificationDatabase.Schema,
+            schema = TMDatabase.Schema,
             context = appContext,
-            name = "notification.db"
+            name = "tm.db"
         )
     }
 } 

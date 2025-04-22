@@ -1,9 +1,10 @@
 package com.district37.toastmasters.eventlist
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,9 +12,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
@@ -30,19 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
-import com.district37.toastmasters.models.EventPreview
-import com.district37.toastmasters.models.TabInfo
-import com.district37.toastmasters.navigation.EVENT_ID_ARG
+import com.district37.toastmasters.models.DateTabInfo
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.navigation.StatefulScaffold
 import com.district37.toastmasters.notifications.NotificationsEntry
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
 import com.wongislandd.nexus.util.conditionallyChain
-import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
@@ -53,7 +47,7 @@ fun EventListScreen() {
     val appViewModel = LocalAppViewModel.current
     val viewModel = koinViewModel<EventListViewModel>()
     val coroutineScope = rememberCoroutineScope()
-    val screenState by viewModel.screenStateSlice.screenState.collectAsState()
+    val screenState by viewModel.eventListScreenStateSlice.screenState.collectAsState()
     val isRefreshing = screenState is Resource.Loading
     StatefulScaffold(
         actions = {
@@ -76,7 +70,8 @@ fun EventListScreen() {
         resource = screenState
     ) { data ->
         Column(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp).background(MaterialTheme.colors.surface),
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                .background(MaterialTheme.colors.surface),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -86,21 +81,27 @@ fun EventListScreen() {
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
-            LazyRow(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-            ) {
-                data.availableTabs.forEach { tab ->
-                    item {
-                        CustomTab(tab, onTabClick = {
-                            viewModel.uiEventBus.sendEvent(
-                                coroutineScope,
-                                TabChanged(tab)
-                            )
-                        }, modifier = Modifier)
-                    }
+            DateSelector(data.availableTabs, onTabClick = { tab ->
+                viewModel.uiEventBus.sendEvent(
+                    coroutineScope,
+                    DateChanged(tab)
+                )
+            })
+            AgendaSelector(
+                agendaSelection = data.agendaOption,
+                onFullAgendaClicked = {
+                    viewModel.uiEventBus.sendEvent(
+                        coroutineScope,
+                        AgendaChanged(AgendaOption.FULL_AGENDA)
+                    )
+                },
+                onMyAgendaClicked = {
+                    viewModel.uiEventBus.sendEvent(
+                        coroutineScope,
+                        AgendaChanged(AgendaOption.FAVORITES_AGENDA)
+                    )
                 }
-            }
+            )
             Text(
                 text = "Agenda",
                 style = MaterialTheme.typography.body1,
@@ -109,20 +110,19 @@ fun EventListScreen() {
                 textAlign = TextAlign.Start,
                 modifier = Modifier.fillMaxWidth().padding(start = 16.dp)
             )
+            if (data.events.isEmpty()) {
+                Text(
+                    text = "No events found",
+                    style = MaterialTheme.typography.body1,
+                    color = MaterialTheme.colors.secondary,
+                )
+            }
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(vertical = 8.dp).fillMaxSize()
             ) {
                 items(data.events) { event ->
-                    EventCard(event, onCardClick = {
-                        coroutineScope.launch {
-                            appViewModel.navigate(
-                                navController,
-                                NavigationItemKey.EVENT_DETAILS,
-                                mapOf(EVENT_ID_ARG to event.id)
-                            )
-                        }
-                    })
+                    EventCard(event)
                 }
             }
         }
@@ -130,10 +130,82 @@ fun EventListScreen() {
     }
 }
 
+
+@Composable
+fun AgendaSelector(
+    agendaSelection: AgendaOption,
+    onFullAgendaClicked: () -> Unit,
+    onMyAgendaClicked: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colors.onSurface.copy(alpha = 0.05f)),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = "Full Agenda",
+            modifier = Modifier
+                .weight(1f)
+                .clip(CircleShape)
+                .background(
+                    if (agendaSelection == AgendaOption.FULL_AGENDA) MaterialTheme.colors.secondary.copy(
+                        alpha = 0.8f
+                    )
+                    else MaterialTheme.colors.surface
+                )
+                .clickable { onFullAgendaClicked() }
+                .padding(vertical = 8.dp),
+            color = if (agendaSelection == AgendaOption.FULL_AGENDA) MaterialTheme.colors.onSecondary else MaterialTheme.colors.onSurface,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Medium
+        )
+        Text(
+            text = "My Agenda",
+            modifier = Modifier
+                .weight(1f)
+                .clip(CircleShape)
+                .background(
+                    if (agendaSelection == AgendaOption.FAVORITES_AGENDA) MaterialTheme.colors.secondary.copy(
+                        alpha = 0.8f
+                    )
+                    else MaterialTheme.colors.surface
+                )
+                .clickable { onMyAgendaClicked() }
+                .padding(vertical = 8.dp),
+            color = if (agendaSelection == AgendaOption.FAVORITES_AGENDA) MaterialTheme.colors.onSecondary else MaterialTheme.colors.onSurface,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun DateSelector(
+    availableTabs: List<DateTabInfo>,
+    onTabClick: (DateTabInfo) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyRow(
+        modifier = modifier.fillMaxWidth().padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+    ) {
+        availableTabs.forEach { tab ->
+            item {
+                CustomTab(tab, onTabClick = onTabClick, modifier = Modifier)
+            }
+        }
+    }
+}
+
+
 @Composable
 private fun CustomTab(
-    tab: TabInfo,
-    onTabClick: () -> Unit,
+    tab: DateTabInfo,
+    onTabClick: (DateTabInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Tab(
@@ -145,56 +217,11 @@ private fun CustomTab(
             )
         },
         selected = tab.isSelected,
-        onClick = onTabClick,
+        onClick = { onTabClick(tab) },
         modifier = modifier.clip(
             CircleShape
         ).conditionallyChain(
             tab.isSelected, Modifier.background(MaterialTheme.colors.secondary)
         )
     )
-}
-
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-private fun EventCard(
-    eventPreview: EventPreview,
-    onCardClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        backgroundColor = MaterialTheme.colors.onSecondary,
-        modifier = modifier.padding(horizontal = 8.dp),
-        onClick = onCardClick
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp)
-                    .align(Alignment.CenterStart)
-            ) {
-                Text(
-                    text = eventPreview.title,
-                    style = MaterialTheme.typography.body1,
-                    color = MaterialTheme.colors.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    overflow = TextOverflow.Ellipsis,
-                    maxLines = 2
-                )
-                Text(
-                    text = eventPreview.locationInfo,
-                    style = MaterialTheme.typography.body2,
-                    color = MaterialTheme.colors.onSurface,
-                )
-                Text(
-                    text = eventPreview.time,
-                    style = MaterialTheme.typography.body2,
-                    color = MaterialTheme.colors.onSurface,
-                )
-            }
-        }
-
-    }
 }
