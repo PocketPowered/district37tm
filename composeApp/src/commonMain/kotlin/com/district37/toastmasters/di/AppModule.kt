@@ -5,6 +5,7 @@ import com.district37.toastmasters.EventRepository
 import com.district37.toastmasters.eventdetails.eventDetailsModule
 import com.district37.toastmasters.eventlist.eventListModule
 import com.district37.toastmasters.navigation.supportedNavigationItems
+import com.district37.toastmasters.notifications.NotificationsSlice
 import com.district37.toastmasters.util.EpochTimeTransformer
 import com.wongislandd.nexus.di.infraModule
 import com.wongislandd.nexus.navigation.NavigationItem
@@ -19,6 +20,7 @@ import org.koin.dsl.module
 fun appModule(appContext: Any? = null) = module {
     viewModelOf(::AppViewModel)
     factoryOf(::NavigationSlice)
+    factoryOf(::NotificationsSlice)
     singleOf(::EventRepository)
     singleOf(::EpochTimeTransformer)
     single<Set<NavigationItem>> { supportedNavigationItems.values.toSet() }

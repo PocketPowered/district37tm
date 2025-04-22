@@ -11,6 +11,8 @@ import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,6 +25,8 @@ import com.wongislandd.nexus.navigation.LocalNavHostController
 fun NotificationsEntry(modifier: Modifier = Modifier) {
     val appViewModel = LocalAppViewModel.current
     val navController = LocalNavHostController.current
+    val unseenNotificationCount by
+        appViewModel.notificationsSlice.unseenNotificationCount.collectAsState(0)
     Box(modifier = modifier) {
         IconButton(
             {
@@ -34,23 +38,24 @@ fun NotificationsEntry(modifier: Modifier = Modifier) {
             modifier = Modifier.align(Alignment.Center)
         ) {
             Icon(Icons.Default.Notifications, contentDescription = "Notifications")
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
+            if (unseenNotificationCount > 0) {
                 Box(
                     modifier = Modifier
-                        .matchParentSize()
-                        .background(Color.Red, shape = CircleShape)
-                )
-                Text(
-                    text = "3",
-                    color = Color.White,
-                    style = MaterialTheme.typography.caption
-                )
+                        .align(Alignment.TopEnd)
+                        .size(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(Color.Red, shape = CircleShape)
+                    )
+                    Text(
+                        text = unseenNotificationCount.toString(),
+                        color = Color.White,
+                        style = MaterialTheme.typography.caption
+                    )
+                }
             }
         }
     }
