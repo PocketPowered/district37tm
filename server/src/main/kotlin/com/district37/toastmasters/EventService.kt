@@ -9,7 +9,8 @@ import io.ktor.server.plugins.NotFoundException
 class EventService {
 
     fun getEvent(id: Int): BackendEventDetails {
-        return MockEventDataProvider.allEvents[id] ?: throw NotFoundException("Event not found")
+        return MockEventDataProvider.allEvents.find { it.id == id }
+            ?: throw NotFoundException("Event not found")
     }
 
     fun getEventPreviews(dateKey: String?): List<BackendEventPreview> {
@@ -27,7 +28,6 @@ class EventService {
         )
     }
 }
-
 
 
 object MockEventDataProvider {
