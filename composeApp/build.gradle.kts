@@ -35,7 +35,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.firebase.messaging)
-            implementation("app.cash.sqldelight:android-driver:2.0.1")
+            implementation(libs.android.driver)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -51,11 +51,11 @@ kotlin {
             implementation(libs.bundles.gitlive)
             implementation(libs.bundles.landscapist)
             implementation(libs.accompanist.placeholder)
-            implementation("app.cash.sqldelight:coroutines-extensions:2.0.1")
+            implementation(libs.coroutines.extensions)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)
-            implementation("app.cash.sqldelight:native-driver:2.0.1")
+            implementation(libs.native.driver)
         }
     }
 }
