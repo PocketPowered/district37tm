@@ -5,3 +5,8 @@ data class TabInfo(
     val dateKey: String,
     val isSelected: Boolean
 )
+
+fun List<TabInfo>.findSelectedTab(defaultSelectedTab: TabInfo? = null): TabInfo {
+    return this.find { it.isSelected } ?: defaultSelectedTab
+    ?: throw IllegalStateException("No selected tab!")
+}

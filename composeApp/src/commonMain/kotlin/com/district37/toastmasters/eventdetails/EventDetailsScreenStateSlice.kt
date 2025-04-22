@@ -20,7 +20,7 @@ class EventDetailsScreenStateSlice(
 ): ViewModelSlice() {
 
     private val _screenState: MutableStateFlow<Resource<EventDetailsScreenState>> =
-        MutableStateFlow(Resource.Loading())
+        MutableStateFlow(Resource.Loading)
     val screenState = _screenState
 
     fun initialize(eventId: Int) {

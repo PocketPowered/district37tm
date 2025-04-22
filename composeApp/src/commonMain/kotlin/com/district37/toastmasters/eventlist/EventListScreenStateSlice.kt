@@ -3,9 +3,10 @@ package com.district37.toastmasters.eventlist
 import com.district37.toastmasters.EventRepository
 import com.district37.toastmasters.models.EventPreview
 import com.district37.toastmasters.models.TabInfo
+import com.district37.toastmasters.models.findSelectedTab
 import com.wongislandd.nexus.events.UiEvent
-import com.wongislandd.nexus.util.ErrorType
 import com.wongislandd.nexus.util.Resource
+import com.wongislandd.nexus.util.Resource.Loading.handle
 import com.wongislandd.nexus.viewmodel.ViewModelSlice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -15,7 +16,6 @@ import kotlinx.coroutines.launch
 
 data class EventListScreenState(
     val events: List<EventPreview> = emptyList(),
-    val currentlySelectedTabKey: String,
     val availableTabs: List<TabInfo>
 )
 
@@ -32,7 +32,7 @@ class EventListScreenStateSlice(
 ) : ViewModelSlice() {
 
     private val _screenState: MutableStateFlow<Resource<EventListScreenState>> =
-        MutableStateFlow(Resource.Loading())
+        MutableStateFlow(Resource.Loading)
     val screenState = _screenState
 
     override fun afterInit() {
@@ -44,78 +44,82 @@ class EventListScreenStateSlice(
         super.handleUiEvent(event)
         when (event) {
             RefreshTriggered -> {
-                val currentScreenStateData = _screenState.value.data
-                _screenState.update {
-                    Resource.Loading()
-                }
-                if (currentScreenStateData != null) {
-                    fetchEventsByKey(
-                        currentScreenStateData.currentlySelectedTabKey,
-                        currentScreenStateData.availableTabs
-                    )
-                } else if (_screenState.value is Resource.Error) {
-                    fetchInitialData()
-                }
+                _screenState.value.handle(
+                    onSuccess = { currentValue ->
+                        val currentlySelectedKey =
+                            currentValue.availableTabs.findSelectedTab().dateKey
+                        fetchEventsByKey(currentlySelectedKey)
+                    },
+                    onError = { _, _ ->
+                        fetchInitialData()
+                    }
+                )
             }
 
             is TabChanged -> {
-                val currentScreenStateData = _screenState.value.data
-                _screenState.update {
-                    Resource.Loading()
+                _screenState.update { currentValue ->
+                    currentValue.map {
+                        it.copy(
+                            availableTabs = it.availableTabs.map { tab ->
+                                tab.copy(isSelected = tab.dateKey == event.selectedTab.dateKey)
+                            }
+                        )
+                    }
                 }
-                val currentTabsState = currentScreenStateData?.availableTabs ?: emptyList()
-                val newTabState = currentTabsState.map {
-                    TabInfo(
-                        it.displayName,
-                        it.dateKey,
-                        it.dateKey == event.selectedTab.dateKey
-                    )
-                }
-                fetchEventsByKey(event.selectedTab.dateKey, newTabState)
+                fetchEventsByKey(event.selectedTab.dateKey)
             }
         }
     }
 
 
-    private fun fetchEventsByKey(key: String, availableTabs: List<TabInfo>) {
+    private fun fetchEventsByKey(key: String) {
         sliceScope.launch(Dispatchers.IO) {
-            val eventsForSelectedTab =
-                eventRepository.getEventsByKey(key).map { events ->
-                    events.map {
-                        eventPreviewTransformer.transform(it)
-                    }
+            val previousState = _screenState.value
+            _screenState.update { Resource.Loading }
+            eventRepository.getEventsByKey(key).map { events ->
+                events.map {
+                    eventPreviewTransformer.transform(it)
                 }
-            if (eventsForSelectedTab is Resource.Success) {
-                _screenState.update {
-                    Resource.Success(
-                        EventListScreenState(
-                            events = eventsForSelectedTab.data,
-                            currentlySelectedTabKey = key,
-                            availableTabs = availableTabs
-                        )
+            }.handle(
+                onSuccess = { availableEvents ->
+                    previousState.handle(
+                        onSuccess = { currentValue ->
+                            _screenState.update {
+                                Resource.Success(currentValue.copy(events = availableEvents))
+                            }
+                        },
+                        onError = { error, _ ->
+                            _screenState.update { Resource.Error(error) }
+                        }
                     )
+                },
+                onError = { error, _ ->
+                    _screenState.update { Resource.Error(error) }
                 }
-            } else {
-                _screenState.update { Resource.Error(ErrorType.UNKNOWN) }
-            }
+            )
         }
     }
 
     private fun fetchInitialData() {
         sliceScope.launch(Dispatchers.IO) {
-            _screenState.update { Resource.Loading() }
-            val availableTabsRes =
-                eventRepository.getAvailableTabs().map { tabInfoTransformer.transform(it) }
-            if (availableTabsRes is Resource.Error) {
-                _screenState.update { Resource.Error(availableTabsRes.errorType) }
-                return@launch
-            } else if (availableTabsRes is Resource.Success) {
-                val availableTabs = availableTabsRes.data
-                val selectedTab =
-                    availableTabs.find { it.isSelected }
-                        ?: throw IllegalStateException("No selected tab!")
-                fetchEventsByKey(selectedTab.dateKey, availableTabs)
-            }
+            _screenState.update { Resource.Loading }
+            eventRepository.getAvailableTabs().map { tabInfoTransformer.transform(it) }
+                .handle(
+                    onSuccess = { availableTabs ->
+                        _screenState.update {
+                            Resource.Success(
+                                EventListScreenState(
+                                    availableTabs = availableTabs
+                                )
+                            )
+                        }
+                        val currentlySelectedTab = availableTabs.findSelectedTab()
+                        fetchEventsByKey(currentlySelectedTab.dateKey)
+                    },
+                    onError = { error, _ ->
+                        _screenState.update { Resource.Error(error) }
+                    }
+                )
         }
     }
 }

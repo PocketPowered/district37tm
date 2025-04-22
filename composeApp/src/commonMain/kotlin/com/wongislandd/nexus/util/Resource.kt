@@ -1,39 +1,63 @@
 package com.wongislandd.nexus.util
 
+/**
+ * Useful to put in a resource where we really only care about loading state
+ */
 object Empty
 
-sealed class Resource<T>(
-    open val data: T? = null
-) {
-    class Loading<T> : Resource<T>()
-    class Success<T>(override val data: T) : Resource<T>(data)
-    class Error<T>(val errorType: ErrorType, val throwable: Throwable? = null) :
-        Resource<T>()
+sealed class Resource<out T> {
+
+    object Loading : Resource<Nothing>()
+    data class Success<out T>(val data: T) : Resource<T>()
+    data class Error(
+        val error: ErrorType,
+        val throwable: Throwable? = null
+    ) : Resource<Nothing>()
 
     fun <R> map(transform: (T) -> R?): Resource<R> {
         return when (this) {
             is Success -> {
-                if (data == null) {
-                    // success with no data
-                    return Error(ErrorType.SUCCESS_WITH_NO_DATA)
-                }
                 val transformedData = transform(data)
-                transform(data)?.let {
-                    Success(it)
-                } ?: run {
+                if (transformedData != null) {
+                    Success(transformedData)
+                } else {
                     Error(ErrorType.CLIENT_ERROR)
                 }
             }
-
-            is Error -> Error(errorType, throwable)
-            is Loading -> Loading()
+            is Error -> this
+            is Loading -> this
         }
     }
+
 
     fun <T> Resource<T>.onSuccess(block: (T) -> Unit): Resource<T> {
         if (this is Success) {
             block(data)
         }
         return this
+    }
+
+    fun Resource<*>.onError(block: (error: ErrorType?, throwable: Throwable?) -> Unit): Resource<*> {
+        if (this is Error) {
+            block(error, throwable)
+        }
+        return this
+    }
+
+    fun <T> Resource<T>.handle(
+        onSuccess: (T) -> Unit,
+        onError: (error: ErrorType, throwable: Throwable?) -> Unit
+    ): Resource<T> {
+        return when (this) {
+            is Success -> {
+                onSuccess(data)
+                this
+            }
+            is Error -> {
+                onError(error, throwable)
+                this
+            }
+            else -> this
+        }
     }
 }
