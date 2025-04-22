@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.apache.tools.ant.util.JavaEnvUtils.VERSION_11
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -6,15 +6,14 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.google.services)
-    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.crashlytics)
+    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
     androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
+
     }
 
     listOf(
@@ -34,6 +33,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.firebase.messaging)
+            implementation(libs.android.driver)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -49,9 +49,12 @@ kotlin {
             implementation(libs.bundles.gitlive)
             implementation(libs.bundles.landscapist)
             implementation(libs.accompanist.placeholder)
+            implementation(libs.coroutines.extensions)
+//            implementation(libs.androidx.compose.material3)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            implementation(libs.native.driver)
         }
     }
 }
@@ -78,11 +81,19 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 }
 
 dependencies {
     debugImplementation(compose.uiTooling)
+}
+
+sqldelight {
+    databases {
+        create("NotificationDatabase") {
+            packageName.set("com.district37.toastmasters.database")
+        }
+    }
 }

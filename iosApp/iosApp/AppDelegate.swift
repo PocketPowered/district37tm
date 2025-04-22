@@ -1,15 +1,24 @@
 import UIKit
 import Firebase
 import UserNotifications
+import ComposeApp
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
+    private lazy var notificationRepository: NotificationRepository = {
+        return KoinBridge.shared.getNotificationsRepository()
+    }()
 
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
+        // Initialize Firebase
         FirebaseApp.configure()
 
+        // Initialize Koin
+        AppModuleKt.initializeKoin(context: nil)
+
+        // Setup push notifications
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
 
@@ -41,7 +50,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         print("✅ FCM token received via delegate: \(fcmToken ?? "nil")")
     }
 
-    // Optional: show push in foreground
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,

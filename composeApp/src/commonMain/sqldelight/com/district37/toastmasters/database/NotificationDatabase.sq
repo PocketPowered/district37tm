@@ -1,0 +1,29 @@
+CREATE TABLE notification (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    header TEXT NOT NULL,
+    description TEXT NOT NULL,
+    seen INTEGER NOT NULL DEFAULT 0,
+    time_received INTEGER NOT NULL
+);
+
+getAllNotifications:
+SELECT * FROM notification ORDER BY time_received DESC;
+
+getUnseenNotifications:
+SELECT * FROM notification WHERE seen = 0 ORDER BY time_received DESC;
+
+insertNotification:
+INSERT INTO notification (header, description, seen, time_received)
+VALUES (:header, :description, :seen, :time_received);
+
+markNotificationAsSeen:
+UPDATE notification SET seen = 1 WHERE id = ?;
+
+deleteNotification:
+DELETE FROM notification WHERE id = ?;
+
+clearAllNotifications:
+DELETE FROM notification;
+
+markAllNotificationsAsSeen:
+UPDATE notification SET seen = 1;
