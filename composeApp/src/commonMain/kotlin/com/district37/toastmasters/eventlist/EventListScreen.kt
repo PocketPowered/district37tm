@@ -81,6 +81,12 @@ fun EventListScreen() {
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
+            DateSelector(data.availableTabs, onTabClick = { tab ->
+                viewModel.uiEventBus.sendEvent(
+                    coroutineScope,
+                    DateChanged(tab)
+                )
+            })
             AgendaSelector(
                 agendaSelection = data.agendaOption,
                 onFullAgendaClicked = {
@@ -96,21 +102,6 @@ fun EventListScreen() {
                     )
                 }
             )
-            LazyRow(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
-            ) {
-                data.availableTabs.forEach { tab ->
-                    item {
-                        CustomTab(tab, onTabClick = {
-                            viewModel.uiEventBus.sendEvent(
-                                coroutineScope,
-                                DateChanged(tab)
-                            )
-                        }, modifier = Modifier)
-                    }
-                }
-            }
             Text(
                 text = "Agenda",
                 style = MaterialTheme.typography.body1,
@@ -192,11 +183,29 @@ fun AgendaSelector(
     }
 }
 
+@Composable
+private fun DateSelector(
+    availableTabs: List<DateTabInfo>,
+    onTabClick: (DateTabInfo) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyRow(
+        modifier = modifier.fillMaxWidth().padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+    ) {
+        availableTabs.forEach { tab ->
+            item {
+                CustomTab(tab, onTabClick = onTabClick, modifier = Modifier)
+            }
+        }
+    }
+}
+
 
 @Composable
 private fun CustomTab(
     tab: DateTabInfo,
-    onTabClick: () -> Unit,
+    onTabClick: (DateTabInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Tab(
@@ -208,7 +217,7 @@ private fun CustomTab(
             )
         },
         selected = tab.isSelected,
-        onClick = onTabClick,
+        onClick = { onTabClick(tab) },
         modifier = modifier.clip(
             CircleShape
         ).conditionallyChain(
