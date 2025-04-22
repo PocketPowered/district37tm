@@ -5,6 +5,11 @@ import com.wongislandd.nexus.navigation.NavigationItem
 val EVENT_ID_ARG = "eventId"
 
 val supportedNavigationItems = mutableMapOf(
+    NavigationItemKey.SPLASH_SCREEN to NavigationItem(
+        NavigationItemKey.SPLASH_SCREEN.name,
+        "",
+        "splash"
+    ),
     NavigationItemKey.LANDING_PAGE to NavigationItem(
         NavigationItemKey.LANDING_PAGE.name,
         "District 37 Toastmasters",

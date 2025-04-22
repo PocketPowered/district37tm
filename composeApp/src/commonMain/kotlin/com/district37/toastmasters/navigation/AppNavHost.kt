@@ -13,12 +13,13 @@ import com.district37.toastmasters.eventdetails.EventDetailsScreen
 import com.district37.toastmasters.eventlist.EventListScreen
 import com.district37.toastmasters.info.InfoScreen
 import com.district37.toastmasters.notifications.NotificationsScreen
+import com.district37.toastmasters.splash.SplashScreen
 import com.wongislandd.nexus.navigation.LocalNavHostController
 
 @Composable
 fun AppNavHost(
     modifier: Modifier = Modifier,
-    startDestination: NavigationItemKey = NavigationItemKey.EVENT_LIST
+    startDestination: NavigationItemKey = NavigationItemKey.SPLASH_SCREEN
 ) {
     val navController = LocalNavHostController.current
     val startingDestination = supportedNavigationItems[startDestination]
@@ -62,8 +63,15 @@ fun AppNavHost(
     ) {
         supportedNavigationItems.map { (_, navigationItem) ->
             when (NavigationItemKey.valueOf(navigationItem.navigationKey)) {
+
                 NavigationItemKey.LANDING_PAGE -> {
                     // TODO
+                }
+
+                NavigationItemKey.SPLASH_SCREEN -> {
+                    composable(route = navigationItem.completeRoute) {
+                        SplashScreen()
+                    }
                 }
 
                 NavigationItemKey.EVENT_LIST -> {
