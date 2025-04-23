@@ -7,11 +7,10 @@ import com.wongislandd.nexus.networking.HttpMethod
 import com.wongislandd.nexus.networking.NetworkClient
 import com.wongislandd.nexus.util.Resource
 import io.ktor.client.HttpClient
-import io.ktor.client.request.HttpRequestBuilder
 
 class EventRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
 
-        suspend fun getEventDetails(id: Int): Resource<BackendEventDetails> {
+    suspend fun getEventDetails(id: Int): Resource<BackendEventDetails> {
         return makeRequest(
             "event/${id}",
             HttpMethod.GET
@@ -24,15 +23,6 @@ class EventRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
             HttpMethod.GET,
         ) {
             url.parameters.append("date", dateKey)
-        }
-    }
-
-    suspend fun getEventsByIds(ids: List<Int>): Resource<List<BackendEventPreview>> {
-        return makeRequest(
-            "events/favorites",
-            HttpMethod.GET,
-        ) {
-            url.parameters.append("ids", ids.joinToString(","))
         }
     }
 

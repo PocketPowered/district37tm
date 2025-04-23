@@ -68,7 +68,7 @@ class FirebaseEventService {
 
             query.get().get().documents.mapNotNull { doc ->
                 val event = doc.toObject(BackendEventDetails::class.java)
-                event?.let {
+                event.let {
                     BackendEventPreview(
                         id = it.id,
                         title = it.title,
