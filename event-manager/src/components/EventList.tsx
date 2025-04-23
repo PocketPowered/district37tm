@@ -140,6 +140,15 @@ const EventList: React.FC = () => {
                     <TableRow>
                       <TableCell>
                         <TableSortLabel
+                          active={sortConfig.key === 'id'}
+                          direction={sortConfig.key === 'id' ? sortConfig.direction : 'asc'}
+                          onClick={() => handleSort('id')}
+                        >
+                          ID
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell>
+                        <TableSortLabel
                           active={sortConfig.key === 'title'}
                           direction={sortConfig.key === 'title' ? sortConfig.direction : 'asc'}
                           onClick={() => handleSort('title')}
@@ -171,6 +180,7 @@ const EventList: React.FC = () => {
                   <TableBody>
                     {tabEvents.map((event) => (
                       <TableRow key={event.id}>
+                        <TableCell>{event.id}</TableCell>
                         <TableCell>{event.title}</TableCell>
                         <TableCell>{event.time}</TableCell>
                         <TableCell>{event.locationInfo}</TableCell>
