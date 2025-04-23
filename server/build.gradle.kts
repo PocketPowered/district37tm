@@ -24,6 +24,11 @@ configurations.all {
     }
 }
 
+// Needed to provide grpc the proper load balancer
+tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
+    mergeServiceFiles()
+}
+
 group = "com.district37.toastmasters"
 version = "1.0.0"
 application {
