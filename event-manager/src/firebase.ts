@@ -4,12 +4,12 @@ import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID,
-  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
+  authDomain: "district37-toastmasters.firebaseapp.com",
+  projectId: "district37-toastmasters",
+  storageBucket: "district37-toastmasters.firebasestorage.app",
+  messagingSenderId: "117850780335",
+  appId: "1:117850780335:web:7171bdb759ddc8b3d8da5a",
+  measurementId: "G-4JTXWV37E1"
 }
 
 export const app = initializeApp(firebaseConfig);
