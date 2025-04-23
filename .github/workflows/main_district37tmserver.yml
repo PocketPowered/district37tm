@@ -21,7 +21,7 @@ jobs:
       - name: Set up Java version
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'microsoft'
 
       - name: Build with Gradle
@@ -56,6 +56,14 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3E02EF7BAFA341E487B03D2F5D05E5E9 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_72B76B967B2B4DFF9D263804522769AA }}
 
+
+      - name: Set GOOGLE_CREDENTIALS_JSON as app setting
+        run: |
+          az webapp config appsettings set \
+            --name district37tmserver \
+            --resource-group district37tmserver_group \
+            --settings GOOGLE_CREDENTIALS_JSON='${{ secrets.GOOGLE_CREDENTIALS_JSON }}'
+            
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
