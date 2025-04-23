@@ -39,6 +39,7 @@ jobs:
         run: npm run build
         env:
           REACT_APP_FIREBASE_API_KEY: ${{ secrets.REACT_APP_FIREBASE_API_KEY }}
+          CI: false
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
