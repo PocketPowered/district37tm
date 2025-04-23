@@ -38,6 +38,7 @@ class FirebaseUserFCMService {
             firestore.collection("user_fcm_tokens").document(doc.id).delete().get()
         }
 
+        // Register the new token
         val userToken = UserFCMToken(
             userId = userId,
             token = token,

@@ -25,7 +25,8 @@ class FirebaseService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Logger.d("[FCM] New token: $token")
-        // Optionally send token to your server
+
+        // Update server knowledge of this token, currently no way to expire old tokens!
         CoroutineScope(Dispatchers.IO).launch {
             fcmRepository.registerToken(
                 userId = getOrCreateUserId(applicationContext),
