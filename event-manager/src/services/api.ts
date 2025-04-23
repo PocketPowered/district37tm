@@ -24,14 +24,31 @@ api.interceptors.response.use(
   }
 );
 
-export interface TabInfo {
-  displayName: string;
-  dateKey: string;
-}
-
 export const eventService = {
-  getAllEvents: () => api.get('/events/all').then(res => res.data),
-  getEvent: (id: number) => api.get(`/event/${id}`).then(res => res.data),
+  getAllEvents: async (): Promise<Event[]> => {
+    const response = await fetch(`${API_BASE_URL}/events/all`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch events');
+    }
+    return response.json();
+  },
+
+  getEventsByDate: async (date: number): Promise<Event[]> => {
+    const response = await fetch(`${API_BASE_URL}/events?date=${date}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch events for date');
+    }
+    return response.json();
+  },
+
+  getEvent: async (id: number): Promise<Event> => {
+    const response = await fetch(`${API_BASE_URL}/event/${id}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch event');
+    }
+    return response.json();
+  },
+
   createEvent: (event: Event) => api.post('/events', event, {
     headers: {
       'Content-Type': 'application/json'
@@ -43,14 +60,6 @@ export const eventService = {
     }
   }).then(res => res.data),
   deleteEvent: (id: number) => api.delete(`/event/${id}`).then(res => res.data),
-  getAvailableTabs: async (): Promise<TabInfo[]> => {
-    const response = await fetch(`${API_BASE_URL}/availableTabs`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch available tabs');
-    }
-    const data = await response.json();
-    return data;
-  },
 };
 
 export const notificationService = {

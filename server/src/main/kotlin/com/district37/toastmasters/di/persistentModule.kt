@@ -1,5 +1,6 @@
 package com.district37.toastmasters.di
 
+import com.district37.toastmasters.DateService
 import com.district37.toastmasters.EventService
 import com.district37.toastmasters.FirebaseDateService
 import com.district37.toastmasters.FirebaseEventService
@@ -9,6 +10,7 @@ import org.koin.dsl.module
 
 val persistentModule = module {
     singleOf(::EventService)
+    singleOf(::DateService)
     singleOf(::FirebaseEventService)
     singleOf(::FirebaseUserFCMService)
     singleOf(::FirebaseDateService)

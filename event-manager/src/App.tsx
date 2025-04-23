@@ -5,6 +5,7 @@ import { lightTheme, darkTheme } from './theme';
 import EventList from './components/EventList';
 import EventForm from './components/EventForm';
 import NotificationForm from './components/NotificationForm';
+import DateManager from './pages/DateManager';
 import './App.css';
 
 const App: React.FC = () => {
@@ -25,6 +26,9 @@ const App: React.FC = () => {
                 <Button color="inherit" component={Link} to="/">
                   Event Manager
                 </Button>
+                <Button color="inherit" component={Link} to="/dates">
+                  Date Manager
+                </Button>
                 <Button color="inherit" component={Link} to="/notifications">
                   Notifications
                 </Button>
@@ -37,6 +41,7 @@ const App: React.FC = () => {
               <Route path="/events/new" element={<EventForm />} />
               <Route path="/events/:id/edit" element={<EventForm />} />
               <Route path="/notifications" element={<NotificationForm />} />
+              <Route path="/dates" element={<DateManager />} />
             </Routes>
           </Container>
         </div>

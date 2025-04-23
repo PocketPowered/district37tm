@@ -1,15 +1,19 @@
 package com.district37.toastmasters
 
+import com.district37.toastmasters.models.BackendEventDetails
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.firestore.Firestore
 import com.google.cloud.firestore.FirestoreOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class FirebaseDateService {
+class FirebaseDateService : KoinComponent {
     private val json = System.getenv("GOOGLE_CREDENTIALS_JSON")
         ?: error("Missing GOOGLE_CREDENTIALS_JSON env variable")
     private val serviceAccount = GoogleCredentials.fromStream(json.byteInputStream())
+    private val eventService: FirebaseEventService by inject()
 
     private val firestore: Firestore = FirestoreOptions.getDefaultInstance().toBuilder()
         .setProjectId("district37-toastmasters")
@@ -35,6 +39,23 @@ class FirebaseDateService {
     }
 
     suspend fun removeDate(timestamp: Long): Boolean = withContext(Dispatchers.IO) {
+        // First, get all events for this date
+        val events = firestore.collection("events")
+            .whereEqualTo("dateKey", timestamp)
+            .get()
+            .get()
+            .documents
+            .mapNotNull { doc ->
+                doc.toObject(BackendEventDetails::class.java)
+            }
+
+        // Delete all events for this date
+        if (events.isNotEmpty()) {
+            val eventIds = events.map { it.id }
+            eventService.deleteEvents(eventIds)
+        }
+
+        // Finally, delete the date itself
         val docRef = firestore.collection("dates").document(timestamp.toString())
         docRef.delete().get()
         true

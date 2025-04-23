@@ -17,7 +17,8 @@ import {
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Event, AgendaItem, ExternalLink, TimeRange } from '../types/Event';
-import { eventService, TabInfo } from '../services/api';
+import { eventService } from '../services/api';
+import { dateService } from '../services/dateService';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LinkIcon from '@mui/icons-material/Link';
@@ -51,21 +52,21 @@ const EventForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState('');
-  const [availableTabs, setAvailableTabs] = useState<TabInfo[]>([]);
+  const [availableDates, setAvailableDates] = useState<number[]>([]);
 
   useEffect(() => {
     if (id) {
       loadEvent();
     }
-    loadAvailableTabs();
+    loadAvailableDates();
   }, [id]);
 
-  const loadAvailableTabs = async () => {
+  const loadAvailableDates = async () => {
     try {
-      const tabs = await eventService.getAvailableTabs();
-      setAvailableTabs(tabs);
+      const dates = await dateService.getAvailableDates();
+      setAvailableDates(dates);
     } catch (error) {
-      console.error('Error loading available tabs:', error);
+      console.error('Error loading available dates:', error);
     }
   };
 
@@ -259,22 +260,54 @@ const EventForm: React.FC = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          {id ? 'Edit Event' : 'Create Event'}
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h5">
+            {id ? 'Edit Event' : 'Create Event'}
+          </Typography>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate('/')}
+            variant="outlined"
+          >
+            Back to List
+          </Button>
+        </Box>
+
+        {success && (
+          <Alert 
+            severity="success" 
+            sx={{ mb: 3 }}
+            action={
+              <Button 
+                color="inherit" 
+                size="small"
+                onClick={() => navigate('/')}
+              >
+                Back to List
+              </Button>
+            }
+          >
+            {success}
+          </Alert>
+        )}
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
             <FormControl fullWidth required>
-              <InputLabel>Date Key</InputLabel>
+              <InputLabel>Date</InputLabel>
               <Select
                 value={event.dateKey}
-                label="Date Key"
+                label="Date"
                 onChange={(e) => setEvent({ ...event, dateKey: e.target.value })}
               >
-                {availableTabs.map((tab) => (
-                  <MenuItem key={tab.dateKey} value={tab.dateKey}>
-                    {tab.displayName}
+                {availableDates.map((timestamp) => (
+                  <MenuItem key={timestamp} value={timestamp.toString()}>
+                    {new Date(timestamp).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
                   </MenuItem>
                 ))}
               </Select>
@@ -589,24 +622,6 @@ const EventForm: React.FC = () => {
             </Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
-              {success && (
-                <Alert 
-                  severity="success" 
-                  sx={{ 
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    '& .MuiAlert-message': {
-                      flex: 1
-                    }
-                  }}
-                >
-                  {success}
-                </Alert>
-              )}
-              <Button variant="outlined" onClick={() => navigate('/')}>
-                Go Back
-              </Button>
               <Button type="submit" variant="contained" color="primary" disabled={loading}>
                 {loading ? <CircularProgress size={24} /> : 'Save Changes'}
               </Button>
