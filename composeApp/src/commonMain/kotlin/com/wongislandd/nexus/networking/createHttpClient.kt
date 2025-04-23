@@ -13,7 +13,7 @@ import io.ktor.http.takeFrom
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
-private const val PROD_HOST = "https://district37tmserver-a7fgdaageve3g9dx.eastus-01.azurewebsites.net"
+private const val PROD_HOST = "https://district37tm-dve3cncpajdnh5h3.eastus2-01.azurewebsites.net"
 private const val DEV_HOST = "http://localhost:8080"
 // Adjust this to true to hit local server, never commit with this as true
 private const val useDevHost = false

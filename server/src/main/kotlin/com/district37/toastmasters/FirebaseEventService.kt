@@ -13,7 +13,7 @@ import kotlinx.coroutines.withContext
 class FirebaseEventService {
     private val json = System.getenv("GOOGLE_CREDENTIALS_JSON")
         ?: error("Missing GOOGLE_CREDENTIALS_JSON env variable")
-    val serviceAccount = GoogleCredentials.fromStream(json.byteInputStream())
+    private val serviceAccount = GoogleCredentials.fromStream(json.byteInputStream())
 
     private val firestore: Firestore = FirestoreOptions.getDefaultInstance().toBuilder()
         .setProjectId("district37-toastmasters")
