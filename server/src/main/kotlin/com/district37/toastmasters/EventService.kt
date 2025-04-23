@@ -1,58 +1,28 @@
 package com.district37.toastmasters
 
-import com.district37.toastmasters.di.util.eventsByDate
 import com.district37.toastmasters.models.BackendEventDetails
 import com.district37.toastmasters.models.BackendEventPreview
 import com.district37.toastmasters.models.BackendTabInfo
-import io.ktor.server.plugins.NotFoundException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
-class EventService {
+class EventService(private val firebaseService: FirebaseEventService) {
 
-    fun getEvent(id: Int): BackendEventDetails {
-        return MockEventDataProvider.allEvents.find { it.id == id }
-            ?: throw NotFoundException("Event not found")
+    suspend fun getEvent(id: Int): BackendEventDetails = withContext(Dispatchers.IO) {
+        firebaseService.getEvent(id)
     }
 
-    fun getEventPreviews(dateKey: String?): List<BackendEventPreview> {
-        if (dateKey == null) {
-            return MockEventDataProvider.allEventPreviews
-        }
-        return MockEventDataProvider.eventPreviewsByDate[dateKey]
-            ?: throw NotFoundException("Event key not found")
-    }
-
-    fun getEventsByIds(ids: List<Int>): List<BackendEventPreview> {
-        return MockEventDataProvider.allEventPreviews.filter { it.id in ids }
-    }
-
-    fun getAvailableTabsInfo(): List<BackendTabInfo> {
-        return listOf(
-            BackendTabInfo("May 2nd, 2025", "050225"),
-            BackendTabInfo("May 3rd, 2025", "050325")
-        )
-    }
-}
-
-
-object MockEventDataProvider {
-
-    val allEvents = eventsByDate.values.flatten()
-
-    val eventPreviewsByDate: Map<String, List<BackendEventPreview>> =
-        eventsByDate.mapValues { (_, value) ->
-            value.map {
-                BackendEventPreview(
-                    id = it.id,
-                    title = it.title,
-                    image = it.images.firstOrNull() ?: "no url in mock",
-                    time = it.time,
-                    locationInfo = it.locationInfo
-                )
-            }
+    suspend fun getEventPreviews(dateKey: String?): List<BackendEventPreview> =
+        withContext(Dispatchers.IO) {
+            firebaseService.getEventPreviews(dateKey)
         }
 
-    // Map:
-    // "01523" to BackendEventDetails ------> "01523" to BackendEventPreview
+    suspend fun getEventsByIds(ids: List<Int>): List<BackendEventPreview> =
+        withContext(Dispatchers.IO) {
+            firebaseService.getEventsByIds(ids)
+        }
 
-    val allEventPreviews = eventPreviewsByDate.values.flatten()
+    suspend fun getAvailableTabsInfo(): List<BackendTabInfo> = withContext(Dispatchers.IO) {
+        firebaseService.getAvailableTabsInfo()
+    }
 }

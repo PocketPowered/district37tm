@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class BackendTabInfo(
-    val displayName: String,
-    val dateKey: String
+    val displayName: String = "",
+    val dateKey: String = "",
 )
