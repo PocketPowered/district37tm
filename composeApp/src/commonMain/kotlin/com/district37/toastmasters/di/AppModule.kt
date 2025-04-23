@@ -9,6 +9,7 @@ import com.district37.toastmasters.database.TMDatabase
 import com.district37.toastmasters.eventdetails.eventDetailsModule
 import com.district37.toastmasters.eventlist.eventListModule
 import com.district37.toastmasters.favorites.FavoritedEventsSlice
+import com.district37.toastmasters.fcm.FCMRepository
 import com.district37.toastmasters.navigation.supportedNavigationItems
 import com.district37.toastmasters.notifications.NotificationsSlice
 import com.district37.toastmasters.util.EpochTimeTransformer
@@ -34,6 +35,7 @@ fun appModule(appContext: Any? = null) = module {
     singleOf(::NotificationRepository)
     singleOf(::FavoritesRepository)
     singleOf(::FavoritedEventsSlice)
+    singleOf(::FCMRepository)
 }
 
 fun initializeKoin(context: Any? = null) =

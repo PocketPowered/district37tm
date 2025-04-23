@@ -46,6 +46,7 @@ fun Application.main() {
     }
     install(RequestContextPlugin)
     notificationsController()
+    userFCMController()
     eventsController()
 }
 

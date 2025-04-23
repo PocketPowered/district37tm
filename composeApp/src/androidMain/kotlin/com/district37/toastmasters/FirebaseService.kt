@@ -9,20 +9,41 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import co.touchlab.kermit.Logger
 import com.district37.toastmasters.database.NotificationRepository
+import com.district37.toastmasters.fcm.FCMRepository
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent.inject
+import java.util.UUID
 
 class FirebaseService : FirebaseMessagingService() {
     private val notificationRepository: NotificationRepository by inject(NotificationRepository::class.java)
+    private val fcmRepository: FCMRepository by inject(FCMRepository::class.java)
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Logger.d("[FCM] New token: $token")
         // Optionally send token to your server
+        CoroutineScope(Dispatchers.IO).launch {
+            fcmRepository.registerToken(
+                userId = getOrCreateUserId(applicationContext),
+                token = token,
+                deviceInfo = listOfNotNull(
+                    Build.MANUFACTURER,
+                    Build.MODEL,
+                    "API ${Build.VERSION.SDK_INT}"
+                ).joinToString(" - ")
+            )
+        }
+    }
+
+    private fun getOrCreateUserId(context: Context): String {
+        val sharedPrefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        return sharedPrefs.getString("user_id", null) ?: UUID.randomUUID().toString().also {
+            sharedPrefs.edit().putString("user_id", it).apply()
+        }
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
