@@ -16,58 +16,56 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.java.KoinJavaComponent.inject
-import java.util.UUID
 
 class FirebaseService : FirebaseMessagingService() {
     private val notificationRepository: NotificationRepository by inject(NotificationRepository::class.java)
+    // Since we can just subscribe to topics, do we need to track their FCM token?
     private val fcmRepository: FCMRepository by inject(FCMRepository::class.java)
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Logger.d("[FCM] New token: $token")
-
-        // Update server knowledge of this token, currently no way to expire old tokens!
-        CoroutineScope(Dispatchers.IO).launch {
-            fcmRepository.registerToken(
-                userId = getOrCreateUserId(applicationContext),
-                token = token,
-                deviceInfo = listOfNotNull(
-                    Build.MANUFACTURER,
-                    Build.MODEL,
-                    "API ${Build.VERSION.SDK_INT}"
-                ).joinToString(" - ")
-            )
-        }
+        // Subscribe to topics
+        subscribeToTopics()
     }
 
-    private fun getOrCreateUserId(context: Context): String {
-        val sharedPrefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        return sharedPrefs.getString("user_id", null) ?: UUID.randomUUID().toString().also {
-            sharedPrefs.edit().putString("user_id", it).apply()
+    private fun subscribeToTopics() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                com.google.firebase.messaging.FirebaseMessaging.getInstance()
+                    .subscribeToTopic(NotifcationTopics.GENERAL.name)
+                Logger.d("[FCM] Successfully subscribed to topics")
+            } catch (e: Exception) {
+                Logger.e("[FCM] Failed to subscribe to topics: ${e.message}")
+            }
         }
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
-        val title = remoteMessage.notification?.title
-        val body = remoteMessage.notification?.body
-        val relatedEventId = remoteMessage.data["relatedEventId"]
+        Logger.d("[FCM] Received message - Data: ${remoteMessage.data}")
 
-        Logger.d("[FCM] Received notification - Title: $title, Body: $body, EventId: $relatedEventId")
+        // Handle data-only messages
+        val data = remoteMessage.data
+        val title = data["title"] ?: "Notification"
+        val body = data["body"] ?: ""
+        val type = data["type"] ?: "notification"
+        val relatedEventId = data["relatedEventId"]
 
-        if (title != null && body != null) {
-            try {
-                notificationRepository.insertNotification(title, body)
-                Logger.d("[FCM] Successfully inserted notification into database")
-            } catch (e: Exception) {
-                Logger.e("[FCM] Failed to insert notification: ${e.message}")
-            }
+        Logger.d("[FCM] Processed data - Title: $title, Body: $body, Type: $type, EventId: $relatedEventId")
+
+        try {
+            notificationRepository.insertNotification(title, body)
+            Logger.d("[FCM] Successfully inserted notification into database")
+        } catch (e: Exception) {
+            Logger.e("[FCM] Failed to insert notification: ${e.message}")
         }
 
-        showNotification(title ?: "Notification", body ?: "")
+        showNotification(title, body)
     }
 
     private fun showNotification(title: String, body: String) {
+        Logger.d("[FCM] Showing notification - Title: $title, Body: $body")
         val notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 

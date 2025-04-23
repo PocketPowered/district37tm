@@ -2,6 +2,7 @@ package com.district37.toastmasters
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
@@ -11,21 +12,19 @@ import org.koin.ktor.ext.inject
 @Serializable
 data class NotificationRequest(
     val title: String,
-    val body: String,
-    val topic: String
+    val body: String
 )
 
 fun Application.notificationsController() {
-    val notificationService: NotificationService by inject()
+    val notificationService: FirebaseNotificationService by inject()
 
     routing {
         post("/notifications") {
             try {
-                val request = NotificationRequest("test", "test", "test2")
+                val request = call.receive<NotificationRequest>()
                 val messageId = notificationService.sendNotification(
                     title = request.title,
-                    body = request.body,
-                    topic = request.topic
+                    body = request.body
                 )
                 call.respond(mapOf("messageId" to messageId))
             } catch (e: Exception) {
