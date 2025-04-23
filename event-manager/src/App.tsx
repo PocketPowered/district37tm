@@ -6,6 +6,7 @@ import EventList from './components/EventList';
 import EventForm from './components/EventForm';
 import NotificationForm from './components/NotificationForm';
 import DateManager from './pages/DateManager';
+import EnvironmentToggle from './components/EnvironmentToggle';
 import './App.css';
 
 const App: React.FC = () => {
@@ -44,6 +45,7 @@ const App: React.FC = () => {
               <Route path="/dates" element={<DateManager />} />
             </Routes>
           </Container>
+          <EnvironmentToggle />
         </div>
       </Router>
     </ThemeProvider>

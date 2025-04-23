@@ -1,10 +1,9 @@
 import axios from 'axios';
 import { Event } from '../types/Event';
-
-const API_BASE_URL = 'http://localhost:8080'; // Update this with your actual backend URL
+import { apiConfig } from '../config/api';
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: apiConfig.baseUrl,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -26,7 +25,7 @@ api.interceptors.response.use(
 
 export const eventService = {
   getAllEvents: async (): Promise<Event[]> => {
-    const response = await fetch(`${API_BASE_URL}/events/all`);
+    const response = await fetch(`${apiConfig.baseUrl}/events/all`);
     if (!response.ok) {
       throw new Error('Failed to fetch events');
     }
@@ -34,7 +33,7 @@ export const eventService = {
   },
 
   getEventsByDate: async (date: number): Promise<Event[]> => {
-    const response = await fetch(`${API_BASE_URL}/events?date=${date}`);
+    const response = await fetch(`${apiConfig.baseUrl}/events?date=${date}`);
     if (!response.ok) {
       throw new Error('Failed to fetch events for date');
     }
@@ -42,7 +41,7 @@ export const eventService = {
   },
 
   getEvent: async (id: number): Promise<Event> => {
-    const response = await fetch(`${API_BASE_URL}/event/${id}`);
+    const response = await fetch(`${apiConfig.baseUrl}/event/${id}`);
     if (!response.ok) {
       throw new Error('Failed to fetch event');
     }
