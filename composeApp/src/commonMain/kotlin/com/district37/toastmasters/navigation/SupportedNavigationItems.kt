@@ -26,11 +26,6 @@ val supportedNavigationItems = mutableMapOf(
         "event",
         supportedArgs = listOf(EVENT_ID_ARG)
     ),
-    NavigationItemKey.INFO to NavigationItem(
-        NavigationItemKey.INFO.name,
-        "Info",
-        "info"
-    ),
     NavigationItemKey.NOTIFICATIONS to NavigationItem(
         NavigationItemKey.NOTIFICATIONS.name,
         "Notifications",

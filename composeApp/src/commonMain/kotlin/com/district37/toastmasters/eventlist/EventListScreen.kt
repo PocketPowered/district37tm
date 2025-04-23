@@ -12,13 +12,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Tab
 import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,12 +25,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.district37.toastmasters.LocalAppViewModel
 import com.district37.toastmasters.models.DateTabInfo
-import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.navigation.StatefulScaffold
 import com.district37.toastmasters.notifications.NotificationsEntry
-import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
 import com.wongislandd.nexus.util.conditionallyChain
 import org.koin.compose.viewmodel.koinViewModel
@@ -43,22 +36,12 @@ import org.koin.core.annotation.KoinExperimentalAPI
 @OptIn(KoinExperimentalAPI::class)
 @Composable
 fun EventListScreen() {
-    val navController = LocalNavHostController.current
-    val appViewModel = LocalAppViewModel.current
     val viewModel = koinViewModel<EventListViewModel>()
     val coroutineScope = rememberCoroutineScope()
     val screenState by viewModel.eventListScreenStateSlice.screenState.collectAsState()
     val isRefreshing = screenState is Resource.Loading
     StatefulScaffold(
         actions = {
-            IconButton({
-                appViewModel.navigate(
-                    navController,
-                    NavigationItemKey.INFO
-                )
-            }) {
-                Icon(Icons.Default.Info, contentDescription = "Info")
-            }
             NotificationsEntry()
         },
         onRefresh = {
