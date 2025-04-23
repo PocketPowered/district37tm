@@ -3,7 +3,7 @@ package com.district37.toastmasters.models
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class TimeRange(
-    val startTime: Long,
-    val endTime: Long
+data class BackendTimeRange(
+    val startTime: Long = -1,
+    val endTime: Long = -1
 ) 

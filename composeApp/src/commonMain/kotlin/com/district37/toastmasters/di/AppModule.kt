@@ -12,7 +12,6 @@ import com.district37.toastmasters.favorites.FavoritedEventsSlice
 import com.district37.toastmasters.fcm.FCMRepository
 import com.district37.toastmasters.navigation.supportedNavigationItems
 import com.district37.toastmasters.notifications.NotificationsSlice
-import com.district37.toastmasters.util.EpochTimeTransformer
 import com.wongislandd.nexus.di.infraModule
 import com.wongislandd.nexus.navigation.NavigationItem
 import com.wongislandd.nexus.navigation.NavigationSlice
@@ -28,7 +27,6 @@ fun appModule(appContext: Any? = null) = module {
     factoryOf(::NavigationSlice)
     factoryOf(::NotificationsSlice)
     singleOf(::EventRepository)
-    singleOf(::EpochTimeTransformer)
     single<Set<NavigationItem>> { supportedNavigationItems.values.toSet() }
     single { DatabaseFactory(appContext) }
     single { TMDatabase(get<DatabaseFactory>().createDriver()) }

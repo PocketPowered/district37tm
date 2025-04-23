@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.components.EventImage
+import com.district37.toastmasters.models.toHumanReadableString
 import com.district37.toastmasters.navigation.StatefulScaffold
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -36,7 +37,7 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     // TODO transform this into a carousel
-                    it.event.images.firstOrNull()?.let { firstImage ->
+                    it.event.images?.firstOrNull()?.let { firstImage ->
                         EventImage(
                             url = firstImage,
                             modifier = Modifier.height(400.dp).fillMaxWidth()
@@ -47,13 +48,13 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
                     ) {
                         Text(text = it.event.title, fontWeight = FontWeight.Bold)
                         Text(text = it.event.locationInfo)
-                        Text(text = it.event.time.toString())
+                        Text(text = it.event.time.toHumanReadableString())
                         Spacer(modifier = Modifier.height(4.dp))
                         it.event.agenda.forEach { agendaItem ->
                             Text(text = agendaItem.title)
                             Text(text = agendaItem.description)
                             Text(text = agendaItem.locationInfo)
-                            Text(text = agendaItem.time.toString())
+                            Text(text = agendaItem.time.toHumanReadableString(showDate = false))
                             Spacer(modifier = Modifier.height(4.dp))
                         }
                     }

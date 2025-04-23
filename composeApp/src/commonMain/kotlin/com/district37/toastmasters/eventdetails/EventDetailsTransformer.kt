@@ -4,24 +4,25 @@ import com.district37.toastmasters.models.AgendaItem
 import com.district37.toastmasters.models.BackendEventDetails
 import com.district37.toastmasters.models.EventDetails
 import com.district37.toastmasters.models.ExternalLink
-import com.district37.toastmasters.util.EpochTimeTransformer
+import com.district37.toastmasters.models.TimeRange
 import com.wongislandd.nexus.util.Transformer
 import com.wongislandd.nexus.util.safeLet
 
-class EventDetailsTransformer(
-    private val epochTimeTransformer: EpochTimeTransformer
-) : Transformer<BackendEventDetails, EventDetails> {
+class EventDetailsTransformer : Transformer<BackendEventDetails, EventDetails> {
     override fun transform(input: BackendEventDetails): EventDetails? {
-        return safeLet(
-            input.images, input.title, input.description, input.time,
+        return safeLet(input.title, input.description, input.time,
             input.locationInfo
-        ) { images, title, description, time, locationInfo ->
+        ) { title, description, time, locationInfo ->
             EventDetails(
                 id = input.id,
-                images = images,
+                images = input.images,
                 title = title,
                 description = description,
-                time = time,
+                time = TimeRange(
+                    time
+                        .startTime,
+                    time.endTime
+                ),
                 locationInfo = locationInfo,
                 agenda = input.agenda?.mapNotNull {
                     safeLet(
@@ -33,7 +34,11 @@ class EventDetailsTransformer(
                         AgendaItem(
                             title = title,
                             description = description,
-                            time = time,
+                            time = TimeRange(
+                                time
+                                    .startTime,
+                                time.endTime
+                            ),
                             locationInfo = locationInfo
                         )
                     }

@@ -34,18 +34,18 @@ fun Application.main() {
             encodeDefaults = true
         })
     }
-//    install(CORS) {
-//        anyHost()
-//        allowCredentials = true
-//        allowNonSimpleContentTypes = true
-//        allowHeaders { true }
-//        allowMethod(HttpMethod.Options)
-//        allowMethod(HttpMethod.Get)
-//        allowMethod(HttpMethod.Post)
-//        allowMethod(HttpMethod.Put)
-//        allowMethod(HttpMethod.Patch)
-//        allowMethod(HttpMethod.Delete)
-//    }
+    install(CORS) {
+        anyHost()
+        allowCredentials = true
+        allowNonSimpleContentTypes = true
+        allowHeaders { true }
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Patch)
+        allowMethod(HttpMethod.Delete)
+    }
     install(RequestContextPlugin)
     notificationsController()
     userFCMController()

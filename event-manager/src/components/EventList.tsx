@@ -16,12 +16,14 @@ import {
   AccordionDetails,
   IconButton,
   TableSortLabel,
+  Button,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Event } from '../types/Event';
+import AddIcon from '@mui/icons-material/Add';
+import { Event, formatTimeRange } from '../types/Event';
 import { eventService, TabInfo } from '../services/api';
 
 type SortConfig = {
@@ -119,11 +121,44 @@ const EventList: React.FC = () => {
     );
   }
 
+  // Check if there are any events across all tabs
+  const hasEvents = availableTabs.some(tab => getEventsForTab(tab).length > 0);
+
+  if (!hasEvents) {
+    return (
+      <Box sx={{ p: 2, textAlign: 'center' }}>
+        <Typography variant="h5" gutterBottom>
+          No Events Found
+        </Typography>
+        <Typography variant="body1" color="text.secondary" paragraph>
+          There are no events scheduled yet. Click the button below to create your first event.
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => navigate('/events/new')}
+          sx={{ mt: 2 }}
+        >
+          Create New Event
+        </Button>
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h4" gutterBottom>
-        Event Manager
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4">
+          Event Manager
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => navigate('/events/new')}
+        >
+          Create New Event
+        </Button>
+      </Box>
       {availableTabs.map((tab, index) => {
         const tabEvents = getEventsForTab(tab);
         if (tabEvents.length === 0) return null;
@@ -182,7 +217,7 @@ const EventList: React.FC = () => {
                       <TableRow key={event.id}>
                         <TableCell>{event.id}</TableCell>
                         <TableCell>{event.title}</TableCell>
-                        <TableCell>{event.time}</TableCell>
+                        <TableCell>{formatTimeRange(event.time.startTime, event.time.endTime)}</TableCell>
                         <TableCell>{event.locationInfo}</TableCell>
                         <TableCell>
                           <IconButton onClick={() => navigate(`/events/${event.id}/edit`)}>
