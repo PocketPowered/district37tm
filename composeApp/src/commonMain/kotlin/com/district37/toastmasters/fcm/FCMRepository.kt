@@ -17,14 +17,6 @@ data class RegisterTokenRequest(
     val deviceInfo: String? = null
 )
 
-@Serializable
-data class UpdateTokenRequest(
-    val userId: String,
-    val oldToken: String,
-    val newToken: String,
-    val deviceInfo: String? = null
-)
-
 class FCMRepository(httpClient: HttpClient) : NetworkClient(httpClient) {
     suspend fun registerToken(userId: String, token: String, deviceInfo: String? = null): Resource<Unit> {
         return makeRequest(
@@ -33,16 +25,6 @@ class FCMRepository(httpClient: HttpClient) : NetworkClient(httpClient) {
         ) {
             contentType(ContentType.Application.Json)
             setBody(RegisterTokenRequest(userId, token, deviceInfo))
-        }
-    }
-
-    suspend fun updateToken(userId: String, oldToken: String, newToken: String, deviceInfo: String? = null): Resource<Unit> {
-        return makeRequest(
-            "fcm/update",
-            HttpMethod.POST
-        ) {
-            contentType(ContentType.Application.Json)
-            setBody(UpdateTokenRequest(userId, oldToken, newToken, deviceInfo))
         }
     }
 } 

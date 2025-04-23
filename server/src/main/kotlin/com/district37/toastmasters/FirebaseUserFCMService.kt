@@ -27,6 +27,17 @@ class FirebaseUserFCMService {
         .service
 
     suspend fun registerToken(userId: String, token: String, deviceInfo: String? = null): UserFCMToken = withContext(Dispatchers.IO) {
+        // Remove any old tokens associated with this userId
+        val existingTokens = firestore.collection("user_fcm_tokens")
+            .whereEqualTo("userId", userId)
+            .get()
+            .get()
+            .documents
+
+        existingTokens.forEach { doc ->
+            firestore.collection("user_fcm_tokens").document(doc.id).delete().get()
+        }
+
         val userToken = UserFCMToken(
             userId = userId,
             token = token,
@@ -64,12 +75,12 @@ class FirebaseUserFCMService {
     suspend fun deleteTokensForUser(userId: String): Boolean = withContext(Dispatchers.IO) {
         val batch = firestore.batch()
         val tokens = getTokensForUser(userId)
-        
+
         tokens.forEach { token ->
             val docRef = firestore.collection("user_fcm_tokens").document(token.token)
             batch.delete(docRef)
         }
-        
+
         batch.commit().get()
         true
     }
@@ -77,8 +88,8 @@ class FirebaseUserFCMService {
     suspend fun updateToken(userId: String, oldToken: String, newToken: String, deviceInfo: String? = null): UserFCMToken = withContext(Dispatchers.IO) {
         // Delete old token
         deleteToken(oldToken)
-        
+
         // Register new token
         registerToken(userId, newToken, deviceInfo)
     }
-} 
+}
