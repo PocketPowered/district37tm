@@ -2,6 +2,8 @@ package com.district37.toastmasters
 
 import com.district37.toastmasters.di.persistentModule
 import com.district37.toastmasters.di.requestModule
+import io.grpc.LoadBalancerRegistry
+import io.grpc.internal.PickFirstLoadBalancerProvider
 import io.ktor.http.HttpMethod
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -17,6 +19,7 @@ import org.koin.ktor.plugin.scope
 
 fun main() {
     val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
+    LoadBalancerRegistry.getDefaultRegistry().register(PickFirstLoadBalancerProvider())
     embeddedServer(Netty, port = port, host = "0.0.0.0", module = Application::main)
         .start(wait = true)
 }
