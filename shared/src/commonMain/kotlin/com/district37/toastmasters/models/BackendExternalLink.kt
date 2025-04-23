@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class BackendExternalLink(
-    val displayName: String = "",
-    val url: String = ""
+    val displayName: String? = null,
+    val url: String? = null
 )

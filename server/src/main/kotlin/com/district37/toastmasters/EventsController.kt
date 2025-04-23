@@ -24,7 +24,7 @@ fun Application.eventsController() {
                 val createdEvent = eventService.createEvent(event)
                 call.respond(HttpStatusCode.Created, createdEvent)
             } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid event data")
+                call.respond(HttpStatusCode.BadRequest, "Invalid event data: ${e.message}")
             }
         }
 

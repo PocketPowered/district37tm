@@ -30,6 +30,8 @@ fun Application.main() {
             prettyPrint = true
             isLenient = true
             ignoreUnknownKeys = true
+            explicitNulls = false
+            encodeDefaults = true
         })
     }
     install(CORS) {

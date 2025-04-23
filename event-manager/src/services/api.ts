@@ -24,12 +24,33 @@ api.interceptors.response.use(
   }
 );
 
+export interface TabInfo {
+  displayName: string;
+  dateKey: string;
+}
+
 export const eventService = {
   getAllEvents: () => api.get('/events/all').then(res => res.data),
   getEvent: (id: number) => api.get(`/event/${id}`).then(res => res.data),
-  createEvent: (event: any) => api.post('/events', event).then(res => res.data),
-  updateEvent: (id: number, event: any) => api.put(`/event/${id}`, event).then(res => res.data),
-  deleteEvent: (id: number) => api.delete(`/event/${id}`).then(res => res.data)
+  createEvent: (event: Event) => api.post('/events', event, {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }).then(res => res.data),
+  updateEvent: (id: number, event: Event) => api.put(`/event/${id}`, event, {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }).then(res => res.data),
+  deleteEvent: (id: number) => api.delete(`/event/${id}`).then(res => res.data),
+  getAvailableTabs: async (): Promise<TabInfo[]> => {
+    const response = await fetch(`${API_BASE_URL}/availableTabs`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch available tabs');
+    }
+    const data = await response.json();
+    return data;
+  },
 };
 
 export const notificationService = {

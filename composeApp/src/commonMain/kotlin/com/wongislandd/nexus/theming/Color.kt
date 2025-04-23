@@ -49,14 +49,6 @@ val MaterialThemeColors
         )
     }
 
-//val LoyalBlue = Color(0xFF004165)
-//val TrueMaroon = Color(0xFF772432)
-//val CoolGray = Color(0xFFA9B2B1)
-//val HappyYellow = Color(0xFFF2DF74)
-//val TMRed = Color(0xFFCD202C)
-//val PureWhite = Color(0xFFFFFFFF)
-//val PureBlack = Color(0xFF000000)
-
 private val primaryLight = Color(0xFF004165)
 private val onPrimaryLight = Color(0xFFFFFFFF)
 private val primaryContainerLight = Color(0xFF88929D)
