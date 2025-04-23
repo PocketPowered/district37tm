@@ -44,6 +44,7 @@ fun initializeKoin(context: Any? = null) =
             *infraModule.toTypedArray(),
             appModule(context),
             webLinkModule(context),
+            platformModule(context),
             eventListModule,
             eventDetailsModule,
         )

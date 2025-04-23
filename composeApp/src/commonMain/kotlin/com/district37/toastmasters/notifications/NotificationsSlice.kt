@@ -3,18 +3,22 @@ package com.district37.toastmasters.notifications
 import com.district37.toastmasters.database.NotificationRepository
 import com.wongislandd.nexus.viewmodel.ViewModelSlice
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class NotificationsSlice : ViewModelSlice(), KoinComponent {
     private val notificationRepository: NotificationRepository by inject()
+    private val notificationPermissions: NotificationPermissions by inject()
 
     private val _notificationsFlow = MutableStateFlow<List<Notification>>(emptyList())
     val notificationsFlow = _notificationsFlow
 
     private val _unseenNotificationCount = MutableStateFlow(0)
     val unseenNotificationCount = _unseenNotificationCount
+
+    val notificationPermissionState: StateFlow<NotificationPermissionState> = notificationPermissions.permissionState
 
     override fun afterInit() {
         super.afterInit()
@@ -62,5 +66,13 @@ class NotificationsSlice : ViewModelSlice(), KoinComponent {
         sliceScope.launch {
             notificationRepository.deleteNotification(id)
         }
+    }
+
+    suspend fun requestNotificationPermission() {
+        notificationPermissions.requestPermission()
+    }
+
+    fun openNotificationSettings() {
+        notificationPermissions.openNotificationSettings()
     }
 }

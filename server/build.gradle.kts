@@ -43,4 +43,11 @@ dependencies {
     implementation(libs.koin.ktor)
     implementation(libs.kermit)
     implementation(libs.firebase.admin)
+    
+    // Add gRPC dependencies
+    implementation(libs.grpc.netty)
+    implementation(libs.grpc.protobuf)
+    implementation(libs.grpc.stub)
+    implementation(libs.grpc.services)
+    implementation(libs.grpc.core)
 }

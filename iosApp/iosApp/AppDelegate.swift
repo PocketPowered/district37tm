@@ -16,7 +16,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         FirebaseApp.configure()
 
         // Initialize Koin
-        AppModuleKt.initializeKoin(context: nil)
+        AppModuleKt.initializeKoin(context: application)
 
         // Setup push notifications
         UNUserNotificationCenter.current().delegate = self
@@ -55,6 +55,14 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        completionHandler([.banner, .sound])
+        completionHandler([.banner, .sound, .badge])
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        completionHandler()
     }
 }

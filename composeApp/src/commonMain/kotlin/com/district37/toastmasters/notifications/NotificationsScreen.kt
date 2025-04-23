@@ -40,7 +40,16 @@ fun NotificationsScreen() {
     val appViewModel = LocalAppViewModel.current
     val navController = LocalNavHostController.current
     val notifications by appViewModel.notificationsSlice.notificationsFlow.collectAsState(emptyList())
+    val permissionState by appViewModel.notificationsSlice.notificationPermissionState.collectAsState()
+    val showPermissionPrompt = remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+
+    // Show permission prompt if needed
+    if (showPermissionPrompt.value) {
+        NotificationPermissionPrompt(
+            onDismiss = { showPermissionPrompt.value = false }
+        )
+    }
 
     StatefulScaffold(
         title = "Notifications",
@@ -55,11 +64,26 @@ fun NotificationsScreen() {
             }
         }
     ) { notifs ->
-        if (notifs.isEmpty()) {
-            Text(
-                "No notifications available at this time!",
-                modifier = Modifier.padding(top = 16.dp)
+        if (permissionState == NotificationPermissionState.Denied) {
+            EnableNotificationsBanner(
+                onEnableNotifsClicked = {
+                    showPermissionPrompt.value = true
+                }
             )
+        }
+        if (notifs.isEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    "No notifications available at this time!",
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
         }
         LazyColumn(
             modifier = Modifier

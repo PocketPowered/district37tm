@@ -11,7 +11,6 @@ import com.wongislandd.nexus.events.EventBus
 import com.wongislandd.nexus.events.UiEvent
 import com.wongislandd.nexus.navigation.NavigationSlice
 import com.wongislandd.nexus.viewmodel.SliceableViewModel
-
 class AppViewModel(
     private val navigationSlice: NavigationSlice,
     val notificationsSlice: NotificationsSlice,
