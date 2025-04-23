@@ -1,5 +1,9 @@
 package com.district37.toastmasters.di
 
+import com.district37.toastmasters.EventService
+import com.district37.toastmasters.FirebaseEventService
+import com.district37.toastmasters.FirebaseNotificationService
+import com.district37.toastmasters.NotificationService
 import com.district37.toastmasters.RequestContextProvider
 import com.district37.toastmasters.RequestContextProviderImpl
 import org.koin.core.module.dsl.scopedOf
@@ -14,4 +18,6 @@ val requestModule = module {
         scopedOf(::RequestContextProviderImpl)
         scoped<RequestContextProvider> { get<RequestContextProviderImpl>() }
     }
+    single<EventService> { EventService(get<FirebaseEventService>()) }
+    single<NotificationService> { FirebaseNotificationService() }
 }

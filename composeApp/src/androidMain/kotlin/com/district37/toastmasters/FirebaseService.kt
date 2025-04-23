@@ -34,13 +34,11 @@ class FirebaseService : FirebaseMessagingService() {
         Logger.d("[FCM] Received notification - Title: $title, Body: $body, EventId: $relatedEventId")
 
         if (title != null && body != null) {
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    notificationRepository.insertNotification(title, body)
-                    Logger.d("[FCM] Successfully inserted notification into database")
-                } catch (e: Exception) {
-                    Logger.e("[FCM] Failed to insert notification: ${e.message}")
-                }
+            try {
+                notificationRepository.insertNotification(title, body)
+                Logger.d("[FCM] Successfully inserted notification into database")
+            } catch (e: Exception) {
+                Logger.e("[FCM] Failed to insert notification: ${e.message}")
             }
         }
 

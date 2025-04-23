@@ -42,5 +42,5 @@ dependencies {
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.koin.ktor)
     implementation(libs.kermit)
-    implementation(libs.google.cloud.firestore)
+    implementation(libs.firebase.admin)
 }

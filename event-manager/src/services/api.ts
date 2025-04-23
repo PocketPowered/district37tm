@@ -25,66 +25,22 @@ api.interceptors.response.use(
 );
 
 export const eventService = {
-  getAllEvents: async () => {
-    try {
-      console.log('Fetching all events...');
-      const response = await api.get<Event[]>('/events');
-      console.log('Events fetched:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      throw error;
-    }
-  },
+  getAllEvents: () => api.get('/events/all').then(res => res.data),
+  getEvent: (id: number) => api.get(`/event/${id}`).then(res => res.data),
+  createEvent: (event: any) => api.post('/events', event).then(res => res.data),
+  updateEvent: (id: number, event: any) => api.put(`/event/${id}`, event).then(res => res.data),
+  deleteEvent: (id: number) => api.delete(`/event/${id}`).then(res => res.data)
+};
 
-  getEvent: async (id: number) => {
-    try {
-      const response = await api.get<Event>(`/event/${id}`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching event ${id}:`, error);
-      throw error;
-    }
-  },
-
-  createEvent: async (event: Omit<Event, 'id'>) => {
-    try {
-      // Ensure all required fields are present
-      const eventToCreate = {
-        ...event,
-        title: event.title || '',
-        time: event.time || '',
-        locationInfo: event.locationInfo || '',
-        description: event.description || '',
-        images: event.images || [],
-        agenda: event.agenda || [],
-        additionalLinks: event.additionalLinks || [],
-        dateKey: event.dateKey || '',
-      };
-      const response = await api.post<Event>('/events', eventToCreate);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating event:', error);
-      throw error;
-    }
-  },
-
-  updateEvent: async (id: number, event: Partial<Event>) => {
-    try {
-      const response = await api.put<Event>(`/event/${id}`, event);
-      return response.data;
-    } catch (error) {
-      console.error(`Error updating event ${id}:`, error);
-      throw error;
-    }
-  },
-
-  deleteEvent: async (id: number) => {
-    try {
-      await api.delete(`/event/${id}`);
-    } catch (error) {
-      console.error(`Error deleting event ${id}:`, error);
-      throw error;
-    }
-  },
+export const notificationService = {
+  sendNotification: (title: string, body: string, topic: string) =>
+    api.post('/notifications', {
+      title,
+      body,
+      topic
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(res => res.data)
 }; 

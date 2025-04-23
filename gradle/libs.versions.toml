@@ -7,6 +7,7 @@ androidx-activityCompose = "1.9.3"
 androidx-lifecycle = "2.8.4"
 buildkonfig = "0.15.2"
 compose-multiplatform = "1.7.0"
+firebaseAdmin = "9.2.0"
 googleCloudFirestore = "3.13.4"
 junit = "4.13.2"
 kermit="2.0.4"
@@ -38,6 +39,7 @@ google-services = "4.4.2"
 
 [libraries]
 coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqlDelight" }
+firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebaseAdmin" }
 google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version.ref = "googleCloudFirestore" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
