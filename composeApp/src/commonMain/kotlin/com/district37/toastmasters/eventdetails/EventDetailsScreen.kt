@@ -37,20 +37,23 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     // TODO transform this into a carousel
                     it.event.images.firstOrNull()?.let { firstImage ->
-                        EventImage(url = firstImage, modifier = Modifier.height(400.dp).fillMaxWidth())
+                        EventImage(
+                            url = firstImage,
+                            modifier = Modifier.height(400.dp).fillMaxWidth()
+                        )
                     }
                     Column(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),
                     ) {
                         Text(text = it.event.title, fontWeight = FontWeight.Bold)
                         Text(text = it.event.locationInfo)
-                        Text(text = it.event.time)
+                        Text(text = it.event.time.toString())
                         Spacer(modifier = Modifier.height(4.dp))
                         it.event.agenda.forEach { agendaItem ->
                             Text(text = agendaItem.title)
                             Text(text = agendaItem.description)
                             Text(text = agendaItem.locationInfo)
-                            Text(text = agendaItem.time)
+                            Text(text = agendaItem.time.toString())
                             Spacer(modifier = Modifier.height(4.dp))
                         }
                     }

@@ -78,7 +78,7 @@ fun EventCard(
                     color = MaterialTheme.colors.onSurface,
                 )
                 Text(
-                    text = eventPreview.time,
+                    text = eventPreview.time.toString(),
                     style = MaterialTheme.typography.body2,
                     color = MaterialTheme.colors.onSurface,
                 )

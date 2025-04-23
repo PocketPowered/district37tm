@@ -23,19 +23,31 @@ class EventDetailsTransformer(
                 description = description,
                 time = time,
                 locationInfo = locationInfo,
-                agenda = input.agenda?.map {
-                    AgendaItem(
-                        title = it.title,
-                        description = it.description,
-                        time = it.time,
-                        locationInfo = it.locationInfo
-                    )
+                agenda = input.agenda?.mapNotNull {
+                    safeLet(
+                        it.title,
+                        it.description,
+                        it.time,
+                        it.locationInfo
+                    ) { title, description, time, locationInfo ->
+                        AgendaItem(
+                            title = title,
+                            description = description,
+                            time = time,
+                            locationInfo = locationInfo
+                        )
+                    }
                 } ?: emptyList(),
-                additionalLinks = input.additionalLinks?.map {
-                    ExternalLink(
-                        displayName = it.displayName,
-                        url = it.url
-                    )
+                additionalLinks = input.additionalLinks?.mapNotNull {
+                    safeLet(
+                        it.displayName,
+                        it.url
+                    ) { displayName, url ->
+                        ExternalLink(
+                            displayName = displayName,
+                            url = url
+                        )
+                    }
                 } ?: emptyList()
             )
         }
