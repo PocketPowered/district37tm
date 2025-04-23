@@ -61,7 +61,7 @@ jobs:
         run: |
           az webapp config appsettings set \
             --name district37tmserver \
-            --resource-group YOUR_RESOURCE_GROUP \
+            --resource-group district37tmserver_group \
             --settings GOOGLE_CREDENTIALS_JSON='${{ secrets.GOOGLE_CREDENTIALS_JSON }}'
             
       - name: Deploy to Azure Web App
