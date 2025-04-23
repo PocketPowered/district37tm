@@ -15,5 +15,5 @@ data class BackendEventDetails(
     val locationInfo: String? = null,
     val agenda: List<BackendAgendaItem>? = null,
     val additionalLinks: List<BackendExternalLink>? = null,
-    val dateKey: String? = null
+    val dateKey: Long? = null
 )

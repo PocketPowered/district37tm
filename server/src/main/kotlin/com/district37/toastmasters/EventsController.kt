@@ -42,7 +42,7 @@ fun Application.eventsController() {
 
         // Get events by date
         get("/events") {
-            val date = call.request.queryParameters["date"]
+            val date = call.request.queryParameters["date"]?.toLongOrNull()
             call.respond(eventService.getEventPreviews(date))
         }
 
@@ -53,11 +53,6 @@ fun Application.eventsController() {
                 .mapNotNull { it.trim().toIntOrNull() }
                 .filter { it > 0 }
             call.respond(eventService.getEventsByIds(ids))
-        }
-
-        // Get available tabs
-        get("/availableTabs") {
-            call.respond(eventService.getAvailableTabsInfo())
         }
 
         // Update single event

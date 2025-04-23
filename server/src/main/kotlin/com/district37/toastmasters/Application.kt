@@ -47,9 +47,10 @@ fun Application.main() {
         allowMethod(HttpMethod.Delete)
     }
     install(RequestContextPlugin)
+    eventsController()
     notificationsController()
     userFCMController()
-    eventsController()
+    dateController()
 }
 
 val RequestContextPlugin = createApplicationPlugin(name = "RequestContextPlugin") {

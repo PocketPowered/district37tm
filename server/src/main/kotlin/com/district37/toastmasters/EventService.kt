@@ -2,7 +2,6 @@ package com.district37.toastmasters
 
 import com.district37.toastmasters.models.BackendEventDetails
 import com.district37.toastmasters.models.BackendEventPreview
-import com.district37.toastmasters.models.BackendTabInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -16,7 +15,7 @@ class EventService(private val firebaseService: FirebaseEventService) {
         firebaseService.getEvent(id)
     }
 
-    suspend fun getEventPreviews(dateKey: String?): List<BackendEventPreview> =
+    suspend fun getEventPreviews(dateKey: Long?): List<BackendEventPreview> =
         withContext(Dispatchers.IO) {
             firebaseService.getEventPreviews(dateKey)
         }
@@ -25,10 +24,6 @@ class EventService(private val firebaseService: FirebaseEventService) {
         withContext(Dispatchers.IO) {
             firebaseService.getEventsByIds(ids)
         }
-
-    suspend fun getAvailableTabsInfo(): List<BackendTabInfo> = withContext(Dispatchers.IO) {
-        firebaseService.getAvailableTabsInfo()
-    }
 
     suspend fun updateEvent(event: BackendEventDetails): BackendEventDetails = withContext(Dispatchers.IO) {
         firebaseService.updateEvent(event)

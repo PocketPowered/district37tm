@@ -17,18 +17,25 @@ class EventRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
         )
     }
 
-    suspend fun getEventsByKey(dateKey: String): Resource<List<BackendEventPreview>> {
+    suspend fun getEventsByKey(dateKey: Long): Resource<List<BackendEventPreview>> {
         return makeRequest(
             "events",
             HttpMethod.GET,
         ) {
-            url.parameters.append("date", dateKey)
+            url.parameters.append("date", dateKey.toString())
         }
     }
 
     suspend fun getAvailableTabs(): Resource<List<BackendTabInfo>> {
         return makeRequest(
             "availableTabs",
+            HttpMethod.GET
+        )
+    }
+
+    suspend fun getAvailableDates(): Resource<List<Long>> {
+        return makeRequest(
+            "dates",
             HttpMethod.GET
         )
     }

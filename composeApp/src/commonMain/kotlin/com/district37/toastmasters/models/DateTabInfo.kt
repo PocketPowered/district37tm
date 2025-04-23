@@ -2,7 +2,7 @@ package com.district37.toastmasters.models
 
 data class DateTabInfo(
     val displayName: String,
-    val dateKey: String,
+    val dateKey: Long,
     val isSelected: Boolean
 )
 

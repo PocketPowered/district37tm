@@ -605,10 +605,10 @@ const EventForm: React.FC = () => {
                 </Alert>
               )}
               <Button variant="outlined" onClick={() => navigate('/')}>
-                Cancel
+                Go Back
               </Button>
               <Button type="submit" variant="contained" color="primary" disabled={loading}>
-                {loading ? <CircularProgress size={24} /> : 'Save'}
+                {loading ? <CircularProgress size={24} /> : 'Save Changes'}
               </Button>
             </Box>
           </Stack>

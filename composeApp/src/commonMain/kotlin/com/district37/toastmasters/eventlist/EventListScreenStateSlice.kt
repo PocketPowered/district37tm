@@ -46,7 +46,7 @@ class EventListScreenStateSlice(
     private val eventRepository: EventRepository,
     private val eventPreviewTransformer: EventPreviewTransformer,
     private val favoritesRepository: FavoritesRepository,
-    private val tabInfoTransformer: TabInfoTransformer,
+    private val dateTransformer: DateTransformer,
 ) : ViewModelSlice() {
 
     private val _agendaSelection: MutableStateFlow<AgendaOption> =
@@ -67,7 +67,7 @@ class EventListScreenStateSlice(
         }
         if (availableTabs is Resource.Success && eventList is Resource.NotLoading) {
             val selectedTabKey = availableTabs.data.findSelectedTab().dateKey
-            fetchEventsByKey(selectedTabKey)
+            fetchEventsByDate(selectedTabKey)
             return@combine Resource.Loading
         }
         if (availableTabs is Resource.Success && eventList is Resource.Success) {
@@ -109,7 +109,7 @@ class EventListScreenStateSlice(
                     onSuccess = { currentValue ->
                         val currentlySelectedKey =
                             currentValue.availableTabs.findSelectedTab().dateKey
-                        fetchEventsByKey(currentlySelectedKey)
+                        fetchEventsByDate(currentlySelectedKey)
                     },
                     onError = { _, _ ->
                         fetchAvailableTabs()
@@ -125,7 +125,7 @@ class EventListScreenStateSlice(
                         }
                     }
                 }
-                fetchEventsByKey(event.selectedDateTab.dateKey)
+                fetchEventsByDate(event.selectedDateTab.dateKey)
             }
 
             is AgendaChanged -> {
@@ -135,7 +135,7 @@ class EventListScreenStateSlice(
     }
 
 
-    private fun fetchEventsByKey(key: String) {
+    private fun fetchEventsByDate(key: Long) {
         sliceScope.launch(Dispatchers.IO) {
             _eventsList.update {
                 Resource.Loading
@@ -160,7 +160,7 @@ class EventListScreenStateSlice(
     private fun fetchAvailableTabs() {
         sliceScope.launch(Dispatchers.IO) {
             _availableTabs.update { Resource.Loading }
-            eventRepository.getAvailableTabs().map { tabInfoTransformer.transform(it) }
+            eventRepository.getAvailableDates().map { dateTransformer.transform(it) }
                 .handle(
                     onSuccess = { availableTabs ->
                         _availableTabs.update {

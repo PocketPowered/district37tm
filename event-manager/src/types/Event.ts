@@ -38,6 +38,7 @@ export interface EventPreview {
 // Helper function to format epoch timestamp to local time string
 export const formatEventTime = (timestamp: number): string => {
   const date = new Date(timestamp);
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   return date.toLocaleString('en-US', {
     weekday: 'long',
     month: 'long',
@@ -45,12 +46,13 @@ export const formatEventTime = (timestamp: number): string => {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
-    timeZone: 'America/New_York'
+    timeZone
   });
 };
 
 // Helper function to format time range
 export const formatTimeRange = (startTime: number, endTime: number): string => {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const start = new Date(startTime);
   const end = new Date(endTime);
   
@@ -58,14 +60,14 @@ export const formatTimeRange = (startTime: number, endTime: number): string => {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
-    timeZone: 'America/New_York'
+    timeZone
   });
   
   const endStr = end.toLocaleString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
-    timeZone: 'America/New_York'
+    timeZone
   });
   
   return `${startStr} - ${endStr}`;

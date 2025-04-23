@@ -57,7 +57,7 @@ class FirebaseEventService {
         doc.toObject(BackendEventDetails::class.java) ?: throw NotFoundException("Event not found")
     }
 
-    suspend fun getEventPreviews(dateKey: String?): List<BackendEventPreview> =
+    suspend fun getEventPreviews(dateKey: Long?): List<BackendEventPreview> =
         withContext(Dispatchers.IO) {
             val query = if (dateKey != null) {
                 firestore.collection("events")
