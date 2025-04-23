@@ -53,4 +53,8 @@ class EventService(private val firebaseService: FirebaseEventService) {
     suspend fun deleteEvents(ids: List<Int>): Boolean = withContext(Dispatchers.IO) {
         firebaseService.deleteEvents(ids)
     }
+
+    suspend fun createEvent(event: BackendEventDetails): BackendEventDetails = withContext(Dispatchers.IO) {
+        firebaseService.createEvent(event)
+    }
 }

@@ -18,6 +18,17 @@ fun Application.eventsController() {
     val eventService: EventService by inject()
 
     routing {
+        // Create new event
+        post("/events") {
+            try {
+                val event = call.receive<BackendEventDetails>()
+                val createdEvent = eventService.createEvent(event)
+                call.respond(HttpStatusCode.Created, createdEvent)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid event data")
+            }
+        }
+
         // Get all events
         get("/events/all") {
             call.respond(eventService.getAllEvents())
