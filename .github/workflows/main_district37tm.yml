@@ -31,7 +31,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: java-app
-          path: '${{ github.workspace }}/target/*.jar'
+          path: './server/build/libs/server-all.jar'
 
   deploy:
     runs-on: ubuntu-latest
@@ -55,6 +55,15 @@ jobs:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_99846FC029B84DBCA6844FCC537847F8 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_968367DAD4EE4CBBBA87146EC97CBC75 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_679168F998B1427EB422B1C415760327 }}
+      
+      - name: Set GOOGLE_CREDENTIALS_JSON as app setting
+        run: |
+          az webapp config appsettings set \
+            --name district37tm \
+            --resource-group district37tmserver_group \
+            --settings GOOGLE_CREDENTIALS_JSON='${{ secrets.GOOGLE_CREDENTIALS_JSON }}'
+            
+
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
