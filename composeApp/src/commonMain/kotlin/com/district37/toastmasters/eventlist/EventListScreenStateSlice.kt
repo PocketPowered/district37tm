@@ -137,12 +137,11 @@ class EventListScreenStateSlice(
 
     private fun fetchEventsByKey(key: String) {
         sliceScope.launch(Dispatchers.IO) {
-            val previousState = _screenState.value
             _eventsList.update {
                 Resource.Loading
             }
             eventRepository.getEventsByKey(key).map { events ->
-                events.map {
+                events.mapNotNull {
                     eventPreviewTransformer.transform(it)
                 }
             }.handle(

@@ -8,12 +8,12 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class BackendEventDetails(
     val id: Int = 0,
-    val images: List<String> = emptyList(),
-    val title: String = "",
-    val description: String = "",
-    val time: String = "",
-    val locationInfo: String = "",
-    val agenda: List<BackendAgendaItem> = emptyList(),
-    val additionalLinks: List<BackendExternalLink> = emptyList(),
+    val images: List<String>? = null,
+    val title: String? = null,
+    val description: String? = null,
+    val time: String? = null,
+    val locationInfo: String? = null,
+    val agenda: List<BackendAgendaItem>? = null,
+    val additionalLinks: List<BackendExternalLink>? = null,
     val dateKey: String? = null
 )

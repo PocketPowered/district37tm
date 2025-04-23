@@ -5,8 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class BackendEventPreview(
     val id: Int = -1,
-    val image: String = "",
-    val title: String = "",
-    val time: String = "",
-    val locationInfo: String = "",
+    val image: String? = null,
+    val title: String? = null,
+    val time: String? = null,
+    val locationInfo: String? = null,
 )

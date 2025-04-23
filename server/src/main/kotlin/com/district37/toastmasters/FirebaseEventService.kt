@@ -21,6 +21,16 @@ class FirebaseEventService {
         .build()
         .service
 
+    suspend fun getAllEvents(): List<BackendEventDetails> = withContext(Dispatchers.IO) {
+        firestore.collection("events")
+            .get()
+            .get()
+            .documents
+            .mapNotNull { doc ->
+                doc.toObject(BackendEventDetails::class.java)
+            }
+    }
+
     suspend fun getEvent(id: Int): BackendEventDetails = withContext(Dispatchers.IO) {
         val doc = firestore.collection("events").document(id.toString()).get().get()
         if (!doc.exists()) {
@@ -43,10 +53,10 @@ class FirebaseEventService {
                 event?.let {
                     BackendEventPreview(
                         id = it.id,
-                        title = it.title,
-                        image = it.images.firstOrNull() ?: "no url in mock",
-                        time = it.time,
-                        locationInfo = it.locationInfo
+                        title = it.title ?: "",
+                        image = it.images?.firstOrNull() ?: "no url in mock",
+                        time = it.time ?: "",
+                        locationInfo = it.locationInfo ?: ""
                     )
                 }
             }
@@ -64,10 +74,10 @@ class FirebaseEventService {
                     event?.let {
                         BackendEventPreview(
                             id = it.id,
-                            title = it.title,
-                            image = it.images.firstOrNull() ?: "no url in mock",
-                            time = it.time,
-                            locationInfo = it.locationInfo
+                            title = it.title ?: "",
+                            image = it.images?.firstOrNull() ?: "no url in mock",
+                            time = it.time ?: "",
+                            locationInfo = it.locationInfo ?: ""
                         )
                     }
                 }
@@ -83,5 +93,85 @@ class FirebaseEventService {
                 doc.toObject(BackendTabInfo::class.java)
             }
         tabs
+    }
+
+    suspend fun updateEvent(event: BackendEventDetails): BackendEventDetails = withContext(Dispatchers.IO) {
+        val docRef = firestore.collection("events").document(event.id.toString())
+        docRef.set(event).get()
+        event
+    }
+
+    suspend fun updateEventPartial(update: BackendEventDetails): BackendEventDetails = withContext(Dispatchers.IO) {
+        val docRef = firestore.collection("events").document(update.id.toString())
+        val currentEvent = docRef.get().get().toObject(BackendEventDetails::class.java)
+            ?: throw NotFoundException("Event not found")
+
+        val updatedEvent = currentEvent.copy(
+            images = update.images ?: currentEvent.images,
+            title = update.title ?: currentEvent.title,
+            description = update.description ?: currentEvent.description,
+            time = update.time ?: currentEvent.time,
+            locationInfo = update.locationInfo ?: currentEvent.locationInfo,
+            agenda = update.agenda ?: currentEvent.agenda,
+            additionalLinks = update.additionalLinks ?: currentEvent.additionalLinks,
+            dateKey = update.dateKey ?: currentEvent.dateKey
+        )
+
+        docRef.set(updatedEvent).get()
+        updatedEvent
+    }
+
+    suspend fun updateEvents(events: List<BackendEventDetails>): List<BackendEventDetails> = withContext(Dispatchers.IO) {
+        val batch = firestore.batch()
+        events.forEach { event ->
+            val docRef = firestore.collection("events").document(event.id.toString())
+            batch.set(docRef, event)
+        }
+        batch.commit().get()
+        events
+    }
+
+    suspend fun updateEventsPartial(updates: List<BackendEventDetails>): List<BackendEventDetails> = withContext(Dispatchers.IO) {
+        val batch = firestore.batch()
+        val updatedEvents = mutableListOf<BackendEventDetails>()
+
+        updates.forEach { update ->
+            val docRef = firestore.collection("events").document(update.id.toString())
+            val currentEvent = docRef.get().get().toObject(BackendEventDetails::class.java)
+                ?: throw NotFoundException("Event not found: ${update.id}")
+
+            val updatedEvent = currentEvent.copy(
+                images = update.images ?: currentEvent.images,
+                title = update.title ?: currentEvent.title,
+                description = update.description ?: currentEvent.description,
+                time = update.time ?: currentEvent.time,
+                locationInfo = update.locationInfo ?: currentEvent.locationInfo,
+                agenda = update.agenda ?: currentEvent.agenda,
+                additionalLinks = update.additionalLinks ?: currentEvent.additionalLinks,
+                dateKey = update.dateKey ?: currentEvent.dateKey
+            )
+
+            batch.set(docRef, updatedEvent)
+            updatedEvents.add(updatedEvent)
+        }
+
+        batch.commit().get()
+        updatedEvents
+    }
+
+    suspend fun deleteEvent(id: Int): Boolean = withContext(Dispatchers.IO) {
+        val docRef = firestore.collection("events").document(id.toString())
+        docRef.delete().get()
+        true
+    }
+
+    suspend fun deleteEvents(ids: List<Int>): Boolean = withContext(Dispatchers.IO) {
+        val batch = firestore.batch()
+        ids.forEach { id ->
+            val docRef = firestore.collection("events").document(id.toString())
+            batch.delete(docRef)
+        }
+        batch.commit().get()
+        true
     }
 } 

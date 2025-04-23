@@ -17,7 +17,7 @@ data class EventDetailsScreenState(
 class EventDetailsScreenStateSlice(
     private val eventRepository: EventRepository,
     private val eventDetailsTransformer: EventDetailsTransformer
-): ViewModelSlice() {
+) : ViewModelSlice() {
 
     private val _screenState: MutableStateFlow<Resource<EventDetailsScreenState>> =
         MutableStateFlow(Resource.Loading)
@@ -28,9 +28,9 @@ class EventDetailsScreenStateSlice(
             val eventDetails = eventRepository.getEventDetails(eventId)
             _screenState.update {
                 eventDetails.map { backendEventDetails ->
-                    EventDetailsScreenState(
-                        eventDetailsTransformer.transform(backendEventDetails)
-                    )
+                    eventDetailsTransformer.transform(backendEventDetails)?.let {
+                        EventDetailsScreenState(it)
+                    }
                 }
             }
         }
