@@ -7,6 +7,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     private lazy var notificationRepository: NotificationRepository = {
         return KoinBridge.shared.getNotificationsRepository()
     }()
+    
+    private var storedFCMToken: String?
+    private var hasAPNSToken = false
 
     func application(
         _ application: UIApplication,
@@ -78,6 +81,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         print("📱 Received APNS token")
         Messaging.messaging().apnsToken = deviceToken
         print("📱 APNS token set in Firebase")
+        hasAPNSToken = true
+        
+        // If we already have the FCM token, subscribe to topics
+        if let fcmToken = storedFCMToken {
+            subscribeToTopics(fcmToken: fcmToken)
+        }
     }
 
     func application(
@@ -90,7 +99,18 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         print("✅ FCM token received: \(fcmToken ?? "nil")")
         
-        // Subscribe to topics once we have the token
+        if let token = fcmToken {
+            storedFCMToken = token
+            
+            // If we already have the APNS token, subscribe to topics
+            if hasAPNSToken {
+                subscribeToTopics(fcmToken: token)
+            }
+        }
+    }
+    
+    private func subscribeToTopics(fcmToken: String) {
+        print("📡 Subscribing to topics with FCM token: \(fcmToken)")
         Messaging.messaging().subscribe(toTopic: "GENERAL") { error in
             if let error = error {
                 print("❌ Failed to subscribe to topic: \(error)")
@@ -105,6 +125,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        // Handle the notification data
+        let userInfo = notification.request.content.userInfo
+        handleNotificationData(userInfo)
+        
+        // Show the notification
         completionHandler([.banner, .sound, .badge])
     }
 
@@ -113,6 +138,34 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        // Handle the notification data
+        let userInfo = response.notification.request.content.userInfo
+        handleNotificationData(userInfo)
+        
         completionHandler()
+    }
+    
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) {
+        print("📩 Received remote notification: \(userInfo)")
+        handleNotificationData(userInfo)
+    }
+    
+    private func handleNotificationData(_ userInfo: [AnyHashable: Any]) {
+        // Extract data from the notification
+        let data = userInfo as? [String: Any] ?? [:]
+        let title = data["title"] as? String ?? "Notification"
+        let body = data["body"] as? String ?? ""
+        let type = data["type"] as? String ?? "notification"
+        let relatedEventId = data["relatedEventId"] as? String
+        
+        print("📬 Received notification - Title: \(title), Body: \(body), Type: \(type), EventId: \(relatedEventId ?? "nil")")
+        
+        // Insert notification into repository
+        do {
+            try notificationRepository.insertNotification(header: title, description: body)
+            print("✅ Successfully inserted notification into database")
+        } catch {
+            print("❌ Failed to insert notification: \(error.localizedDescription)")
+        }
     }
 }
