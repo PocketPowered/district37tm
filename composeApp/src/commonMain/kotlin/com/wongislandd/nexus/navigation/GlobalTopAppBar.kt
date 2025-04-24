@@ -1,6 +1,7 @@
 package com.wongislandd.nexus.navigation
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
@@ -10,6 +11,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,6 +29,7 @@ fun GlobalTopAppBar(
     homeDestination: String,
     defaultTitle: String = "District 37 Conference - 2025",
     actions: (@Composable RowScope.() -> Unit) = {},
+    onHamburgerMenuClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val navController = LocalNavHostController.current
@@ -35,22 +38,30 @@ fun GlobalTopAppBar(
         .collectAsState(initial = null)
     val canNavigateBack = previousBackStackEntry != null && showBackButton
 
-    val backButton: (@Composable () -> Unit)? = if (canNavigateBack) {
+    val backButton: (@Composable () -> Unit) = if (canNavigateBack) {
         {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
                 modifier = Modifier.combinedClickable(
                     onClick = { navController.popBackStack() },
-                    onLongClick = { navController.navigate(
-                        homeDestination
-                    ) {
-                        popUpTo(homeDestination) { inclusive = true }
-                    } }
+                    onLongClick = {
+                        navController.navigate(
+                            homeDestination
+                        ) {
+                            popUpTo(homeDestination) { inclusive = true }
+                        }
+                    }
                 ).padding(16.dp))
         }
     } else {
-        null
+        {
+            Icon(
+                Icons.Default.Menu,
+                contentDescription = "Menu",
+                modifier = Modifier.clickable(onClick = onHamburgerMenuClick).padding(16.dp)
+            )
+        }
     }
     TopAppBar(
         title = {
