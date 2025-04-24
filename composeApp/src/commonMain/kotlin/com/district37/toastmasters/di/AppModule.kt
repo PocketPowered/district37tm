@@ -12,6 +12,7 @@ import com.district37.toastmasters.favorites.FavoritedEventsSlice
 import com.district37.toastmasters.fcm.FCMRepository
 import com.district37.toastmasters.navigation.supportedNavigationItems
 import com.district37.toastmasters.notifications.NotificationsSlice
+import com.district37.toastmasters.references.referencesModule
 import com.wongislandd.nexus.di.infraModule
 import com.wongislandd.nexus.navigation.NavigationItem
 import com.wongislandd.nexus.navigation.NavigationSlice
@@ -45,5 +46,6 @@ fun initializeKoin(context: Any? = null) =
             platformModule(context),
             eventListModule,
             eventDetailsModule,
+            referencesModule
         )
     }

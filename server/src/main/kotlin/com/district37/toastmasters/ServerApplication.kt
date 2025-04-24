@@ -51,6 +51,7 @@ fun Application.main() {
     notificationsController()
     userFCMController()
     dateController()
+    referencesController()
 }
 
 val RequestContextPlugin = createApplicationPlugin(name = "RequestContextPlugin") {

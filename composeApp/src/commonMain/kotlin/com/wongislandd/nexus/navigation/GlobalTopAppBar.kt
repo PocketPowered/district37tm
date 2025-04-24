@@ -38,7 +38,7 @@ fun GlobalTopAppBar(
         .collectAsState(initial = null)
     val canNavigateBack = previousBackStackEntry != null && showBackButton
 
-    val backButton: (@Composable () -> Unit) = if (canNavigateBack) {
+    val navAction: (@Composable () -> Unit) = if (canNavigateBack) {
         {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,
@@ -72,7 +72,7 @@ fun GlobalTopAppBar(
                 )
             }
         },
-        navigationIcon = backButton,
+        navigationIcon = navAction,
         modifier = modifier,
         actions = actions,
         backgroundColor = MaterialTheme.colors.primary

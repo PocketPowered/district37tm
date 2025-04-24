@@ -14,9 +14,9 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 private const val PROD_HOST = "https://district37tm-dve3cncpajdnh5h3.eastus2-01.azurewebsites.net"
-private const val DEV_HOST = "http://localhost:8080"
+private const val DEV_HOST = "http://0.0.0.0:8080"
 // Adjust this to true to hit local server, never commit with this as true
-private const val useDevHost = false
+private const val useDevHost = true
 
 private val HOST = if (useDevHost) DEV_HOST else PROD_HOST
 

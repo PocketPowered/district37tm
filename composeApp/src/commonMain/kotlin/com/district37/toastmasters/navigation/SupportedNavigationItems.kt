@@ -30,7 +30,10 @@ val supportedNavigationItems = mutableMapOf(
         NavigationItemKey.NOTIFICATIONS.name,
         "Notifications",
         "notifications"
+    ),
+    NavigationItemKey.REFERENCES to NavigationItem(
+        NavigationItemKey.REFERENCES.name,
+        "References",
+        "references"
     )
-
-
 )

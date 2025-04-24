@@ -26,13 +26,6 @@ class EventRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
         }
     }
 
-    suspend fun getAvailableTabs(): Resource<List<BackendTabInfo>> {
-        return makeRequest(
-            "availableTabs",
-            HttpMethod.GET
-        )
-    }
-
     suspend fun getAvailableDates(): Resource<List<Long>> {
         return makeRequest(
             "dates",

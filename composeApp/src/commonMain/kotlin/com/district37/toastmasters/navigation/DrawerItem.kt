@@ -2,6 +2,7 @@ package com.district37.toastmasters.navigation
 
 import EventIcon
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -21,5 +22,10 @@ val drawerItems = listOf(
         key = NavigationItemKey.NOTIFICATIONS,
         title = "Notifications",
         icon = Icons.Default.Notifications,
+    ),
+    DrawerItem(
+        key = NavigationItemKey.REFERENCES,
+        title = "References",
+        icon = Icons.Default.Info,
     )
 ) 
