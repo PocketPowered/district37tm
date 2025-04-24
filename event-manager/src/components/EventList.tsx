@@ -181,15 +181,36 @@ const EventList: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4">
+    <Box sx={{ 
+      p: { xs: 1, sm: 2 }, 
+      width: '100%',
+      maxWidth: '100%',
+      overflowX: 'hidden'
+    }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'stretch', sm: 'center' }, 
+        mb: 2,
+        gap: 2,
+        width: '100%'
+      }}>
+        <Typography variant="h4" sx={{ 
+          fontSize: { xs: '1.5rem', sm: '2rem' },
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
+        }}>
           Event Manager
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => navigate('/events/new')}
+          sx={{ 
+            alignSelf: { xs: 'stretch', sm: 'auto' },
+            whiteSpace: 'nowrap'
+          }}
         >
           Create New Event
         </Button>
@@ -203,10 +224,28 @@ const EventList: React.FC = () => {
             key={timestamp} 
             expanded={expandedDate === timestamp.toString()}
             onChange={handleAccordionChange(timestamp.toString())}
-            sx={{ mb: 2 }}
+            sx={{ 
+              mb: 2,
+              width: '100%'
+            }}
           >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">
+            <AccordionSummary 
+              expandIcon={<ExpandMoreIcon />}
+              sx={{
+                width: '100%',
+                '& .MuiAccordionSummary-content': {
+                  overflow: 'hidden'
+                }
+              }}
+            >
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  fontSize: { xs: '1rem', sm: '1.25rem' },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
                 {new Date(timestamp).toLocaleDateString('en-US', {
                   month: 'long',
                   day: 'numeric',
@@ -216,15 +255,35 @@ const EventList: React.FC = () => {
             </AccordionSummary>
             <AccordionDetails>
               {sortedEvents.length === 0 ? (
-                <Typography color="text.secondary">
+                <Typography color="text.secondary" sx={{ p: 2 }}>
                   No events scheduled for this date.
                 </Typography>
               ) : (
-                <TableContainer component={Paper}>
-                  <Table>
+                <Box sx={{ 
+                  width: '100%',
+                  overflowX: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  '-webkit-overflow-scrolling': 'touch',
+                  msOverflowStyle: 'none',
+                  scrollbarWidth: 'none',
+                  '&::-webkit-scrollbar': {
+                    display: 'none'
+                  }
+                }}>
+                  <Table size="small" sx={{ 
+                    minWidth: { xs: '800px', sm: '100%' },
+                    '& th, & td': { 
+                      px: { xs: 1, sm: 2 },
+                      py: 1,
+                      whiteSpace: 'nowrap'
+                    },
+                    '& th': {
+                      fontWeight: 'bold'
+                    }
+                  }}>
                     <TableHead>
                       <TableRow>
-                        <TableCell>
+                        <TableCell width="80px">
                           <TableSortLabel
                             active={sortConfig.key === 'id'}
                             direction={sortConfig.key === 'id' ? sortConfig.direction : 'asc'}
@@ -233,7 +292,7 @@ const EventList: React.FC = () => {
                             ID
                           </TableSortLabel>
                         </TableCell>
-                        <TableCell>
+                        <TableCell width="35%">
                           <TableSortLabel
                             active={sortConfig.key === 'title'}
                             direction={sortConfig.key === 'title' ? sortConfig.direction : 'asc'}
@@ -242,7 +301,7 @@ const EventList: React.FC = () => {
                             Title
                           </TableSortLabel>
                         </TableCell>
-                        <TableCell>
+                        <TableCell width="25%">
                           <TableSortLabel
                             active={sortConfig.key === 'time'}
                             direction={sortConfig.key === 'time' ? sortConfig.direction : 'asc'}
@@ -251,7 +310,7 @@ const EventList: React.FC = () => {
                             Time
                           </TableSortLabel>
                         </TableCell>
-                        <TableCell>
+                        <TableCell width="25%">
                           <TableSortLabel
                             active={sortConfig.key === 'locationInfo'}
                             direction={sortConfig.key === 'locationInfo' ? sortConfig.direction : 'asc'}
@@ -260,7 +319,7 @@ const EventList: React.FC = () => {
                             Location
                           </TableSortLabel>
                         </TableCell>
-                        <TableCell>Actions</TableCell>
+                        <TableCell width="100px" align="right">Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -270,19 +329,32 @@ const EventList: React.FC = () => {
                           <TableCell>{event.title}</TableCell>
                           <TableCell>{formatTimeRange(event.time.startTime, event.time.endTime)}</TableCell>
                           <TableCell>{event.locationInfo}</TableCell>
-                          <TableCell>
-                            <IconButton onClick={() => navigate(`/events/${event.id}/edit`)}>
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton onClick={() => event.id && handleDelete(event.id)}>
-                              <DeleteIcon />
-                            </IconButton>
+                          <TableCell align="right">
+                            <Box sx={{ 
+                              display: 'flex', 
+                              justifyContent: 'flex-end', 
+                              gap: 1,
+                              minWidth: 'max-content'
+                            }}>
+                              <IconButton 
+                                size="small"
+                                onClick={() => navigate(`/events/${event.id}/edit`)}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton 
+                                size="small"
+                                onClick={() => event.id && handleDelete(event.id)}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
-                </TableContainer>
+                </Box>
               )}
             </AccordionDetails>
           </Accordion>
