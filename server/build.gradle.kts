@@ -32,7 +32,7 @@ tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
 group = "com.district37.toastmasters"
 version = "1.0.0"
 application {
-    mainClass.set("com.district37.toastmasters.ApplicationKt")
+    mainClass.set("com.district37.toastmasters.ServerApplicationKt")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=${extra["io.ktor.development"] ?: "false"}")
 }
 

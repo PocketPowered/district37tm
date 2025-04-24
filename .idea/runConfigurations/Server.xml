@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Server" type="JetRunConfigurationType">
-    <option name="MAIN_CLASS_NAME" value="com.district37.toastmasters.ApplicationKt" />
+    <option name="MAIN_CLASS_NAME" value="com.district37.toastmasters.ServerApplicationKt" />
     <module name="District37ToastMasters.server.main" />
     <shortenClasspath name="NONE" />
     <method v="2">
