@@ -58,7 +58,7 @@ fun EventListScreen() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Events",
+                text = "Agenda",
                 style = MaterialTheme.typography.h5,
                 color = MaterialTheme.colors.secondary,
                 fontWeight = FontWeight.Bold,
@@ -90,6 +90,7 @@ fun EventListScreen() {
                     text = if (data.agendaOption == AgendaOption.FAVORITES_AGENDA) "No favorites found" else "No events found",
                     style = MaterialTheme.typography.body1,
                     color = MaterialTheme.colors.secondary,
+                    modifier = Modifier.padding(top = 16.dp)
                 )
             }
             LazyColumn(

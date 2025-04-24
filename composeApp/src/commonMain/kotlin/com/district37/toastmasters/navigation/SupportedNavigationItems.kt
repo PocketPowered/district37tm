@@ -17,7 +17,7 @@ val supportedNavigationItems = mutableMapOf(
     ),
     NavigationItemKey.EVENT_LIST to NavigationItem(
         NavigationItemKey.EVENT_LIST.name,
-        "Events",
+        "Agenda",
         "eventlist"
     ),
     NavigationItemKey.EVENT_DETAILS to NavigationItem(

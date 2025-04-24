@@ -25,7 +25,7 @@ fun <T> StatefulScaffold(
     Scaffold(topBar = {
         GlobalTopAppBar(
             title = title, homeDestination =
-            supportedNavigationItems[NavigationItemKey.LANDING_PAGE]?.completeRoute
+            supportedNavigationItems[NavigationItemKey.EVENT_LIST]?.completeRoute
                 ?: throw IllegalStateException("Home destination not found"),
             actions = actions
         )

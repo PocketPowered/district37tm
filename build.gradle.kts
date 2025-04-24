@@ -11,3 +11,8 @@ plugins {
     alias(libs.plugins.kotlinxSerialization) apply false
     alias(libs.plugins.google.services) apply false
 }
+
+tasks.register<Exec>("runAdminPortal") {
+    workingDir = file("$projectDir/event-manager")
+    commandLine("sh", "-c", "npm install --legacy-peer-deps && npm start")
+}
