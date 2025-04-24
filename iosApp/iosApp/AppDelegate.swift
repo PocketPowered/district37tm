@@ -10,6 +10,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     
     private var storedFCMToken: String?
     private var hasAPNSToken = false
+    private var hasSubscribedToTopics = false
 
     func application(
         _ application: UIApplication,
@@ -110,12 +111,19 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     }
     
     private func subscribeToTopics(fcmToken: String) {
+        // If we've already successfully subscribed, don't do it again
+        guard !hasSubscribedToTopics else {
+            print("ℹ️ Already subscribed to topics, skipping")
+            return
+        }
+        
         print("📡 Subscribing to topics with FCM token: \(fcmToken)")
         Messaging.messaging().subscribe(toTopic: "GENERAL") { error in
             if let error = error {
                 print("❌ Failed to subscribe to topic: \(error)")
             } else {
                 print("✅ Successfully subscribed to GENERAL topic")
+                self.hasSubscribedToTopics = true
             }
         }
     }
@@ -127,7 +135,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     ) {
         // Handle the notification data
         let userInfo = notification.request.content.userInfo
-        handleNotificationData(userInfo)
         
         // Show the notification
         completionHandler([.banner, .sound, .badge])
