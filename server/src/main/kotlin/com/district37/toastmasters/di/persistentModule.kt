@@ -4,6 +4,7 @@ import com.district37.toastmasters.DateService
 import com.district37.toastmasters.EventService
 import com.district37.toastmasters.FirebaseDateService
 import com.district37.toastmasters.FirebaseEventService
+import com.district37.toastmasters.FirebaseNotificationService
 import com.district37.toastmasters.FirebaseReferencesService
 import com.district37.toastmasters.FirebaseUserFCMService
 import com.district37.toastmasters.ReferencesService
@@ -18,4 +19,5 @@ val persistentModule = module {
     singleOf(::FirebaseUserFCMService)
     singleOf(::FirebaseDateService)
     singleOf(::FirebaseReferencesService)
+    singleOf(::FirebaseNotificationService)
 }
