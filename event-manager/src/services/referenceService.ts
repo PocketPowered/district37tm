@@ -1,6 +1,7 @@
+import { apiConfig } from '../config/api';
 import { BackendExternalLink } from '../types/BackendExternalLink';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = apiConfig.baseUrl;
 
 export const referenceService = {
   async getAllReferences(): Promise<BackendExternalLink[]> {
