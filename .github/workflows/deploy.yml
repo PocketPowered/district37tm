@@ -33,7 +33,7 @@ jobs:
           cache-dependency-path: 'event-manager/package-lock.json'
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
       - name: Build
         run: npm run build
