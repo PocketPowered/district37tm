@@ -247,6 +247,7 @@ const EventList: React.FC = () => {
                 }}
               >
                 {new Date(timestamp).toLocaleDateString('en-US', {
+                  weekday: 'long',
                   month: 'long',
                   day: 'numeric',
                   year: 'numeric'
@@ -324,7 +325,16 @@ const EventList: React.FC = () => {
                     </TableHead>
                     <TableBody>
                       {sortedEvents.map((event) => (
-                        <TableRow key={event.id}>
+                        <TableRow 
+                          key={event.id}
+                          onClick={() => navigate(`/events/${event.id}/edit`)}
+                          sx={{ 
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: 'action.hover'
+                            }
+                          }}
+                        >
                           <TableCell>{event.id}</TableCell>
                           <TableCell>{event.title}</TableCell>
                           <TableCell>{formatTimeRange(event.time.startTime, event.time.endTime)}</TableCell>
@@ -338,13 +348,19 @@ const EventList: React.FC = () => {
                             }}>
                               <IconButton 
                                 size="small"
-                                onClick={() => navigate(`/events/${event.id}/edit`)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/events/${event.id}/edit`);
+                                }}
                               >
                                 <EditIcon fontSize="small" />
                               </IconButton>
                               <IconButton 
                                 size="small"
-                                onClick={() => event.id && handleDelete(event.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  event.id && handleDelete(event.id);
+                                }}
                               >
                                 <DeleteIcon fontSize="small" />
                               </IconButton>

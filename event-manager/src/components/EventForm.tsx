@@ -147,12 +147,23 @@ const EventForm: React.FC = () => {
   };
 
   const addAgendaItem = () => {
+    const selectedDate = new Date(parseInt(event.dateKey));
+    
+    const startTime = new Date(selectedDate);
+    startTime.setHours(12, 0, 0, 0);
+    
+    const endTime = new Date(selectedDate);
+    endTime.setHours(13, 0, 0, 0);
+
     setEvent(prev => ({
       ...prev,
       agenda: [...prev.agenda, {
         title: '',
         description: '',
-        time: { startTime: Date.now(), endTime: Date.now() + 3600000 },
+        time: { 
+          startTime: startTime.getTime(),
+          endTime: endTime.getTime()
+        },
         locationInfo: ''
       }]
     }));
@@ -327,6 +338,7 @@ const EventForm: React.FC = () => {
                 {availableDates.map((timestamp) => (
                   <MenuItem key={timestamp} value={timestamp.toString()}>
                     {new Date(timestamp).toLocaleDateString('en-US', {
+                      weekday: 'long',
                       month: 'long',
                       day: 'numeric',
                       year: 'numeric'
