@@ -30,8 +30,13 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
-		<string>fetch</string>
 		<string>processing</string>
+		<string>fetch</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.district37.toastmasters.refresh</string>
+		<string>com.district37.toastmasters.processing</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>

@@ -138,10 +138,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        // Handle the notification data
-        let userInfo = response.notification.request.content.userInfo
-        handleNotificationData(userInfo)
-        
         completionHandler()
     }
     
@@ -166,6 +162,33 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             print("✅ Successfully inserted notification into database")
         } catch {
             print("❌ Failed to insert notification: \(error.localizedDescription)")
+        }
+        
+        // Create and show local notification
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        
+        // Add any additional data
+        if let eventId = relatedEventId {
+            content.userInfo = ["relatedEventId": eventId]
+        }
+        
+        // Create request
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: nil // Show immediately
+        )
+        
+        // Add request to notification center
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("❌ Failed to show notification: \(error.localizedDescription)")
+            } else {
+                print("✅ Successfully showed notification")
+            }
         }
     }
 }
