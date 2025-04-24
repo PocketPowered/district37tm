@@ -6,5 +6,6 @@ import kotlinx.serialization.Serializable
 data class BackendExternalLink(
     val id: String? = null,
     val displayName: String? = null,
-    val url: String? = null
+    val url: String? = null,
+    val description: String? = null
 )

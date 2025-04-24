@@ -29,7 +29,8 @@ class FirebaseReferencesService  {
                 BackendExternalLink(
                     id = doc.id,
                     displayName = doc.getString("displayName"),
-                    url = doc.getString("url")
+                    url = doc.getString("url"),
+                    description = doc.getString("description")
                 )
             }
     }
@@ -39,7 +40,8 @@ class FirebaseReferencesService  {
         val newReference = reference.copy(id = docRef.id)
         docRef.set(mapOf(
             "displayName" to newReference.displayName,
-            "url" to newReference.url
+            "url" to newReference.url,
+            "description" to newReference.description
         )).get()
         newReference
     }
@@ -49,7 +51,8 @@ class FirebaseReferencesService  {
         val updatedReference = reference.copy(id = id)
         docRef.update(mapOf(
             "displayName" to updatedReference.displayName,
-            "url" to updatedReference.url
+            "url" to updatedReference.url,
+            "description" to updatedReference.description
         )).get()
         updatedReference
     }

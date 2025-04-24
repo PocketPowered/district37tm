@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Event } from '../types/Event';
+import { BackendExternalLink } from '../types/BackendExternalLink';
 import { apiConfig } from '../config/api';
 
 const api = axios.create({
@@ -72,4 +73,31 @@ export const notificationService = {
         'Content-Type': 'application/json'
       }
     }).then(res => res.data)
+};
+
+export const referenceService = {
+  getAllReferences: async (): Promise<BackendExternalLink[]> => {
+    const response = await fetch(`${apiConfig.baseUrl}/references`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch references');
+    }
+    return response.json();
+  },
+
+  createReference: (reference: Omit<BackendExternalLink, 'id'>) => 
+    api.post('/references', reference, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(res => res.data),
+
+  updateReference: (id: string, reference: Omit<BackendExternalLink, 'id'>) => 
+    api.put(`/references/${id}`, reference, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(res => res.data),
+
+  deleteReference: (id: string) => 
+    api.delete(`/references/${id}`).then(res => res.data),
 }; 

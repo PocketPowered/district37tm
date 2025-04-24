@@ -1,6 +1,9 @@
 package com.district37.toastmasters.references
 
 import Linkout
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import co.touchlab.kermit.Logger
 import com.district37.toastmasters.models.BackendExternalLink
@@ -41,20 +45,29 @@ fun ReferencesScreen() {
             viewModel.onRefresh()
         }
     ) { references ->
-        if (references.isEmpty()) {
-            Text(
-                text = "No references available",
-                modifier = Modifier.padding(16.dp).fillMaxSize()
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                items(references) { reference ->
-                    ReferenceItem(reference)
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            if (references.isEmpty()) {
+                item {
+                    Text(
+                        text = "No references available",
+                        modifier = Modifier.padding(16.dp).fillMaxSize()
+                    )
                 }
+            } else {
+                item {
+                    Text(
+                        text = "Browse more materials and resources to support your conference experience.",
+                        style = MaterialTheme.typography.h5,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
+            }
+            items(references) { reference ->
+                ReferenceItem(reference)
             }
         }
     }
@@ -89,16 +102,29 @@ fun ReferenceItem(reference: BackendExternalLink) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start
             ) {
                 Text(
                     text = reference.displayName ?: "Untitled Reference",
-                    style = MaterialTheme.typography.subtitle1
+                    style = MaterialTheme.typography.subtitle1,
+                    textAlign = TextAlign.Start
                 )
+
+                reference.description?.also {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.body2,
+                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(top = 4.dp),
+                        textAlign = TextAlign.Start
+                    )
+                }
                 Text(
                     text = reference.url ?: "",
                     style = MaterialTheme.typography.body2,
-                    color = MaterialTheme.colors.primary
+                    color = MaterialTheme.colors.primary,
+                    textAlign = TextAlign.Start
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))

@@ -14,7 +14,8 @@ import {
   DialogContentText,
   DialogActions,
   TextField,
-  FormHelperText
+  FormHelperText,
+  Link
 } from '@mui/material';
 import { referenceService } from '../services/referenceService';
 import { BackendExternalLink } from '../types/BackendExternalLink';
@@ -33,7 +34,8 @@ const ReferencesManager: React.FC = () => {
   const [formData, setFormData] = useState<BackendExternalLink>({
     id: null,
     displayName: '',
-    url: ''
+    url: '',
+    description: null
   });
   const [urlError, setUrlError] = useState<string | null>(null);
 
@@ -93,10 +95,11 @@ const ReferencesManager: React.FC = () => {
       const newReference = await referenceService.createReference({
         id: null,
         displayName: formData.displayName,
-        url: formattedUrl
+        url: formattedUrl,
+        description: formData.description
       });
       await fetchReferences();
-      setFormData({ id: null, displayName: '', url: '' });
+      setFormData({ id: null, displayName: '', url: '', description: null });
       setOpenDialog(false);
       setUrlError(null);
     } catch (err) {
@@ -117,10 +120,11 @@ const ReferencesManager: React.FC = () => {
       await referenceService.updateReference(editingReference.id, {
         id: editingReference.id,
         displayName: formData.displayName,
-        url: formattedUrl
+        url: formattedUrl,
+        description: formData.description
       });
       await fetchReferences();
-      setFormData({ id: null, displayName: '', url: '' });
+      setFormData({ id: null, displayName: '', url: '', description: null });
       setEditingReference(null);
       setOpenDialog(false);
       setUrlError(null);
@@ -158,7 +162,8 @@ const ReferencesManager: React.FC = () => {
     setFormData({
       id: reference.id,
       displayName: reference.displayName || '',
-      url: reference.url || ''
+      url: reference.url || '',
+      description: reference.description || null
     });
     setUrlError(null);
     setOpenDialog(true);
@@ -195,7 +200,7 @@ const ReferencesManager: React.FC = () => {
             startIcon={<AddIcon />}
             onClick={() => {
               setEditingReference(null);
-              setFormData({ id: null, displayName: '', url: '' });
+              setFormData({ id: null, displayName: '', url: '', description: null });
               setUrlError(null);
               setOpenDialog(true);
             }}
@@ -227,12 +232,41 @@ const ReferencesManager: React.FC = () => {
               <Paper key={reference.id} sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Box>
-                    <Typography variant="subtitle1">
-                      {reference.displayName}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {reference.url}
-                    </Typography>
+                    <Box sx={{ textAlign: 'left', width: '100%' }}>
+                      <Typography variant="subtitle1" align="left">
+                        {reference.displayName}
+                      </Typography>
+                      <Link
+                        href={reference.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{ 
+                          color: 'text.secondary',
+                          textDecoration: 'none',
+                          '&:hover': {
+                            textDecoration: 'underline'
+                          }
+                        }}
+                      >
+                        <Typography variant="body2" align="left">
+                          {reference.url}
+                        </Typography>
+                      </Link>
+                      {reference.description && (
+                        <Typography 
+                          variant="body2" 
+                          color="text.secondary"
+                          align="left"
+                          sx={{ 
+                            mt: 1,
+                            fontStyle: 'italic',
+                            opacity: 0.7
+                          }}
+                        >
+                          {reference.description}
+                        </Typography>
+                      )}
+                    </Box>
                   </Box>
                   <Box>
                     <Button
@@ -256,12 +290,17 @@ const ReferencesManager: React.FC = () => {
           </Stack>
         )}
 
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <Dialog 
+          open={openDialog} 
+          onClose={() => setOpenDialog(false)}
+          maxWidth="md"
+          fullWidth
+        >
           <DialogTitle>
             {editingReference ? 'Edit Reference' : 'Add New Reference'}
           </DialogTitle>
           <DialogContent>
-            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
               <TextField
                 label="Display Name"
                 name="displayName"
@@ -280,6 +319,16 @@ const ReferencesManager: React.FC = () => {
                 error={!!urlError}
                 helperText={urlError || "URL must start with https://"}
                 placeholder="https://example.com"
+              />
+              <TextField
+                label="Description"
+                name="description"
+                value={formData.description || ''}
+                onChange={handleFormChange}
+                fullWidth
+                multiline
+                rows={3}
+                placeholder="Enter a description for this reference"
               />
             </Box>
           </DialogContent>
