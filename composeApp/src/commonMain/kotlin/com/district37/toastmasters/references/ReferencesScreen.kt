@@ -1,5 +1,6 @@
 package com.district37.toastmasters.references
 
+import Linkout
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,17 +12,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Card
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import co.touchlab.kermit.Logger
 import com.district37.toastmasters.models.BackendExternalLink
 import com.district37.toastmasters.navigation.StatefulScaffold
 import org.koin.compose.viewmodel.koinViewModel
@@ -42,7 +44,7 @@ fun ReferencesScreen() {
         if (references.isEmpty()) {
             Text(
                 text = "No references available",
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp).fillMaxSize()
             )
         } else {
             LazyColumn(
@@ -58,12 +60,26 @@ fun ReferencesScreen() {
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ReferenceItem(reference: BackendExternalLink) {
+    val urlHandler = LocalUriHandler.current
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
+        onClick = {
+            try {
+                reference.url?.let { url ->
+                    urlHandler.openUri(url)
+                }
+            } catch (e: Exception) {
+                Logger.e("ReferencesScreen") {
+                    "Could not link out to $reference"
+                }
+            }
+        },
         elevation = 2.dp
     ) {
         Row(
@@ -72,13 +88,9 @@ fun ReferenceItem(reference: BackendExternalLink) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = reference.displayName ?: "Untitled Reference",
                     style = MaterialTheme.typography.subtitle1
@@ -89,6 +101,12 @@ fun ReferenceItem(reference: BackendExternalLink) {
                     color = MaterialTheme.colors.primary
                 )
             }
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = Linkout,
+                contentDescription = "Open link",
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 } 

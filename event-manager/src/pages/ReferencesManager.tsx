@@ -13,7 +13,8 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  TextField
+  TextField,
+  FormHelperText
 } from '@mui/material';
 import { referenceService } from '../services/referenceService';
 import { BackendExternalLink } from '../types/BackendExternalLink';
@@ -34,6 +35,35 @@ const ReferencesManager: React.FC = () => {
     displayName: '',
     url: ''
   });
+  const [urlError, setUrlError] = useState<string | null>(null);
+
+  const validateUrl = (url: string | undefined): boolean => {
+    if (!url) return false;
+    return url.startsWith('https://');
+  };
+
+  const formatUrl = (url: string | undefined): string => {
+    if (!url) return '';
+    if (url.startsWith('https://')) return url;
+    if (url.startsWith('http://')) {
+      return url.replace('http://', 'https://');
+    }
+    return `https://${url}`;
+  };
+
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      url
+    }));
+    
+    if (url && !validateUrl(url)) {
+      setUrlError('URL must start with https://');
+    } else {
+      setUrlError(null);
+    }
+  };
 
   const fetchReferences = async () => {
     try {
@@ -53,15 +83,22 @@ const ReferencesManager: React.FC = () => {
   }, []);
 
   const handleAddReference = async () => {
+    if (!validateUrl(formData.url)) {
+      setUrlError('URL must start with https://');
+      return;
+    }
+
     try {
+      const formattedUrl = formatUrl(formData.url);
       const newReference = await referenceService.createReference({
         id: null,
         displayName: formData.displayName,
-        url: formData.url
+        url: formattedUrl
       });
       await fetchReferences();
       setFormData({ id: null, displayName: '', url: '' });
       setOpenDialog(false);
+      setUrlError(null);
     } catch (err) {
       setError('Failed to add reference');
       console.error(err);
@@ -70,16 +107,23 @@ const ReferencesManager: React.FC = () => {
 
   const handleUpdateReference = async () => {
     if (!editingReference?.id) return;
+    if (!validateUrl(formData.url)) {
+      setUrlError('URL must start with https://');
+      return;
+    }
+
     try {
+      const formattedUrl = formatUrl(formData.url);
       await referenceService.updateReference(editingReference.id, {
         id: editingReference.id,
         displayName: formData.displayName,
-        url: formData.url
+        url: formattedUrl
       });
       await fetchReferences();
       setFormData({ id: null, displayName: '', url: '' });
       setEditingReference(null);
       setOpenDialog(false);
+      setUrlError(null);
     } catch (err) {
       setError('Failed to update reference');
       console.error(err);
@@ -116,15 +160,20 @@ const ReferencesManager: React.FC = () => {
       displayName: reference.displayName || '',
       url: reference.url || ''
     });
+    setUrlError(null);
     setOpenDialog(true);
   };
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    if (name === 'url') {
+      handleUrlChange(e);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   if (loading) {
@@ -147,6 +196,7 @@ const ReferencesManager: React.FC = () => {
             onClick={() => {
               setEditingReference(null);
               setFormData({ id: null, displayName: '', url: '' });
+              setUrlError(null);
               setOpenDialog(true);
             }}
             variant="contained"
@@ -218,6 +268,7 @@ const ReferencesManager: React.FC = () => {
                 value={formData.displayName}
                 onChange={handleFormChange}
                 fullWidth
+                required
               />
               <TextField
                 label="URL"
@@ -225,6 +276,10 @@ const ReferencesManager: React.FC = () => {
                 value={formData.url}
                 onChange={handleFormChange}
                 fullWidth
+                required
+                error={!!urlError}
+                helperText={urlError || "URL must start with https://"}
+                placeholder="https://example.com"
               />
             </Box>
           </DialogContent>
@@ -232,7 +287,7 @@ const ReferencesManager: React.FC = () => {
             <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
             <Button 
               onClick={editingReference ? handleUpdateReference : handleAddReference}
-              disabled={!formData.displayName || !formData.url}
+              disabled={!formData.displayName || !formData.url || !!urlError}
               variant="contained"
             >
               {editingReference ? 'Update' : 'Add'}
