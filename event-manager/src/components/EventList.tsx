@@ -45,6 +45,7 @@ const EventList: React.FC = () => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'time', direction: 'asc' });
   const [availableDates, setAvailableDates] = useState<number[]>([]);
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   useEffect(() => {
     loadAvailableDates();
@@ -55,8 +56,19 @@ const EventList: React.FC = () => {
       // Set the first date as expanded by default
       const firstDate = availableDates[0].toString();
       setExpandedDate(firstDate);
-      // Load events for the first date immediately
-      loadEventsForDate(parseInt(firstDate));
+      // Load events for all dates
+      Promise.all(availableDates.map(loadEventsForDate))
+        .then(() => {
+          setInitialLoadComplete(true);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error('Error loading events:', error);
+          setError('Failed to load events. Please try again.');
+          setLoading(false);
+        });
+    } else if (availableDates.length === 0 && !loading) {
+      setInitialLoadComplete(true);
     }
   }, [availableDates]);
 
@@ -65,10 +77,12 @@ const EventList: React.FC = () => {
       const dates = await dateService.getAvailableDates();
       setAvailableDates(dates);
       setError(null);
+      if (dates.length === 0) {
+        setLoading(false);
+      }
     } catch (err) {
       setError('Failed to load available dates');
       console.error(err);
-    } finally {
       setLoading(false);
     }
   };
@@ -137,7 +151,7 @@ const EventList: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading || !initialLoadComplete) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
         <CircularProgress />
@@ -159,7 +173,7 @@ const EventList: React.FC = () => {
     return events.length > 0;
   });
 
-  if (!hasEvents) {
+  if (!hasEvents && initialLoadComplete) {
     return (
       <Box sx={{ p: 2, textAlign: 'center' }}>
         <Typography variant="h5" gutterBottom>
@@ -284,16 +298,7 @@ const EventList: React.FC = () => {
                   }}>
                     <TableHead>
                       <TableRow>
-                        <TableCell width="80px">
-                          <TableSortLabel
-                            active={sortConfig.key === 'id'}
-                            direction={sortConfig.key === 'id' ? sortConfig.direction : 'asc'}
-                            onClick={() => handleSort('id')}
-                          >
-                            ID
-                          </TableSortLabel>
-                        </TableCell>
-                        <TableCell width="35%">
+                        <TableCell width="40%">
                           <TableSortLabel
                             active={sortConfig.key === 'title'}
                             direction={sortConfig.key === 'title' ? sortConfig.direction : 'asc'}
@@ -302,7 +307,7 @@ const EventList: React.FC = () => {
                             Title
                           </TableSortLabel>
                         </TableCell>
-                        <TableCell width="25%">
+                        <TableCell width="30%">
                           <TableSortLabel
                             active={sortConfig.key === 'time'}
                             direction={sortConfig.key === 'time' ? sortConfig.direction : 'asc'}
@@ -311,7 +316,7 @@ const EventList: React.FC = () => {
                             Time
                           </TableSortLabel>
                         </TableCell>
-                        <TableCell width="25%">
+                        <TableCell width="20%">
                           <TableSortLabel
                             active={sortConfig.key === 'locationInfo'}
                             direction={sortConfig.key === 'locationInfo' ? sortConfig.direction : 'asc'}
@@ -320,7 +325,7 @@ const EventList: React.FC = () => {
                             Location
                           </TableSortLabel>
                         </TableCell>
-                        <TableCell width="100px" align="right">Actions</TableCell>
+                        <TableCell width="10%" align="right">Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -335,7 +340,6 @@ const EventList: React.FC = () => {
                             }
                           }}
                         >
-                          <TableCell>{event.id}</TableCell>
                           <TableCell>{event.title}</TableCell>
                           <TableCell>{formatTimeRange(event.time.startTime, event.time.endTime)}</TableCell>
                           <TableCell>{event.locationInfo}</TableCell>
