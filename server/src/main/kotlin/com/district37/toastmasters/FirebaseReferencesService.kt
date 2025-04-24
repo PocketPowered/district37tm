@@ -6,9 +6,8 @@ import com.google.cloud.firestore.Firestore
 import com.google.cloud.firestore.FirestoreOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.koin.core.component.KoinComponent
 
-class FirebaseReferencesService : KoinComponent {
+class FirebaseReferencesService  {
     private val json = System.getenv("GOOGLE_CREDENTIALS_JSON")
         ?: error("Missing GOOGLE_CREDENTIALS_JSON env variable")
     private val serviceAccount = GoogleCredentials.fromStream(json.byteInputStream())
@@ -28,6 +27,7 @@ class FirebaseReferencesService : KoinComponent {
             .documents
             .mapNotNull { doc ->
                 BackendExternalLink(
+                    id = doc.id,
                     displayName = doc.getString("displayName"),
                     url = doc.getString("url")
                 )
@@ -36,20 +36,22 @@ class FirebaseReferencesService : KoinComponent {
 
     suspend fun createReference(reference: BackendExternalLink): BackendExternalLink = withContext(Dispatchers.IO) {
         val docRef = referencesCollection.document()
+        val newReference = reference.copy(id = docRef.id)
         docRef.set(mapOf(
-            "displayName" to reference.displayName,
-            "url" to reference.url
+            "displayName" to newReference.displayName,
+            "url" to newReference.url
         )).get()
-        reference
+        newReference
     }
 
     suspend fun updateReference(id: String, reference: BackendExternalLink): BackendExternalLink = withContext(Dispatchers.IO) {
         val docRef = referencesCollection.document(id)
+        val updatedReference = reference.copy(id = id)
         docRef.update(mapOf(
-            "displayName" to reference.displayName,
-            "url" to reference.url
+            "displayName" to updatedReference.displayName,
+            "url" to updatedReference.url
         )).get()
-        reference
+        updatedReference
     }
 
     suspend fun deleteReference(id: String): Boolean = withContext(Dispatchers.IO) {

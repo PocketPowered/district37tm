@@ -1,11 +1,8 @@
 package com.district37.toastmasters
 
 import com.district37.toastmasters.models.BackendExternalLink
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
-class ReferencesService : KoinComponent {
-    private val firebaseService: FirebaseReferencesService by inject()
+class ReferencesService(private val firebaseService: FirebaseReferencesService) {
 
     suspend fun getAllReferences(): List<BackendExternalLink> {
         return firebaseService.getAllReferences()

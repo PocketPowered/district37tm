@@ -5,7 +5,12 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
-import io.ktor.server.routing.*
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.put
+import io.ktor.server.routing.route
+import io.ktor.server.routing.routing
 import org.koin.ktor.ext.inject
 
 fun Application.referencesController() {
@@ -34,7 +39,8 @@ fun Application.referencesController() {
 
             put("/{id}") {
                 try {
-                    val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing reference ID")
+                    val id = call.parameters["id"]
+                        ?: throw IllegalArgumentException("Missing reference ID")
                     val reference = call.receive<BackendExternalLink>()
                     val updatedReference = referencesService.updateReference(id, reference)
                     call.respond(updatedReference)
@@ -45,7 +51,8 @@ fun Application.referencesController() {
 
             delete("/{id}") {
                 try {
-                    val id = call.parameters["id"] ?: throw IllegalArgumentException("Missing reference ID")
+                    val id = call.parameters["id"]
+                        ?: throw IllegalArgumentException("Missing reference ID")
                     referencesService.deleteReference(id)
                     call.respond(HttpStatusCode.NoContent)
                 } catch (e: Exception) {

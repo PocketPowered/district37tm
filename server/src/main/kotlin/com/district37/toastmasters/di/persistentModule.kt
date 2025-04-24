@@ -13,9 +13,9 @@ import org.koin.dsl.module
 val persistentModule = module {
     singleOf(::EventService)
     singleOf(::DateService)
+    singleOf(::ReferencesService)
     singleOf(::FirebaseEventService)
     singleOf(::FirebaseUserFCMService)
     singleOf(::FirebaseDateService)
-    singleOf(::ReferencesService)
     singleOf(::FirebaseReferencesService)
 }

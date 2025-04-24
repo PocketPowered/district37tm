@@ -23,6 +23,7 @@ import EventList from './components/EventList';
 import EventForm from './components/EventForm';
 import NotificationForm from './components/NotificationForm';
 import DateManager from './pages/DateManager';
+import ReferencesManager from './pages/ReferencesManager';
 import EnvironmentToggle from './components/EnvironmentToggle';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -33,6 +34,7 @@ import EventIcon from '@mui/icons-material/Event';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import LinkIcon from '@mui/icons-material/Link';
 import LogoutIcon from '@mui/icons-material/Logout';
 import './App.css';
 
@@ -54,6 +56,7 @@ const AppContent: React.FC = () => {
   const navigationItems = isAuthorized ? [
     { text: 'Event Manager', icon: <EventIcon />, path: '/' },
     { text: 'Date Manager', icon: <CalendarMonthIcon />, path: '/dates' },
+    { text: 'References', icon: <LinkIcon />, path: '/references' },
     { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
     { text: 'Authorized Users', icon: <AdminPanelSettingsIcon />, path: '/admin' },
   ] : [];
@@ -192,6 +195,14 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <DateManager />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/references"
+              element={
+                <ProtectedRoute>
+                  <ReferencesManager />
                 </ProtectedRoute>
               }
             />
