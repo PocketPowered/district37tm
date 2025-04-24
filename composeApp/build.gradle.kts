@@ -50,7 +50,7 @@ kotlin {
             implementation(libs.bundles.landscapist)
             implementation(libs.accompanist.placeholder)
             implementation(libs.coroutines.extensions)
-//            implementation(libs.androidx.compose.material3
+            implementation(libs.androidx.compose.material3)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)

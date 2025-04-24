@@ -34,25 +34,25 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 const EventForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [availableDates, setAvailableDates] = useState<number[]>([]);
   const [event, setEvent] = useState<Event>({
     id: 0,
     title: '',
     time: {
-      startTime: Date.now(),
-      endTime: Date.now() + 3600000 // 1 hour later
+      startTime: availableDates[0] || Date.now(),
+      endTime: (availableDates[0] || Date.now()) + 3600000 // 1 hour later
     },
     locationInfo: '',
     description: '',
     agenda: [],
     additionalLinks: [],
-    dateKey: '',
+    dateKey: availableDates[0]?.toString() || '',
     images: [],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState('');
-  const [availableDates, setAvailableDates] = useState<number[]>([]);
 
   useEffect(() => {
     if (id) {
@@ -61,10 +61,33 @@ const EventForm: React.FC = () => {
     loadAvailableDates();
   }, [id]);
 
+  useEffect(() => {
+    if (event.dateKey) {
+      const selectedDate = parseInt(event.dateKey);
+      setEvent(prev => ({
+        ...prev,
+        time: {
+          startTime: selectedDate,
+          endTime: selectedDate + 3600000 // 1 hour later
+        }
+      }));
+    }
+  }, [event.dateKey]);
+
   const loadAvailableDates = async () => {
     try {
       const dates = await dateService.getAvailableDates();
       setAvailableDates(dates);
+      if (dates.length > 0 && !id) {
+        setEvent(prev => ({
+          ...prev,
+          time: {
+            startTime: dates[0],
+            endTime: dates[0] + 3600000 // 1 hour later
+          },
+          dateKey: dates[0].toString()
+        }));
+      }
     } catch (error) {
       console.error('Error loading available dates:', error);
     }

@@ -1,9 +1,8 @@
 package com.district37.toastmasters.eventlist
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -57,19 +56,19 @@ fun EventCard(
             }
         }
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp)
-                    .align(Alignment.CenterStart)
+                modifier = Modifier.weight(1f)
             ) {
                 Text(
                     text = eventPreview.title,
                     style = MaterialTheme.typography.body1,
                     color = MaterialTheme.colors.onSurface,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 2
                 )
@@ -89,8 +88,7 @@ fun EventCard(
                 contentDescription = if (eventPreview.isFavorited) "Unfavorite" else "Favorite",
                 tint = if (eventPreview.isFavorited) Color.Red else MaterialTheme.colors.onSurface,
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(12.dp)
+                    .padding(start = 8.dp)
                     .size(24.dp)
                     .clickable {
                         appViewModel.uiEventBus.sendEvent(
@@ -102,6 +100,5 @@ fun EventCard(
                     }
             )
         }
-
     }
 }
