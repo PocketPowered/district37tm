@@ -19,6 +19,7 @@ import org.koin.java.KoinJavaComponent.inject
 
 class FirebaseService : FirebaseMessagingService() {
     private val notificationRepository: NotificationRepository by inject(NotificationRepository::class.java)
+
     // Since we can just subscribe to topics, do we need to track their FCM token?
     private val fcmRepository: FCMRepository by inject(FCMRepository::class.java)
 
@@ -30,15 +31,13 @@ class FirebaseService : FirebaseMessagingService() {
     }
 
     private fun subscribeToTopics() {
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val topic = NotifcationTopics.GENERAL.name
-                com.google.firebase.messaging.FirebaseMessaging.getInstance()
-                    .subscribeToTopic(topic)
-                Logger.d("[FCM] Successfully subscribed to topics: $topic")
-            } catch (e: Exception) {
-                Logger.e("[FCM] Failed to subscribe to topics: ${e.message}")
-            }
+        try {
+            val topic = NotifcationTopics.GENERAL.name
+            com.google.firebase.messaging.FirebaseMessaging.getInstance()
+                .subscribeToTopic(topic)
+            Logger.d("[FCM] Successfully subscribed to topics: $topic")
+        } catch (e: Exception) {
+            Logger.e("[FCM] Failed to subscribe to topics: ${e.message}")
         }
     }
 

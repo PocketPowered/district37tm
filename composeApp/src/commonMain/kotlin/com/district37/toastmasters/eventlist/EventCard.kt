@@ -31,6 +31,7 @@ import com.district37.toastmasters.models.toHumanReadableString
 import com.district37.toastmasters.navigation.EVENT_ID_ARG
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.wongislandd.nexus.navigation.LocalNavHostController
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -47,7 +48,7 @@ fun EventCard(
         backgroundColor = MaterialTheme.colors.onSecondary,
         modifier = modifier.padding(horizontal = 8.dp),
         onClick = {
-            coroutineScope.launch {
+            coroutineScope.launch(Dispatchers.Main) {
                 appViewModel.navigate(
                     navController,
                     NavigationItemKey.EVENT_DETAILS,

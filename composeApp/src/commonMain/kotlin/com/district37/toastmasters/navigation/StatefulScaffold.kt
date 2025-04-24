@@ -16,6 +16,7 @@ import com.wongislandd.nexus.navigation.GlobalTopAppBar
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.PullToRefreshWrapper
 import com.wongislandd.nexus.util.Resource
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
@@ -42,7 +43,7 @@ fun <T> StatefulScaffold(
                     actions()
                 },
                 onHamburgerMenuClick = {
-                    coroutineScope.launch {
+                    coroutineScope.launch(Dispatchers.Main) {
                         drawerState.open()
                     }
                 }
@@ -58,7 +59,7 @@ fun <T> StatefulScaffold(
                         navController.navigate(navigationItem.completeRoute)
                     },
                     onCloseDrawer = {
-                        coroutineScope.launch {
+                        coroutineScope.launch(Dispatchers.Main) {
                             drawerState.close()
                         }
                     }

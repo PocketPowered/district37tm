@@ -31,6 +31,7 @@ import com.district37.toastmasters.LocalAppViewModel
 import com.district37.toastmasters.navigation.StatefulScaffold
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -56,7 +57,7 @@ fun NotificationsScreen() {
         resource = Resource.Success(notifications),
         actions = {
             IconButton(onClick = {
-                coroutineScope.launch {
+                coroutineScope.launch(Dispatchers.Main) {
                     appViewModel.notificationsSlice.clearAllNotifications()
                 }
             }) {
@@ -96,13 +97,13 @@ fun NotificationsScreen() {
                 NotificationItem(
                     modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null)
                         .onGloballyPositioned {
-                            coroutineScope.launch {
+                            coroutineScope.launch(Dispatchers.Main) {
                                 appViewModel.notificationsSlice.markNotificationAsSeen(notification.id)
                             }
                         },
                     notification = notification,
                     onDelete = { id ->
-                        coroutineScope.launch {
+                        coroutineScope.launch(Dispatchers.Main) {
                             appViewModel.notificationsSlice.deleteNotification(id)
                         }
                     }
