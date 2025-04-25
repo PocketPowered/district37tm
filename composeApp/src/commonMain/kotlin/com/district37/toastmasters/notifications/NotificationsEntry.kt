@@ -2,6 +2,7 @@ package com.district37.toastmasters.notifications
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Icon
@@ -25,8 +26,6 @@ import com.wongislandd.nexus.navigation.LocalNavHostController
 fun NotificationsEntry(modifier: Modifier = Modifier) {
     val appViewModel = LocalAppViewModel.current
     val navController = LocalNavHostController.current
-    val unseenNotificationCount by
-        appViewModel.notificationsSlice.unseenNotificationCount.collectAsState(0)
     Box(modifier = modifier) {
         IconButton(
             {
@@ -35,28 +34,35 @@ fun NotificationsEntry(modifier: Modifier = Modifier) {
                     NavigationItemKey.NOTIFICATIONS
                 )
             },
-            modifier = Modifier.align(Alignment.Center)
         ) {
             Icon(Icons.Default.Notifications, contentDescription = "Notifications")
-            if (unseenNotificationCount > 0) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .background(Color.Red, shape = CircleShape)
-                    )
-                    Text(
-                        text = unseenNotificationCount.toString(),
-                        color = Color.White,
-                        style = MaterialTheme.typography.caption
-                    )
-                }
-            }
+            NotificationBadge()
+        }
+    }
+}
+
+@Composable
+fun BoxScope.NotificationBadge() {
+    val appViewModel = LocalAppViewModel.current
+    val unseenNotificationCount by
+    appViewModel.notificationsSlice.unseenNotificationCount.collectAsState(0)
+    if (unseenNotificationCount > 0) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Red, shape = CircleShape)
+            )
+            Text(
+                text = unseenNotificationCount.toString(),
+                color = Color.White,
+                style = MaterialTheme.typography.caption
+            )
         }
     }
 }
