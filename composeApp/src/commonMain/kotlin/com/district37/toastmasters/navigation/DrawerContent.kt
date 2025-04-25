@@ -70,7 +70,11 @@ fun DrawerContent(
 }
 
 @Composable
-private fun DrawerItemContent(item: DrawerItem, isSelected: Boolean) {
+private fun DrawerItemContent(
+    item: DrawerItem,
+    isSelected: Boolean,
+    trailingIcon: (@Composable () -> Unit)? = null
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -88,6 +92,10 @@ private fun DrawerItemContent(item: DrawerItem, isSelected: Boolean) {
             style = MaterialTheme.typography.body1,
             color = if (isSelected) MaterialTheme.colors.primary else MaterialTheme.colors.onSurface
         )
+        Spacer(modifier = Modifier.width(8.dp))
+        trailingIcon?.also {
+            it()
+        }
     }
 }
 
@@ -118,8 +126,7 @@ fun NotificationEntryDrawerItem(
                 )
             }
         ) {
-            DrawerItemContent(item, isSelected)
-            NotificationBadge()
+            DrawerItemContent(item, isSelected, trailingIcon = { NotificationBadge() })
         }
     }
 }

@@ -3,6 +3,7 @@ package com.district37.toastmasters.notifications
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Icon
@@ -36,19 +37,19 @@ fun NotificationsEntry(modifier: Modifier = Modifier) {
             },
         ) {
             Icon(Icons.Default.Notifications, contentDescription = "Notifications")
-            NotificationBadge()
+            NotificationBadge(modifier = Modifier.padding(start = 4.dp))
         }
     }
 }
 
 @Composable
-fun BoxScope.NotificationBadge() {
+fun BoxScope.NotificationBadge(modifier: Modifier = Modifier) {
     val appViewModel = LocalAppViewModel.current
     val unseenNotificationCount by
     appViewModel.notificationsSlice.unseenNotificationCount.collectAsState(0)
     if (unseenNotificationCount > 0) {
         Box(
-            modifier = Modifier
+            modifier = modifier
                 .align(Alignment.TopEnd)
                 .size(16.dp),
             contentAlignment = Alignment.Center

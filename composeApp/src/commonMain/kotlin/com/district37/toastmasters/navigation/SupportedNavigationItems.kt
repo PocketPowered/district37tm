@@ -38,7 +38,7 @@ val supportedNavigationItems = mutableMapOf(
     ),
     NavigationItemKey.FIRST_TIMER_RESOURCES to NavigationItem(
         NavigationItemKey.FIRST_TIMER_RESOURCES.name,
-        "First Timer Resources",
+        "First Timer",
         "first-timer-resources"
     )
 )
