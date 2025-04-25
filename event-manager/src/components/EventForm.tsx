@@ -330,23 +330,6 @@ const EventForm: React.FC = () => {
           </Button>
         </Box>
 
-        {success && (
-          <Alert 
-            severity="success" 
-            sx={{ mb: 3 }}
-            action={
-              <Button 
-                color="inherit" 
-                size="small"
-                onClick={() => navigate('/')}
-              >
-                Back to List
-              </Button>
-            }
-          >
-            {success}
-          </Alert>
-        )}
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         
         <form onSubmit={handleSubmit}>
@@ -423,10 +406,11 @@ const EventForm: React.FC = () => {
                 value={event.tag}
                 label="Event Tag"
                 onChange={(e) => setEvent({ ...event, tag: e.target.value as EventTag })}
+                sx={{ textAlign: 'left' }}
               >
-                <MenuItem value={EventTag.NORMAL}>Normal</MenuItem>
-                <MenuItem value={EventTag.HIGHLIGHTED}>Highlighted</MenuItem>
-                <MenuItem value={EventTag.BREAK}>Break</MenuItem>
+                <MenuItem value={EventTag.NORMAL} sx={{ textAlign: 'left' }}>Normal</MenuItem>
+                <MenuItem value={EventTag.HIGHLIGHTED} sx={{ textAlign: 'left' }}>Highlighted</MenuItem>
+                <MenuItem value={EventTag.BREAK} sx={{ textAlign: 'left' }}>Break</MenuItem>
               </Select>
             </FormControl>
 
@@ -699,7 +683,24 @@ const EventForm: React.FC = () => {
               </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
+              {success && (
+                <Alert 
+                  severity="success" 
+                  sx={{ flex: 1 }}
+                  action={
+                    <Button 
+                      color="inherit" 
+                      size="small"
+                      onClick={() => navigate('/')}
+                    >
+                      Back to List
+                    </Button>
+                  }
+                >
+                  {success}
+                </Alert>
+              )}
               <Button type="submit" variant="contained" color="primary" disabled={loading}>
                 {loading ? <CircularProgress size={24} /> : 'Save Changes'}
               </Button>
