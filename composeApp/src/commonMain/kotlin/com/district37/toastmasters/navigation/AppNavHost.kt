@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.district37.toastmasters.eventdetails.EventDetailsScreen
 import com.district37.toastmasters.eventlist.EventListScreen
+import com.district37.toastmasters.locations.LocationsScreen
 import com.district37.toastmasters.notifications.NotificationsScreen
 import com.district37.toastmasters.resources.FirstTimerResourcesScreen
 import com.district37.toastmasters.resources.ResourcesScreen
@@ -107,6 +108,12 @@ fun AppNavHost(
                 NavigationItemKey.FIRST_TIMER_RESOURCES -> {
                     composable(route = navigationItem.completeRoute) {
                         FirstTimerResourcesScreen()
+                    }
+                }
+
+                NavigationItemKey.MAPS -> {
+                    composable(route = navigationItem.completeRoute) {
+                        LocationsScreen()
                     }
                 }
             }

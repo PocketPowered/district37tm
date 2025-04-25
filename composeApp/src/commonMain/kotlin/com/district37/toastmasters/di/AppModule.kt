@@ -10,6 +10,7 @@ import com.district37.toastmasters.eventdetails.eventDetailsModule
 import com.district37.toastmasters.eventlist.eventListModule
 import com.district37.toastmasters.favorites.FavoritedEventsSlice
 import com.district37.toastmasters.fcm.FCMRepository
+import com.district37.toastmasters.locations.locationsModule
 import com.district37.toastmasters.navigation.supportedNavigationItems
 import com.district37.toastmasters.notifications.NotificationsSlice
 import com.district37.toastmasters.resources.resourcesModule
@@ -46,6 +47,7 @@ fun initializeKoin(context: Any? = null) =
             platformModule(context),
             eventListModule,
             eventDetailsModule,
-            resourcesModule
+            resourcesModule,
+            locationsModule
         )
     }

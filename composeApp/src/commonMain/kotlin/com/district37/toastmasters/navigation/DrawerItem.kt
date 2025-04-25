@@ -4,6 +4,7 @@ import EventIcon
 import Menu
 import Rocket
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -18,6 +19,11 @@ val drawerItems = listOf(
         key = NavigationItemKey.EVENT_LIST,
         title = "Agenda",
         icon = EventIcon,
+    ),
+    DrawerItem(
+        key = NavigationItemKey.MAPS,
+        title = "Maps",
+        icon = Icons.Default.MailOutline
     ),
     DrawerItem(
         key = NavigationItemKey.NOTIFICATIONS,

@@ -21,6 +21,9 @@ import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
 import com.district37.toastmasters.notifications.NotificationBadge
 import com.wongislandd.nexus.navigation.LocalNavHostController
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Notifications
 
 @Composable
 fun DrawerContent(
