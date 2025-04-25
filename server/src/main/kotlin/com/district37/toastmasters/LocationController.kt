@@ -27,6 +27,19 @@ fun Application.locationController() {
                 }
             }
 
+            get("/search") {
+                try {
+                    val query = call.request.queryParameters["q"]
+                        ?: throw IllegalArgumentException("Missing search query parameter 'q'")
+                    val locations = locationService.searchLocationsByName(query)
+                    call.respond(locations)
+                } catch (e: IllegalArgumentException) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to e.message))
+                }
+            }
+
             post {
                 try {
                     val location = call.receive<Location>()

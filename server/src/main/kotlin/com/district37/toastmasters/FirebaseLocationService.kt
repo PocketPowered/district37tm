@@ -59,4 +59,42 @@ class FirebaseLocationService {
         docRef.delete().get()
         true
     }
+
+    suspend fun searchLocationsByName(query: String): List<Location> = withContext(Dispatchers.IO) {
+        // Normalize the query by converting to lowercase and trimming
+        val normalizedQuery = query.lowercase().trim()
+        
+        // If the query is empty, return all locations
+        if (normalizedQuery.isEmpty()) {
+            return@withContext getAllLocations()
+        }
+
+        // Split the query into words for more flexible matching
+        val queryWords = normalizedQuery.split("\\s+".toRegex())
+        
+        locationsCollection
+            .get()
+            .get()
+            .documents
+            .mapNotNull { doc ->
+                val locationName = doc.getString("locationName")?.lowercase() ?: ""
+                val locationImages = doc.get("locationImages") as? List<String> ?: emptyList()
+                
+                // Check if all query words are present in the location name
+                val matches = queryWords.all { word -> 
+                    locationName.contains(word)
+                }
+                
+                if (matches) {
+                    Location(
+                        id = doc.id,
+                        locationName = doc.getString("locationName") ?: "",
+                        locationImages = locationImages
+                    )
+                } else {
+                    null
+                }
+            }
+            .sortedBy { it.locationName } // Sort results alphabetically
+    }
 } 
