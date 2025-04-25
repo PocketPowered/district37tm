@@ -11,6 +11,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     private var storedFCMToken: String?
     private var hasAPNSToken = false
     private var hasSubscribedToTopics = false
+    private let backgroundQueue = DispatchQueue(label: "com.district37.toastmasters.background", qos: .userInitiated)
 
     func application(
         _ application: UIApplication,
@@ -18,9 +19,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     ) -> Bool {
         print("🚀 App starting up...")
         
-        // Initialize Firebase
-        FirebaseApp.configure()
-        print("🔥 Firebase configured")
+        // Initialize Firebase on background queue
+        backgroundQueue.async {
+            FirebaseApp.configure()
+            print("🔥 Firebase configured")
+        }
 
         // Initialize Koin
         AppModuleKt.initializeKoin(context: application)
@@ -118,12 +121,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         }
         
         print("📡 Subscribing to topics with FCM token: \(fcmToken)")
-        Messaging.messaging().subscribe(toTopic: "GENERAL") { error in
-            if let error = error {
-                print("❌ Failed to subscribe to topic: \(error)")
-            } else {
-                print("✅ Successfully subscribed to GENERAL topic")
-                self.hasSubscribedToTopics = true
+        // Move topic subscription to background queue
+        backgroundQueue.async { [weak self] in
+            Messaging.messaging().subscribe(toTopic: "GENERAL") { error in
+                if let error = error {
+                    print("❌ Failed to subscribe to topic: \(error)")
+                } else {
+                    print("✅ Successfully subscribed to GENERAL topic")
+                    self?.hasSubscribedToTopics = true
+                }
             }
         }
     }
@@ -150,7 +156,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) {
         print("📩 Received remote notification: \(userInfo)")
-        handleNotificationData(userInfo)
+        // Move notification handling to background queue
+        backgroundQueue.async { [weak self] in
+            self?.handleNotificationData(userInfo)
+        }
     }
     
     private func handleNotificationData(_ userInfo: [AnyHashable: Any]) {
