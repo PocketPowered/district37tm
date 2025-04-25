@@ -33,8 +33,24 @@ import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+
+fun Instant.toHumanReadableString(): String {
+    val localDateTime = this.toLocalDateTime(TimeZone.currentSystemDefault())
+    
+    val month = localDateTime.month.name.lowercase().replaceFirstChar { it.uppercase() }
+    val day = localDateTime.dayOfMonth
+    val year = localDateTime.year
+    val hour = localDateTime.hour
+    val minute = localDateTime.minute
+    
+    val period = if (hour < 12) "AM" else "PM"
+    val formattedHour = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+    
+    return "$month $day, $year at ${formattedHour}:${minute.toString().padStart(2, '0')}$period"
+}
 
 @Composable
 fun NotificationsScreen() {
@@ -164,7 +180,7 @@ fun NotificationItem(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Received: ${notification.timeReceived.toLocalDateTime(TimeZone.currentSystemDefault())}",
+                text = "Received: ${notification.timeReceived.toHumanReadableString()}",
                 style = MaterialTheme.typography.caption
             )
         }
