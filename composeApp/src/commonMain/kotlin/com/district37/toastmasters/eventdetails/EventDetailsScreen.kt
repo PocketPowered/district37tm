@@ -47,7 +47,18 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),
                     ) {
                         Text(text = it.event.title, fontWeight = FontWeight.Bold)
-                        Text(text = it.event.locationInfo)
+                        // Display location info with enhanced styling if we have a matching location
+                        if (it.location != null) {
+                            Text(
+                                text = it.location.locationName,
+                                fontWeight = FontWeight.Medium
+                            )
+                            if (it.location.locationImages.isNotEmpty()) {
+                                // TODO: Add location images carousel
+                            }
+                        } else {
+                            Text(text = it.event.locationInfo)
+                        }
                         Text(text = it.event.time.toHumanReadableString())
                         Spacer(modifier = Modifier.height(4.dp))
                         it.event.agenda.forEach { agendaItem ->
