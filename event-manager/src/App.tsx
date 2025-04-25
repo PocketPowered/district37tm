@@ -35,7 +35,9 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LinkIcon from '@mui/icons-material/Link';
 import LogoutIcon from '@mui/icons-material/Logout';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ResourcesManager from './pages/ResourcesManager';
+import LocationsManager from './pages/LocationsManager';
 import './App.css';
 
 const AppContent: React.FC = () => {
@@ -60,6 +62,7 @@ const AppContent: React.FC = () => {
     { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
     { text: 'Authorized Users', icon: <AdminPanelSettingsIcon />, path: '/admin' },
     { text: 'Resources', icon: <LinkIcon />, path: '/resources' },
+    { text: 'Locations', icon: <LocationOnIcon />, path: '/locations' },
   ] : [];
 
   const drawer = (
@@ -212,6 +215,14 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <ResourcesManager />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/locations"
+              element={
+                <ProtectedRoute>
+                  <LocationsManager />
                 </ProtectedRoute>
               }
             />

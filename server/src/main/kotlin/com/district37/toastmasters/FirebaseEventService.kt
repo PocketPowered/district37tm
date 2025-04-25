@@ -76,7 +76,7 @@ class FirebaseEventService {
                     title = it.title,
                     image = it.images?.firstOrNull(),
                     time = it.time,
-                    locationInfo = it.locationInfo
+                    locationInfo = it.location?.locationName
                 )
             }
         }
@@ -98,7 +98,7 @@ class FirebaseEventService {
                         title = it.title,
                         image = it.images?.firstOrNull(),
                         time = it.time,
-                        locationInfo = it.locationInfo
+                        locationInfo = it.location?.locationName
                     )
                 }
         }
@@ -121,7 +121,7 @@ class FirebaseEventService {
                 title = update.title ?: currentEvent.title,
                 description = update.description ?: currentEvent.description,
                 time = update.time ?: currentEvent.time,
-                locationInfo = update.locationInfo ?: currentEvent.locationInfo,
+                location = update.location ?: currentEvent.location,
                 agenda = update.agenda ?: currentEvent.agenda,
                 additionalLinks = update.additionalLinks ?: currentEvent.additionalLinks,
                 dateKey = update.dateKey ?: currentEvent.dateKey
@@ -157,7 +157,7 @@ class FirebaseEventService {
                     title = update.title ?: currentEvent.title,
                     description = update.description ?: currentEvent.description,
                     time = update.time ?: currentEvent.time,
-                    locationInfo = update.locationInfo ?: currentEvent.locationInfo,
+                    location = update.location ?: currentEvent.location,
                     agenda = update.agenda ?: currentEvent.agenda,
                     additionalLinks = update.additionalLinks ?: currentEvent.additionalLinks,
                     dateKey = update.dateKey ?: currentEvent.dateKey
