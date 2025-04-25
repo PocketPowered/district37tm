@@ -14,6 +14,7 @@ import com.district37.toastmasters.locations.locationsModule
 import com.district37.toastmasters.navigation.supportedNavigationItems
 import com.district37.toastmasters.notifications.NotificationsSlice
 import com.district37.toastmasters.resources.resourcesModule
+import com.district37.toastmasters.splash.splashModule
 import com.wongislandd.nexus.di.infraModule
 import com.wongislandd.nexus.navigation.NavigationItem
 import com.wongislandd.nexus.navigation.NavigationSlice
@@ -48,6 +49,7 @@ fun initializeKoin(context: Any? = null) =
             eventListModule,
             eventDetailsModule,
             resourcesModule,
-            locationsModule
+            locationsModule,
+            splashModule
         )
     }
