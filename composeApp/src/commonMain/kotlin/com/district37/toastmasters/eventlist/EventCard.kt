@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
 private fun Modifier.shimmerEffect(): Modifier = composed {
     val shimmerColors = listOf(
         Color(0xFFB8860B).copy(alpha = 0.2f),
-        Color(0xFFFFD700).copy(alpha = 0.4f),
+        Color(0xFFF2DF74).copy(alpha = 0.4f),
         Color(0xFFB8860B).copy(alpha = 0.2f)
     )
 
