@@ -57,12 +57,11 @@ const AppContent: React.FC = () => {
 
   const navigationItems = isAuthorized ? [
     { text: 'Event Manager', icon: <EventIcon />, path: '/' },
-    { text: 'Date Manager', icon: <CalendarMonthIcon />, path: '/dates' },
-    { text: 'References', icon: <LinkIcon />, path: '/references' },
-    { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
-    { text: 'Authorized Users', icon: <AdminPanelSettingsIcon />, path: '/admin' },
     { text: 'Resources', icon: <LinkIcon />, path: '/resources' },
     { text: 'Locations', icon: <LocationOnIcon />, path: '/locations' },
+    { text: 'Date Manager', icon: <CalendarMonthIcon />, path: '/dates' },
+    { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
+    { text: 'Authorized Users', icon: <AdminPanelSettingsIcon />, path: '/admin' },
   ] : [];
 
   const drawer = (
