@@ -13,15 +13,15 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import org.koin.ktor.ext.inject
 
-fun Application.referencesController() {
-    val referencesService: ReferencesService by inject()
+fun Application.resourcesController() {
+    val resourcesService: ResourcesService by inject()
 
     routing {
-        route("/references") {
+        route("/resources") {
             get {
                 try {
-                    val references = referencesService.getAllReferences()
-                    call.respond(references)
+                    val resources = resourcesService.getAllResources()
+                    call.respond(resources)
                 } catch (e: Exception) {
                     call.respond(HttpStatusCode.InternalServerError, mapOf("error" to e.message))
                 }
@@ -29,9 +29,9 @@ fun Application.referencesController() {
 
             post {
                 try {
-                    val reference = call.receive<BackendExternalLink>()
-                    val createdReference = referencesService.createReference(reference)
-                    call.respond(HttpStatusCode.Created, createdReference)
+                    val resource = call.receive<BackendExternalLink>()
+                    val createdResource = resourcesService.createResource(resource)
+                    call.respond(HttpStatusCode.Created, createdResource)
                 } catch (e: Exception) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
                 }
@@ -40,10 +40,10 @@ fun Application.referencesController() {
             put("/{id}") {
                 try {
                     val id = call.parameters["id"]
-                        ?: throw IllegalArgumentException("Missing reference ID")
-                    val reference = call.receive<BackendExternalLink>()
-                    val updatedReference = referencesService.updateReference(id, reference)
-                    call.respond(updatedReference)
+                        ?: throw IllegalArgumentException("Missing resource ID")
+                    val resource = call.receive<BackendExternalLink>()
+                    val updatedResource = resourcesService.updateResource(id, resource)
+                    call.respond(updatedResource)
                 } catch (e: Exception) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
                 }
@@ -52,8 +52,8 @@ fun Application.referencesController() {
             delete("/{id}") {
                 try {
                     val id = call.parameters["id"]
-                        ?: throw IllegalArgumentException("Missing reference ID")
-                    referencesService.deleteReference(id)
+                        ?: throw IllegalArgumentException("Missing resource ID")
+                    resourcesService.deleteResource(id)
                     call.respond(HttpStatusCode.NoContent)
                 } catch (e: Exception) {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))

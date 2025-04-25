@@ -7,7 +7,7 @@ import com.google.cloud.firestore.FirestoreOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class FirebaseReferencesService  {
+class FirebaseResourcesService  {
     private val json = System.getenv("GOOGLE_CREDENTIALS_JSON")
         ?: error("Missing GOOGLE_CREDENTIALS_JSON env variable")
     private val serviceAccount = GoogleCredentials.fromStream(json.byteInputStream())
@@ -18,10 +18,10 @@ class FirebaseReferencesService  {
         .build()
         .service
 
-    private val referencesCollection = firestore.collection("references")
+    private val resourcesCollection = firestore.collection("resources")
 
-    suspend fun getAllReferences(): List<BackendExternalLink> = withContext(Dispatchers.IO) {
-        referencesCollection
+    suspend fun getAllResources(): List<BackendExternalLink> = withContext(Dispatchers.IO) {
+        resourcesCollection
             .get()
             .get()
             .documents
@@ -35,30 +35,30 @@ class FirebaseReferencesService  {
             }
     }
 
-    suspend fun createReference(reference: BackendExternalLink): BackendExternalLink = withContext(Dispatchers.IO) {
-        val docRef = referencesCollection.document()
-        val newReference = reference.copy(id = docRef.id)
+    suspend fun createResource(resource: BackendExternalLink): BackendExternalLink = withContext(Dispatchers.IO) {
+        val docRef = resourcesCollection.document()
+        val newResource = resource.copy(id = docRef.id)
         docRef.set(mapOf(
-            "displayName" to newReference.displayName,
-            "url" to newReference.url,
-            "description" to newReference.description
+            "displayName" to newResource.displayName,
+            "url" to newResource.url,
+            "description" to newResource.description
         )).get()
-        newReference
+        newResource
     }
 
-    suspend fun updateReference(id: String, reference: BackendExternalLink): BackendExternalLink = withContext(Dispatchers.IO) {
-        val docRef = referencesCollection.document(id)
-        val updatedReference = reference.copy(id = id)
+    suspend fun updateResource(id: String, resource: BackendExternalLink): BackendExternalLink = withContext(Dispatchers.IO) {
+        val docRef = resourcesCollection.document(id)
+        val updatedResource = resource.copy(id = id)
         docRef.update(mapOf(
-            "displayName" to updatedReference.displayName,
-            "url" to updatedReference.url,
-            "description" to updatedReference.description
+            "displayName" to updatedResource.displayName,
+            "url" to updatedResource.url,
+            "description" to updatedResource.description
         )).get()
-        updatedReference
+        updatedResource
     }
 
-    suspend fun deleteReference(id: String): Boolean = withContext(Dispatchers.IO) {
-        val docRef = referencesCollection.document(id)
+    suspend fun deleteResource(id: String): Boolean = withContext(Dispatchers.IO) {
+        val docRef = resourcesCollection.document(id)
         docRef.delete().get()
         true
     }

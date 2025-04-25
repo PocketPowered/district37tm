@@ -1,9 +1,6 @@
-package com.district37.toastmasters.references
+package com.district37.toastmasters.resources
 
 import Linkout
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.rememberScrollableState
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,25 +32,25 @@ import org.koin.core.annotation.KoinExperimentalAPI
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
-fun ReferencesScreen() {
-    val viewModel: ReferencesViewModel = koinViewModel<ReferencesViewModel>()
-    val referencesResource by viewModel.references.collectAsState()
+fun ResourcesScreen() {
+    val viewModel: ResourcesViewModel = koinViewModel<ResourcesViewModel>()
+    val resourcesResource by viewModel.resources.collectAsState()
     StatefulScaffold(
-        title = "References",
-        resource = referencesResource,
+        title = "Resources",
+        resource = resourcesResource,
         onRefresh = {
             viewModel.onRefresh()
         }
-    ) { references ->
+    ) { resources ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            if (references.isEmpty()) {
+            if (resources.isEmpty()) {
                 item {
                     Text(
-                        text = "No references available",
+                        text = "No resources available",
                         modifier = Modifier.padding(16.dp).fillMaxSize()
                     )
                 }
@@ -66,8 +63,8 @@ fun ReferencesScreen() {
                     )
                 }
             }
-            items(references) { reference ->
-                ReferenceItem(reference)
+            items(resources) { resource ->
+                ResourceItem(resource)
             }
         }
     }
@@ -75,7 +72,7 @@ fun ReferencesScreen() {
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ReferenceItem(reference: BackendExternalLink) {
+fun ResourceItem(resource: BackendExternalLink) {
     val urlHandler = LocalUriHandler.current
 
     Card(
@@ -84,12 +81,12 @@ fun ReferenceItem(reference: BackendExternalLink) {
             .padding(vertical = 8.dp),
         onClick = {
             try {
-                reference.url?.let { url ->
+                resource.url?.let { url ->
                     urlHandler.openUri(url)
                 }
             } catch (e: Exception) {
-                Logger.e("ReferencesScreen") {
-                    "Could not link out to $reference"
+                Logger.e("ResourcesScreen") {
+                    "Could not link out to $resource"
                 }
             }
         },
@@ -106,12 +103,12 @@ fun ReferenceItem(reference: BackendExternalLink) {
                 horizontalAlignment = Alignment.Start
             ) {
                 Text(
-                    text = reference.displayName ?: "Untitled Reference",
+                    text = resource.displayName ?: "Untitled Resource",
                     style = MaterialTheme.typography.subtitle1,
                     textAlign = TextAlign.Start
                 )
 
-                reference.description?.also {
+                resource.description?.also {
                     Text(
                         text = it,
                         style = MaterialTheme.typography.body2,
@@ -121,7 +118,7 @@ fun ReferenceItem(reference: BackendExternalLink) {
                     )
                 }
                 Text(
-                    text = reference.url ?: "",
+                    text = resource.url ?: "",
                     style = MaterialTheme.typography.body2,
                     color = MaterialTheme.colors.primary,
                     textAlign = TextAlign.Start

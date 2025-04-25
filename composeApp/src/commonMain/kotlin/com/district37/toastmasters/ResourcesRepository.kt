@@ -6,11 +6,11 @@ import com.wongislandd.nexus.networking.NetworkClient
 import com.wongislandd.nexus.util.Resource
 import io.ktor.client.HttpClient
 
-class ReferencesRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
+class ResourcesRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
 
-    suspend fun getAllReferences(): Resource<List<BackendExternalLink>> {
+    suspend fun getAllResources(): Resource<List<BackendExternalLink>> {
         return makeRequest(
-            "references",
+            "resources",
             HttpMethod.GET
         )
     }

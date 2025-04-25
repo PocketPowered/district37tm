@@ -23,7 +23,6 @@ import EventList from './components/EventList';
 import EventForm from './components/EventForm';
 import NotificationForm from './components/NotificationForm';
 import DateManager from './pages/DateManager';
-import ReferencesManager from './pages/ReferencesManager';
 import EnvironmentToggle from './components/EnvironmentToggle';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -36,6 +35,7 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LinkIcon from '@mui/icons-material/Link';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ResourcesManager from './pages/ResourcesManager';
 import './App.css';
 
 const AppContent: React.FC = () => {
@@ -59,6 +59,7 @@ const AppContent: React.FC = () => {
     { text: 'References', icon: <LinkIcon />, path: '/references' },
     { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
     { text: 'Authorized Users', icon: <AdminPanelSettingsIcon />, path: '/admin' },
+    { text: 'Resources', icon: <LinkIcon />, path: '/resources' },
   ] : [];
 
   const drawer = (
@@ -199,18 +200,18 @@ const AppContent: React.FC = () => {
               }
             />
             <Route
-              path="/references"
-              element={
-                <ProtectedRoute>
-                  <ReferencesManager />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/admin"
               element={
                 <ProtectedRoute>
                   <Admin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/resources"
+              element={
+                <ProtectedRoute>
+                  <ResourcesManager />
                 </ProtectedRoute>
               }
             />

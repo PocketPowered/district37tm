@@ -17,20 +17,20 @@ import {
   FormHelperText,
   Link
 } from '@mui/material';
-import { referenceService } from '../services/referenceService';
+import { resourceService } from '../services/resourceService';
 import { BackendExternalLink } from '../types/BackendExternalLink';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-const ReferencesManager: React.FC = () => {
-  const [references, setReferences] = useState<BackendExternalLink[]>([]);
+const ResourcesManager: React.FC = () => {
+  const [resources, setResources] = useState<BackendExternalLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [referenceToDelete, setReferenceToDelete] = useState<BackendExternalLink | null>(null);
-  const [editingReference, setEditingReference] = useState<BackendExternalLink | null>(null);
+  const [resourceToDelete, setResourceToDelete] = useState<BackendExternalLink | null>(null);
+  const [editingResource, setEditingResource] = useState<BackendExternalLink | null>(null);
   const [formData, setFormData] = useState<BackendExternalLink>({
     id: null,
     displayName: '',
@@ -67,13 +67,13 @@ const ReferencesManager: React.FC = () => {
     }
   };
 
-  const fetchReferences = async () => {
+  const fetchResources = async () => {
     try {
-      const fetchedReferences = await referenceService.getAllReferences();
-      setReferences(fetchedReferences);
+      const fetchedResources = await resourceService.getAllResources();
+      setResources(fetchedResources);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch references');
+      setError('Failed to fetch resources');
       console.error(err);
     } finally {
       setLoading(false);
@@ -81,10 +81,10 @@ const ReferencesManager: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchReferences();
+    fetchResources();
   }, []);
 
-  const handleAddReference = async () => {
+  const handleAddResource = async () => {
     if (!validateUrl(formData.url)) {
       setUrlError('URL must start with https://');
       return;
@@ -92,24 +92,24 @@ const ReferencesManager: React.FC = () => {
 
     try {
       const formattedUrl = formatUrl(formData.url);
-      const newReference = await referenceService.createReference({
+      const newResource = await resourceService.createResource({
         id: null,
         displayName: formData.displayName,
         url: formattedUrl,
         description: formData.description
       });
-      await fetchReferences();
+      await fetchResources();
       setFormData({ id: null, displayName: '', url: '', description: null });
       setOpenDialog(false);
       setUrlError(null);
     } catch (err) {
-      setError('Failed to add reference');
+      setError('Failed to add resource');
       console.error(err);
     }
   };
 
-  const handleUpdateReference = async () => {
-    if (!editingReference?.id) return;
+  const handleUpdateResource = async () => {
+    if (!editingResource?.id) return;
     if (!validateUrl(formData.url)) {
       setUrlError('URL must start with https://');
       return;
@@ -117,53 +117,53 @@ const ReferencesManager: React.FC = () => {
 
     try {
       const formattedUrl = formatUrl(formData.url);
-      await referenceService.updateReference(editingReference.id, {
-        id: editingReference.id,
+      await resourceService.updateResource(editingResource.id, {
+        id: editingResource.id,
         displayName: formData.displayName,
         url: formattedUrl,
         description: formData.description
       });
-      await fetchReferences();
+      await fetchResources();
       setFormData({ id: null, displayName: '', url: '', description: null });
-      setEditingReference(null);
+      setEditingResource(null);
       setOpenDialog(false);
       setUrlError(null);
     } catch (err) {
-      setError('Failed to update reference');
+      setError('Failed to update resource');
       console.error(err);
     }
   };
 
-  const handleRemoveClick = (reference: BackendExternalLink) => {
-    setReferenceToDelete(reference);
+  const handleRemoveClick = (resource: BackendExternalLink) => {
+    setResourceToDelete(resource);
     setDeleteDialogOpen(true);
   };
 
   const handleRemoveConfirm = async () => {
-    if (!referenceToDelete?.id) return;
+    if (!resourceToDelete?.id) return;
     try {
-      await referenceService.deleteReference(referenceToDelete.id);
-      await fetchReferences();
+      await resourceService.deleteResource(resourceToDelete.id);
+      await fetchResources();
       setDeleteDialogOpen(false);
-      setReferenceToDelete(null);
+      setResourceToDelete(null);
     } catch (err) {
-      setError('Failed to remove reference');
+      setError('Failed to remove resource');
       console.error(err);
     }
   };
 
   const handleRemoveCancel = () => {
     setDeleteDialogOpen(false);
-    setReferenceToDelete(null);
+    setResourceToDelete(null);
   };
 
-  const handleEditClick = (reference: BackendExternalLink) => {
-    setEditingReference(reference);
+  const handleEditClick = (resource: BackendExternalLink) => {
+    setEditingResource(resource);
     setFormData({
-      id: reference.id,
-      displayName: reference.displayName || '',
-      url: reference.url || '',
-      description: reference.description || null
+      id: resource.id,
+      displayName: resource.displayName || '',
+      url: resource.url || '',
+      description: resource.description || null
     });
     setUrlError(null);
     setOpenDialog(true);
@@ -194,12 +194,12 @@ const ReferencesManager: React.FC = () => {
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5">
-            References Manager
+            Resources Manager
           </Typography>
           <Button
             startIcon={<AddIcon />}
             onClick={() => {
-              setEditingReference(null);
+              setEditingResource(null);
               setFormData({ id: null, displayName: '', url: '', description: null });
               setUrlError(null);
               setOpenDialog(true);
@@ -207,7 +207,7 @@ const ReferencesManager: React.FC = () => {
             variant="contained"
             color="primary"
           >
-            Add New Reference
+            Add New Resource
           </Button>
         </Box>
 
@@ -217,27 +217,27 @@ const ReferencesManager: React.FC = () => {
           </Alert>
         )}
 
-        {references.length === 0 ? (
+        {resources.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="h6" gutterBottom>
-              No References Found
+              No Resources Found
             </Typography>
             <Typography color="text.secondary" paragraph>
-              There are no references yet. Click the button above to add your first reference.
+              There are no resources yet. Click the button above to add your first resource.
             </Typography>
           </Box>
         ) : (
           <Stack spacing={2}>
-            {references.map((reference) => (
-              <Paper key={reference.id} sx={{ p: 2 }}>
+            {resources.map((resource) => (
+              <Paper key={resource.id} sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Box>
                     <Box sx={{ textAlign: 'left', width: '100%' }}>
                       <Typography variant="subtitle1" align="left">
-                        {reference.displayName}
+                        {resource.displayName}
                       </Typography>
                       <Link
-                        href={reference.url}
+                        href={resource.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         sx={{ 
@@ -249,10 +249,10 @@ const ReferencesManager: React.FC = () => {
                         }}
                       >
                         <Typography variant="body2" align="left">
-                          {reference.url}
+                          {resource.url}
                         </Typography>
                       </Link>
-                      {reference.description && (
+                      {resource.description && (
                         <Typography 
                           variant="body2" 
                           color="text.secondary"
@@ -263,7 +263,7 @@ const ReferencesManager: React.FC = () => {
                             opacity: 0.7
                           }}
                         >
-                          {reference.description}
+                          {resource.description}
                         </Typography>
                       )}
                     </Box>
@@ -271,7 +271,7 @@ const ReferencesManager: React.FC = () => {
                   <Box>
                     <Button
                       startIcon={<EditIcon />}
-                      onClick={() => handleEditClick(reference)}
+                      onClick={() => handleEditClick(resource)}
                       sx={{ mr: 1 }}
                     >
                       Edit
@@ -279,7 +279,7 @@ const ReferencesManager: React.FC = () => {
                     <Button
                       startIcon={<DeleteIcon />}
                       color="error"
-                      onClick={() => handleRemoveClick(reference)}
+                      onClick={() => handleRemoveClick(resource)}
                     >
                       Delete
                     </Button>
@@ -297,7 +297,7 @@ const ReferencesManager: React.FC = () => {
           fullWidth
         >
           <DialogTitle>
-            {editingReference ? 'Edit Reference' : 'Add New Reference'}
+            {editingResource ? 'Edit Resource' : 'Add New Resource'}
           </DialogTitle>
           <DialogContent>
             <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -328,18 +328,18 @@ const ReferencesManager: React.FC = () => {
                 fullWidth
                 multiline
                 rows={3}
-                placeholder="Enter a description for this reference"
+                placeholder="Enter a description for this resource"
               />
             </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
             <Button 
-              onClick={editingReference ? handleUpdateReference : handleAddReference}
+              onClick={editingResource ? handleUpdateResource : handleAddResource}
               disabled={!formData.displayName || !formData.url || !!urlError}
               variant="contained"
             >
-              {editingReference ? 'Update' : 'Add'}
+              {editingResource ? 'Update' : 'Add'}
             </Button>
           </DialogActions>
         </Dialog>
@@ -350,10 +350,10 @@ const ReferencesManager: React.FC = () => {
           aria-labelledby="remove-dialog-title"
           aria-describedby="remove-dialog-description"
         >
-          <DialogTitle id="remove-dialog-title">Remove Reference</DialogTitle>
+          <DialogTitle id="remove-dialog-title">Remove Resource</DialogTitle>
           <DialogContent>
             <DialogContentText id="remove-dialog-description">
-              Are you sure you want to remove this reference?
+              Are you sure you want to remove this resource?
             </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -368,4 +368,4 @@ const ReferencesManager: React.FC = () => {
   );
 };
 
-export default ReferencesManager; 
+export default ResourcesManager; 

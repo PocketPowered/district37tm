@@ -6,5 +6,5 @@ enum class NavigationItemKey {
     EVENT_LIST,
     EVENT_DETAILS,
     NOTIFICATIONS,
-    REFERENCES
+    RESOURCES
 }

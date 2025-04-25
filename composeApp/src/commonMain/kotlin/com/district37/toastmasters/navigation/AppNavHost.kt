@@ -12,7 +12,7 @@ import androidx.navigation.navArgument
 import com.district37.toastmasters.eventdetails.EventDetailsScreen
 import com.district37.toastmasters.eventlist.EventListScreen
 import com.district37.toastmasters.notifications.NotificationsScreen
-import com.district37.toastmasters.references.ReferencesScreen
+import com.district37.toastmasters.resources.ResourcesScreen
 import com.district37.toastmasters.splash.SplashScreen
 import com.wongislandd.nexus.navigation.LocalNavHostController
 
@@ -97,9 +97,9 @@ fun AppNavHost(
                     }
                 }
 
-                NavigationItemKey.REFERENCES -> {
+                NavigationItemKey.RESOURCES -> {
                     composable(route = navigationItem.completeRoute) {
-                        ReferencesScreen()
+                        ResourcesScreen()
                     }
                 }
             }

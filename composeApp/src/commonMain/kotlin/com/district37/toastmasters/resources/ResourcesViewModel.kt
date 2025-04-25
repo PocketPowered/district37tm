@@ -1,7 +1,7 @@
-package com.district37.toastmasters.references
+package com.district37.toastmasters.resources
 
 import androidx.lifecycle.viewModelScope
-import com.district37.toastmasters.ReferencesRepository
+import com.district37.toastmasters.ResourcesRepository
 import com.district37.toastmasters.models.BackendExternalLink
 import com.wongislandd.nexus.events.BackChannelEvent
 import com.wongislandd.nexus.events.EventBus
@@ -16,29 +16,29 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class ReferencesViewModel(
-    private val repository: ReferencesRepository,
+class ResourcesViewModel(
+    private val repository: ResourcesRepository,
     uiEvent: EventBus<UiEvent>,
     backChannelEventBus: EventBus<BackChannelEvent>
 ) : SliceableViewModel(uiEvent, backChannelEventBus) {
 
-    private val _references =
+    private val _resources =
         MutableStateFlow<Resource<List<BackendExternalLink>>>(Resource.Loading)
-    val references: StateFlow<Resource<List<BackendExternalLink>>> = _references.asStateFlow()
+    val resources: StateFlow<Resource<List<BackendExternalLink>>> = _resources.asStateFlow()
 
     init {
-        loadReferences()
+        loadResources()
     }
 
-    private fun loadReferences() {
+    private fun loadResources() {
         viewModelScope.launch(Dispatchers.IO) {
-            _references.update {
-                repository.getAllReferences()
+            _resources.update {
+                repository.getAllResources()
             }
         }
     }
 
     fun onRefresh() {
-        loadReferences()
+        loadResources()
     }
 } 

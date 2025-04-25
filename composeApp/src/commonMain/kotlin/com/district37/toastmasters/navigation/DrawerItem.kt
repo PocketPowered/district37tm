@@ -24,8 +24,8 @@ val drawerItems = listOf(
         icon = Icons.Default.Notifications,
     ),
     DrawerItem(
-        key = NavigationItemKey.REFERENCES,
-        title = "References",
+        key = NavigationItemKey.RESOURCES,
+        title = "Resources",
         icon = Icons.Default.Info,
     )
 ) 
