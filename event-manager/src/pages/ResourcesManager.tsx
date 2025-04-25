@@ -15,7 +15,9 @@ import {
   DialogActions,
   TextField,
   FormHelperText,
-  Link
+  Link,
+  Tabs,
+  Tab
 } from '@mui/material';
 import { resourceService } from '../services/resourceService';
 import { BackendExternalLink } from '../types/BackendExternalLink';
@@ -23,8 +25,35 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
 const ResourcesManager: React.FC = () => {
   const [resources, setResources] = useState<BackendExternalLink[]>([]);
+  const [firstTimerResources, setFirstTimerResources] = useState<BackendExternalLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -38,6 +67,7 @@ const ResourcesManager: React.FC = () => {
     description: null
   });
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState(0);
 
   const validateUrl = (url: string | undefined): boolean => {
     if (!url) return false;
@@ -69,8 +99,12 @@ const ResourcesManager: React.FC = () => {
 
   const fetchResources = async () => {
     try {
-      const fetchedResources = await resourceService.getAllResources();
-      setResources(fetchedResources);
+      const [regularResources, firstTimerResources] = await Promise.all([
+        resourceService.getAllResources(),
+        resourceService.getAllFirstTimerResources()
+      ]);
+      setResources(regularResources);
+      setFirstTimerResources(firstTimerResources);
       setError(null);
     } catch (err) {
       setError('Failed to fetch resources');
@@ -92,7 +126,9 @@ const ResourcesManager: React.FC = () => {
 
     try {
       const formattedUrl = formatUrl(formData.url);
-      const newResource = await resourceService.createResource({
+      const newResource = await (currentTab === 0 
+        ? resourceService.createResource
+        : resourceService.createFirstTimerResource)({
         id: null,
         displayName: formData.displayName,
         url: formattedUrl,
@@ -117,7 +153,9 @@ const ResourcesManager: React.FC = () => {
 
     try {
       const formattedUrl = formatUrl(formData.url);
-      await resourceService.updateResource(editingResource.id, {
+      await (currentTab === 0 
+        ? resourceService.updateResource
+        : resourceService.updateFirstTimerResource)(editingResource.id, {
         id: editingResource.id,
         displayName: formData.displayName,
         url: formattedUrl,
@@ -142,7 +180,9 @@ const ResourcesManager: React.FC = () => {
   const handleRemoveConfirm = async () => {
     if (!resourceToDelete?.id) return;
     try {
-      await resourceService.deleteResource(resourceToDelete.id);
+      await (currentTab === 0 
+        ? resourceService.deleteResource
+        : resourceService.deleteFirstTimerResource)(resourceToDelete.id);
       await fetchResources();
       setDeleteDialogOpen(false);
       setResourceToDelete(null);
@@ -181,6 +221,10 @@ const ResourcesManager: React.FC = () => {
     }
   };
 
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setCurrentTab(newValue);
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
@@ -188,6 +232,70 @@ const ResourcesManager: React.FC = () => {
       </Box>
     );
   }
+
+  const renderResourceList = (resources: BackendExternalLink[]) => (
+    <Stack spacing={2}>
+      {resources.map((resource) => (
+        <Paper key={resource.id} sx={{ p: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box>
+              <Box sx={{ textAlign: 'left', width: '100%' }}>
+                <Typography variant="subtitle1" align="left">
+                  {resource.displayName}
+                </Typography>
+                <Link
+                  href={resource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ 
+                    color: 'text.secondary',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline'
+                    }
+                  }}
+                >
+                  <Typography variant="body2" align="left">
+                    {resource.url}
+                  </Typography>
+                </Link>
+                {resource.description && (
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary"
+                    align="left"
+                    sx={{ 
+                      mt: 1,
+                      fontStyle: 'italic',
+                      opacity: 0.7
+                    }}
+                  >
+                    {resource.description}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+            <Box>
+              <Button
+                startIcon={<EditIcon />}
+                onClick={() => handleEditClick(resource)}
+                sx={{ mr: 1 }}
+              >
+                Edit
+              </Button>
+              <Button
+                startIcon={<DeleteIcon />}
+                color="error"
+                onClick={() => handleRemoveClick(resource)}
+              >
+                Delete
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
+      ))}
+    </Stack>
+  );
 
   return (
     <Container maxWidth="md">
@@ -217,78 +325,42 @@ const ResourcesManager: React.FC = () => {
           </Alert>
         )}
 
-        {resources.length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              No Resources Found
-            </Typography>
-            <Typography color="text.secondary" paragraph>
-              There are no resources yet. Click the button above to add your first resource.
-            </Typography>
-          </Box>
-        ) : (
-          <Stack spacing={2}>
-            {resources.map((resource) => (
-              <Paper key={resource.id} sx={{ p: 2 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Box>
-                    <Box sx={{ textAlign: 'left', width: '100%' }}>
-                      <Typography variant="subtitle1" align="left">
-                        {resource.displayName}
-                      </Typography>
-                      <Link
-                        href={resource.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        sx={{ 
-                          color: 'text.secondary',
-                          textDecoration: 'none',
-                          '&:hover': {
-                            textDecoration: 'underline'
-                          }
-                        }}
-                      >
-                        <Typography variant="body2" align="left">
-                          {resource.url}
-                        </Typography>
-                      </Link>
-                      {resource.description && (
-                        <Typography 
-                          variant="body2" 
-                          color="text.secondary"
-                          align="left"
-                          sx={{ 
-                            mt: 1,
-                            fontStyle: 'italic',
-                            opacity: 0.7
-                          }}
-                        >
-                          {resource.description}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Box>
-                  <Box>
-                    <Button
-                      startIcon={<EditIcon />}
-                      onClick={() => handleEditClick(resource)}
-                      sx={{ mr: 1 }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      startIcon={<DeleteIcon />}
-                      color="error"
-                      onClick={() => handleRemoveClick(resource)}
-                    >
-                      Delete
-                    </Button>
-                  </Box>
-                </Box>
-              </Paper>
-            ))}
-          </Stack>
-        )}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={currentTab} onChange={handleTabChange}>
+            <Tab label="Regular Resources" />
+            <Tab label="First Timer Resources" />
+          </Tabs>
+        </Box>
+
+        <TabPanel value={currentTab} index={0}>
+          {resources.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                No Resources Found
+              </Typography>
+              <Typography color="text.secondary" paragraph>
+                There are no resources yet. Click the button above to add your first resource.
+              </Typography>
+            </Box>
+          ) : (
+            renderResourceList(resources)
+          )}
+        </TabPanel>
+
+        <TabPanel value={currentTab} index={1}>
+          {firstTimerResources.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                No First Timer Resources Found
+              </Typography>
+              <Typography color="text.secondary" paragraph>
+                There are no first timer resources yet. Click the button above to add your first resource.
+              </Typography>
+            </Box>
+          ) : (
+            renderResourceList(firstTimerResources)
+          )}
+        </TabPanel>
 
         <Dialog 
           open={openDialog} 

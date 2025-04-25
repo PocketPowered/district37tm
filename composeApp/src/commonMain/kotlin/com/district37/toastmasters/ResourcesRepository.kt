@@ -14,4 +14,11 @@ class ResourcesRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient
             HttpMethod.GET
         )
     }
+
+    suspend fun getAllFirstTimerResources(): Resource<List<BackendExternalLink>> {
+        return makeRequest(
+            "first-timer-resources",
+            HttpMethod.GET
+        )
+    }
 } 

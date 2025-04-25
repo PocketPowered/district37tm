@@ -60,5 +60,49 @@ fun Application.resourcesController() {
                 }
             }
         }
+
+        route("/first-timer-resources") {
+            get {
+                try {
+                    val resources = resourcesService.getAllFirstTimerResources()
+                    call.respond(resources)
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.InternalServerError, mapOf("error" to e.message))
+                }
+            }
+
+            post {
+                try {
+                    val resource = call.receive<BackendExternalLink>()
+                    val createdResource = resourcesService.createFirstTimerResource(resource)
+                    call.respond(HttpStatusCode.Created, createdResource)
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
+                }
+            }
+
+            put("/{id}") {
+                try {
+                    val id = call.parameters["id"]
+                        ?: throw IllegalArgumentException("Missing resource ID")
+                    val resource = call.receive<BackendExternalLink>()
+                    val updatedResource = resourcesService.updateFirstTimerResource(id, resource)
+                    call.respond(updatedResource)
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
+                }
+            }
+
+            delete("/{id}") {
+                try {
+                    val id = call.parameters["id"]
+                        ?: throw IllegalArgumentException("Missing resource ID")
+                    resourcesService.deleteFirstTimerResource(id)
+                    call.respond(HttpStatusCode.NoContent)
+                } catch (e: Exception) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to e.message))
+                }
+            }
+        }
     }
 } 

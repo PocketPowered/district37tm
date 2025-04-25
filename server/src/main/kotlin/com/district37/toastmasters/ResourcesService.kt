@@ -19,4 +19,21 @@ class ResourcesService(private val firebaseService: FirebaseResourcesService) {
     suspend fun deleteResource(id: String) {
         firebaseService.deleteResource(id)
     }
+
+    // First-timer resources methods
+    suspend fun getAllFirstTimerResources(): List<BackendExternalLink> {
+        return firebaseService.getAllFirstTimerResources()
+    }
+
+    suspend fun createFirstTimerResource(resource: BackendExternalLink): BackendExternalLink {
+        return firebaseService.createFirstTimerResource(resource)
+    }
+
+    suspend fun updateFirstTimerResource(id: String, resource: BackendExternalLink): BackendExternalLink {
+        return firebaseService.updateFirstTimerResource(id, resource)
+    }
+
+    suspend fun deleteFirstTimerResource(id: String) {
+        firebaseService.deleteFirstTimerResource(id)
+    }
 } 

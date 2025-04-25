@@ -27,5 +27,10 @@ val drawerItems = listOf(
         key = NavigationItemKey.RESOURCES,
         title = "Resources",
         icon = Icons.Default.Info,
-    )
+    ),
+    DrawerItem(
+        key = NavigationItemKey.FIRST_TIMER_RESOURCES,
+        title = "First Timer Resources",
+        icon = Icons.Default.Info
+    ),
 ) 

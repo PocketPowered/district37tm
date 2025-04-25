@@ -8,4 +8,5 @@ import org.koin.dsl.module
 val resourcesModule = module {
     viewModelOf(::ResourcesViewModel)
     singleOf(::ResourcesRepository)
+    viewModelOf(::FirstTimerResourcesViewModel)
 } 
