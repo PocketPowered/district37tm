@@ -21,7 +21,8 @@ class EventPreviewTransformer : Transformer<BackendEventPreview, EventPreview> {
                     startTime = time.startTime,
                     endTime = time.endTime
                 ),
-                locationInfo = locationInfo
+                locationInfo = locationInfo,
+                tag = input.tag
             )
         }
     }

@@ -9,4 +9,5 @@ data class BackendEventPreview(
     val title: String? = null,
     val time: BackendTimeRange? = null,
     val locationInfo: String? = null,
+    val tag: EventTag = EventTag.NORMAL
 )

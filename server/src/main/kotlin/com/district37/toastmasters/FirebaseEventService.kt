@@ -77,7 +77,8 @@ class FirebaseEventService {
                         title = it.title,
                         image = it.images?.firstOrNull(),
                         time = it.time,
-                        locationInfo = it.locationInfo
+                        locationInfo = it.locationInfo,
+                        tag = it.tag
                     )
                 }
         }
@@ -99,7 +100,8 @@ class FirebaseEventService {
                         title = it.title,
                         image = it.images?.firstOrNull(),
                         time = it.time,
-                        locationInfo = it.locationInfo
+                        locationInfo = it.locationInfo,
+                        tag = it.tag
                     )
                 }
         }
@@ -125,7 +127,8 @@ class FirebaseEventService {
                 locationInfo = update.locationInfo ?: currentEvent.locationInfo,
                 agenda = update.agenda ?: currentEvent.agenda,
                 additionalLinks = update.additionalLinks ?: currentEvent.additionalLinks,
-                dateKey = update.dateKey ?: currentEvent.dateKey
+                dateKey = update.dateKey ?: currentEvent.dateKey,
+                tag = update.tag
             )
 
             docRef.set(updatedEvent).get()
@@ -161,7 +164,8 @@ class FirebaseEventService {
                     locationInfo = update.locationInfo ?: currentEvent.locationInfo,
                     agenda = update.agenda ?: currentEvent.agenda,
                     additionalLinks = update.additionalLinks ?: currentEvent.additionalLinks,
-                    dateKey = update.dateKey ?: currentEvent.dateKey
+                    dateKey = update.dateKey ?: currentEvent.dateKey,
+                    tag = update.tag
                 )
 
                 batch.set(docRef, updatedEvent)

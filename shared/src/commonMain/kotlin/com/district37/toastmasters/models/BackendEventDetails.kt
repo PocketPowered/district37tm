@@ -3,6 +3,16 @@ package com.district37.toastmasters.models
 import kotlinx.serialization.Serializable
 
 /**
+ * Represents the type of event
+ */
+@Serializable
+enum class EventTag {
+    NORMAL,
+    HIGHLIGHTED,
+    BREAK
+}
+
+/**
  * Represents an individual detailed event
  */
 @Serializable
@@ -15,5 +25,6 @@ data class BackendEventDetails(
     val locationInfo: String? = null,
     val agenda: List<BackendAgendaItem>? = null,
     val additionalLinks: List<BackendExternalLink>? = null,
-    val dateKey: Long? = null
+    val dateKey: Long? = null,
+    val tag: EventTag = EventTag.NORMAL
 )

@@ -15,6 +15,12 @@ export interface ExternalLink {
   url: string;
 }
 
+export enum EventTag {
+  NORMAL = 'NORMAL',
+  HIGHLIGHTED = 'HIGHLIGHTED',
+  BREAK = 'BREAK'
+}
+
 export interface Event {
   id: number;
   title: string;
@@ -25,6 +31,7 @@ export interface Event {
   agenda: AgendaItem[];
   additionalLinks: ExternalLink[];
   dateKey: string;
+  tag: EventTag;
 }
 
 export interface EventPreview {

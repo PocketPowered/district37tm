@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
 import com.district37.toastmasters.favorites.FavoriteEventToggle
 import com.district37.toastmasters.models.EventPreview
+import com.district37.toastmasters.models.EventTag
 import com.district37.toastmasters.models.toHumanReadableString
 import com.district37.toastmasters.navigation.EVENT_ID_ARG
 import com.district37.toastmasters.navigation.NavigationItemKey
@@ -82,6 +83,16 @@ fun EventCard(
                     text = eventPreview.time.toHumanReadableString(),
                     style = MaterialTheme.typography.body2,
                     color = MaterialTheme.colors.onSurface,
+                )
+                Text(
+                    text = eventPreview.tag.name,
+                    style = MaterialTheme.typography.caption,
+                    color = when (eventPreview.tag) {
+                        EventTag.NORMAL -> MaterialTheme.colors.onSurface
+                        EventTag.HIGHLIGHTED -> Color(0xFF4CAF50) // Green
+                        EventTag.BREAK -> Color(0xFF2196F3) // Blue
+                    },
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
             Icon(

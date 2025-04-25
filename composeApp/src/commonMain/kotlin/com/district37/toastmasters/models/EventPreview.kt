@@ -7,4 +7,5 @@ data class EventPreview(
     val time: TimeRange,
     val locationInfo: String,
     val isFavorited: Boolean = false,
+    val tag: EventTag = EventTag.NORMAL
 ) 

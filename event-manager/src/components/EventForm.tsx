@@ -16,7 +16,7 @@ import {
   InputLabel,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Event, AgendaItem, ExternalLink, TimeRange } from '../types/Event';
+import { Event, AgendaItem, ExternalLink, TimeRange, EventTag } from '../types/Event';
 import { Location } from '../types/Location';
 import { eventService } from '../services/api';
 import { dateService } from '../services/dateService';
@@ -51,6 +51,7 @@ const EventForm: React.FC = () => {
     additionalLinks: [],
     dateKey: availableDates[0]?.toString() || '',
     images: [],
+    tag: EventTag.NORMAL
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -279,6 +280,7 @@ const EventForm: React.FC = () => {
         additionalLinks: event.additionalLinks || [],
         dateKey: event.dateKey || '',
         images: event.images || [],
+        tag: event.tag || EventTag.NORMAL
       };
 
       // Ensure locationInfo is set from the selected location
@@ -415,6 +417,18 @@ const EventForm: React.FC = () => {
               rows={4}
               fullWidth
             />
+            <FormControl fullWidth>
+              <InputLabel>Event Tag</InputLabel>
+              <Select
+                value={event.tag}
+                label="Event Tag"
+                onChange={(e) => setEvent({ ...event, tag: e.target.value as EventTag })}
+              >
+                <MenuItem value={EventTag.NORMAL}>Normal</MenuItem>
+                <MenuItem value={EventTag.HIGHLIGHTED}>Highlighted</MenuItem>
+                <MenuItem value={EventTag.BREAK}>Break</MenuItem>
+              </Select>
+            </FormControl>
 
             <Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
