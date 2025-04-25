@@ -15,7 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.district37.toastmasters.components.EventImage
+import com.district37.toastmasters.components.ImageCarousel
 import com.district37.toastmasters.models.toHumanReadableString
 import com.district37.toastmasters.navigation.StatefulScaffold
 import org.koin.compose.viewmodel.koinViewModel
@@ -36,43 +36,60 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
         ) {
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    // TODO transform this into a carousel
-                    it.event.images?.firstOrNull()?.let { firstImage ->
-                        EventImage(
-                            url = firstImage,
-                            modifier = Modifier.height(400.dp).fillMaxWidth()
-                        )
-                    }
                     Column(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),
                     ) {
                         Text(text = it.event.title, fontWeight = FontWeight.Bold)
-                        // Display location info with enhanced styling if we have a matching location
-                        if (it.location != null) {
-                            Text(
-                                text = it.location.locationName,
-                                fontWeight = FontWeight.Medium
-                            )
-                            if (it.location.locationImages.isNotEmpty()) {
-                                // TODO: Add location images carousel
-                            }
-                        } else {
-                            Text(text = it.event.locationInfo)
-                        }
                         Text(text = it.event.time.toHumanReadableString())
                         Spacer(modifier = Modifier.height(4.dp))
-                        it.event.agenda.forEach { agendaItem ->
-                            Text(text = agendaItem.title)
-                            Text(text = agendaItem.description)
-                            Text(text = agendaItem.locationInfo)
-                            Text(text = agendaItem.time.toHumanReadableString(showDate = false))
-                            Spacer(modifier = Modifier.height(4.dp))
-                        }
+                    }
+
+                    if (it.event.images?.isNotEmpty() == true) {
+                        ImageCarousel(
+                            images = it.event.images,
+                            height = 400
+                        )
                     }
                 }
             }
+
+            // Show event details
             item {
-                Text(text = it.event.description, modifier = Modifier.padding(horizontal = 8.dp))
+                Column(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),
+                ) {
+                    Text(text = it.event.description)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    it.event.agenda.forEach { agendaItem ->
+                        Text(text = agendaItem.title, fontWeight = FontWeight.Medium)
+                        Text(text = agendaItem.description)
+                        Text(text = agendaItem.locationInfo)
+                        Text(text = agendaItem.time.toHumanReadableString(showDate = false))
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
+            }
+
+            // Show location section
+            if (it.location != null) {
+                item {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),
+                    ) {
+                        Text(
+                            text = "Location",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Text(text = it.location.locationName)
+                        if (it.location.locationImages.isNotEmpty()) {
+                            ImageCarousel(
+                                images = it.location.locationImages,
+                                height = 300
+                            )
+                        }
+                    }
+                }
             }
         }
     }
