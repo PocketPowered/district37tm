@@ -1,4 +1,5 @@
 [versions]
+accompanistPager = "0.28.0"
 agp = "8.5.2"
 android-compileSdk = "34"
 android-minSdk = "24"
@@ -6,6 +7,7 @@ android-targetSdk = "34"
 androidx-activityCompose = "1.9.3"
 androidx-lifecycle = "2.8.4"
 buildkonfig = "0.15.2"
+coilCompose = "2.2.2"
 compose-multiplatform = "1.7.0"
 firebaseAdmin = "9.2.0"
 googleCloudFirestore = "3.13.4"
@@ -39,6 +41,8 @@ google-services = "4.4.2"
 
 
 [libraries]
+accompanist-pager = { module = "com.google.accompanist:accompanist-pager", version.ref = "accompanistPager" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqlDelight" }
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebaseAdmin" }
 google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version.ref = "googleCloudFirestore" }

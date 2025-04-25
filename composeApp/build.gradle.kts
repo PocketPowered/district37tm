@@ -85,8 +85,8 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
-    implementation("com.google.accompanist:accompanist-pager:0.28.0")
-    implementation("io.coil-kt:coil-compose:2.2.2")
+    implementation(libs.accompanist.pager)
+    implementation(libs.coil.compose)
 }
 
 sqldelight {
