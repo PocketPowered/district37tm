@@ -9,6 +9,7 @@ import com.wongislandd.nexus.events.UiEvent
 import com.wongislandd.nexus.util.Resource
 import com.wongislandd.nexus.viewmodel.SliceableViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,6 +33,7 @@ class LocationsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _locations.update {
                 repository.getAllLocations()
+                    .map { it.filter { location -> location.locationImages.isNotEmpty() } }
             }
         }
     }
