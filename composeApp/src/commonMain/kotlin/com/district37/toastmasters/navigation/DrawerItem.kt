@@ -4,9 +4,9 @@ import EventIcon
 import Menu
 import Rocket
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.district37.toastmasters.locations.Map
 
 data class DrawerItem(
     val key: NavigationItemKey,
@@ -23,7 +23,7 @@ val drawerItems = listOf(
     DrawerItem(
         key = NavigationItemKey.MAPS,
         title = "Maps",
-        icon = Icons.Default.MailOutline
+        icon = Map
     ),
     DrawerItem(
         key = NavigationItemKey.NOTIFICATIONS,

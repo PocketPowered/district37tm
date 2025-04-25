@@ -43,7 +43,7 @@ fun LocationsScreen() {
     val locationsResource by viewModel.locations.collectAsState()
 
     StatefulScaffold(
-        title = "Locations",
+        title = "Maps",
         resource = locationsResource,
         onRefresh = {
             viewModel.onRefresh()
