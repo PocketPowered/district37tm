@@ -19,11 +19,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     ) -> Bool {
         print("🚀 App starting up...")
         
-        // Initialize Firebase on background queue
-        backgroundQueue.async {
-            FirebaseApp.configure()
-            print("🔥 Firebase configured")
-        }
+        // Initialize Firebase on main thread (required)
+        FirebaseApp.configure()
+        print("🔥 Firebase configured")
 
         // Initialize Koin
         AppModuleKt.initializeKoin(context: application)
@@ -83,13 +81,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         print("📱 Received APNS token")
-        Messaging.messaging().apnsToken = deviceToken
-        print("📱 APNS token set in Firebase")
-        hasAPNSToken = true
-        
-        // If we already have the FCM token, subscribe to topics
-        if let fcmToken = storedFCMToken {
-            subscribeToTopics(fcmToken: fcmToken)
+        // Set APNS token on main thread
+        DispatchQueue.main.async {
+            Messaging.messaging().apnsToken = deviceToken
+            print("📱 APNS token set in Firebase")
+            self.hasAPNSToken = true
+            
+            // If we already have the FCM token, subscribe to topics
+            if let fcmToken = self.storedFCMToken {
+                self.subscribeToTopics(fcmToken: fcmToken)
+            }
         }
     }
 
