@@ -49,16 +49,34 @@ export const eventService = {
     return response.json();
   },
 
-  createEvent: (event: Event) => api.post('/events', event, {
-    headers: {
-      'Content-Type': 'application/json'
+  createEvent: async (event: Event) => {
+    try {
+      const response = await api.post('/events', event, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Create Event Response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating event:', error);
+      throw error;
     }
-  }).then(res => res.data),
-  updateEvent: (id: number, event: Event) => api.put(`/event/${id}`, event, {
-    headers: {
-      'Content-Type': 'application/json'
+  },
+  updateEvent: async (id: number, event: Event) => {
+    try {
+      const response = await api.put(`/event/${id}`, event, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Update Event Response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating event:', error);
+      throw error;
     }
-  }).then(res => res.data),
+  },
   deleteEvent: (id: number) => api.delete(`/event/${id}`).then(res => res.data),
 };
 
@@ -100,4 +118,4 @@ export const referenceService = {
 
   deleteReference: (id: string) => 
     api.delete(`/references/${id}`).then(res => res.data),
-}; 
+};

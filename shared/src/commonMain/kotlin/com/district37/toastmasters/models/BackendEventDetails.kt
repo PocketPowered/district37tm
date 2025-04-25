@@ -12,7 +12,7 @@ data class BackendEventDetails(
     val title: String? = null,
     val description: String? = null,
     val time: BackendTimeRange? = null,
-    val location: Location? = null,
+    val locationInfo: String? = null,
     val agenda: List<BackendAgendaItem>? = null,
     val additionalLinks: List<BackendExternalLink>? = null,
     val dateKey: Long? = null

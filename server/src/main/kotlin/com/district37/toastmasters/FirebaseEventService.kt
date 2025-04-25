@@ -20,23 +20,24 @@ class FirebaseEventService {
         .build()
         .service
 
-    suspend fun createEvent(event: BackendEventDetails): BackendEventDetails = withContext(Dispatchers.IO) {
-        // Generate a new ID by finding the highest existing ID and incrementing it
-        val maxId = firestore.collection("events")
-            .orderBy("id", com.google.cloud.firestore.Query.Direction.DESCENDING)
-            .limit(1)
-            .get()
-            .get()
-            .documents
-            .firstOrNull()
-            ?.toObject(BackendEventDetails::class.java)
-            ?.id ?: 0
+    suspend fun createEvent(event: BackendEventDetails): BackendEventDetails =
+        withContext(Dispatchers.IO) {
+            // Generate a new ID by finding the highest existing ID and incrementing it
+            val maxId = firestore.collection("events")
+                .orderBy("id", com.google.cloud.firestore.Query.Direction.DESCENDING)
+                .limit(1)
+                .get()
+                .get()
+                .documents
+                .firstOrNull()
+                ?.toObject(BackendEventDetails::class.java)
+                ?.id ?: 0
 
-        val newEvent = event.copy(id = maxId + 1)
-        val docRef = firestore.collection("events").document(newEvent.id.toString())
-        docRef.set(newEvent).get()
-        newEvent
-    }
+            val newEvent = event.copy(id = maxId + 1)
+            val docRef = firestore.collection("events").document(newEvent.id.toString())
+            docRef.set(newEvent).get()
+            newEvent
+        }
 
     suspend fun getAllEvents(): List<BackendEventDetails> = withContext(Dispatchers.IO) {
         firestore.collection("events")
@@ -69,16 +70,16 @@ class FirebaseEventService {
             query.get().get().documents.mapNotNull { doc ->
                 doc.toObject(BackendEventDetails::class.java)
             }
-            .sortedBy { it.time?.startTime }
-            .map {
-                BackendEventPreview(
-                    id = it.id,
-                    title = it.title,
-                    image = it.images?.firstOrNull(),
-                    time = it.time,
-                    locationInfo = it.location?.locationName
-                )
-            }
+                .sortedBy { it.time?.startTime }
+                .map {
+                    BackendEventPreview(
+                        id = it.id,
+                        title = it.title,
+                        image = it.images?.firstOrNull(),
+                        time = it.time,
+                        locationInfo = it.locationInfo
+                    )
+                }
         }
 
     suspend fun getEventsByIds(ids: List<Int>): List<BackendEventPreview> =
@@ -98,7 +99,7 @@ class FirebaseEventService {
                         title = it.title,
                         image = it.images?.firstOrNull(),
                         time = it.time,
-                        locationInfo = it.location?.locationName
+                        locationInfo = it.locationInfo
                     )
                 }
         }
@@ -121,7 +122,7 @@ class FirebaseEventService {
                 title = update.title ?: currentEvent.title,
                 description = update.description ?: currentEvent.description,
                 time = update.time ?: currentEvent.time,
-                location = update.location ?: currentEvent.location,
+                locationInfo = update.locationInfo ?: currentEvent.locationInfo,
                 agenda = update.agenda ?: currentEvent.agenda,
                 additionalLinks = update.additionalLinks ?: currentEvent.additionalLinks,
                 dateKey = update.dateKey ?: currentEvent.dateKey
@@ -157,7 +158,7 @@ class FirebaseEventService {
                     title = update.title ?: currentEvent.title,
                     description = update.description ?: currentEvent.description,
                     time = update.time ?: currentEvent.time,
-                    location = update.location ?: currentEvent.location,
+                    locationInfo = update.locationInfo ?: currentEvent.locationInfo,
                     agenda = update.agenda ?: currentEvent.agenda,
                     additionalLinks = update.additionalLinks ?: currentEvent.additionalLinks,
                     dateKey = update.dateKey ?: currentEvent.dateKey

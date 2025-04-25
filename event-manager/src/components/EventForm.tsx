@@ -17,8 +17,10 @@ import {
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Event, AgendaItem, ExternalLink, TimeRange } from '../types/Event';
+import { Location } from '../types/Location';
 import { eventService } from '../services/api';
 import { dateService } from '../services/dateService';
+import { locationService } from '../services/locationService';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LinkIcon from '@mui/icons-material/Link';
@@ -35,6 +37,7 @@ const EventForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [availableDates, setAvailableDates] = useState<number[]>([]);
+  const [availableLocations, setAvailableLocations] = useState<Location[]>([]);
   const [event, setEvent] = useState<Event>({
     id: 0,
     title: '',
@@ -59,6 +62,7 @@ const EventForm: React.FC = () => {
       loadEvent();
     }
     loadAvailableDates();
+    loadAvailableLocations();
   }, [id]);
 
   useEffect(() => {
@@ -90,6 +94,15 @@ const EventForm: React.FC = () => {
       }
     } catch (error) {
       console.error('Error loading available dates:', error);
+    }
+  };
+
+  const loadAvailableLocations = async () => {
+    try {
+      const locations = await locationService.getAllLocations();
+      setAvailableLocations(locations);
+    } catch (error) {
+      console.error('Error loading available locations:', error);
     }
   };
 
@@ -268,6 +281,14 @@ const EventForm: React.FC = () => {
         images: event.images || [],
       };
 
+      // Ensure locationInfo is set from the selected location
+      if (event.locationInfo) {
+        const selectedLocation = availableLocations.find(loc => loc.locationName === event.locationInfo);
+        if (selectedLocation) {
+          eventToSave.locationInfo = selectedLocation.locationName;
+        }
+      }
+
       if (id) {
         await eventService.updateEvent(parseInt(id), { ...eventToSave, id: parseInt(id) });
         setSuccess('Event updated successfully!');
@@ -334,9 +355,10 @@ const EventForm: React.FC = () => {
                 value={event.dateKey}
                 label="Date"
                 onChange={(e) => setEvent({ ...event, dateKey: e.target.value })}
+                sx={{ textAlign: 'left' }}
               >
                 {availableDates.map((timestamp) => (
-                  <MenuItem key={timestamp} value={timestamp.toString()}>
+                  <MenuItem key={timestamp} value={timestamp.toString()} sx={{ textAlign: 'left' }}>
                     {new Date(timestamp).toLocaleDateString('en-US', {
                       weekday: 'long',
                       month: 'long',
@@ -369,14 +391,21 @@ const EventForm: React.FC = () => {
                 sx={{ flex: 1 }}
               />
             </Box>
-            <TextField
-              label="Location"
-              name="locationInfo"
-              value={event.locationInfo}
-              onChange={handleChange}
-              required
-              fullWidth
-            />
+            <FormControl fullWidth required>
+              <InputLabel>Location</InputLabel>
+              <Select
+                value={event.locationInfo}
+                label="Location"
+                onChange={(e) => setEvent({ ...event, locationInfo: e.target.value })}
+                sx={{ textAlign: 'left' }}
+              >
+                {availableLocations.map((location) => (
+                  <MenuItem key={location.id} value={location.locationName} sx={{ textAlign: 'left' }}>
+                    {location.locationName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <TextField
               label="Description"
               name="description"
