@@ -8,7 +8,7 @@ Toastmasters International is a global nonprofit organization dedicated to empow
 
 ## Project Overview
 
-This project is designed to enhance the experience of Toastmasters conferences by providing attendees with real-time information, schedules, and notifications, while giving administrators powerful tools to manage the event.
+This project was pitched to me by a friend who is the area director for District 37 of Toastmasters. The app is designed to enhance the experience of Toastmasters conferences by providing attendees with real-time information, schedules, and notifications, while giving administrators powerful tools to manage the event. Basically, a digital brochure in their pocket that could notify them!
 
 ## Screenshots
 
