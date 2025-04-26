@@ -31,7 +31,8 @@ fun DrawerContent(
 ) {
     val appViewModel = LocalAppViewModel.current
     val currentNavigationItem by
-        appViewModel.navigationSlice.currentlySelectedNavigationItem.collectAsState()
+    appViewModel.navigationSlice.currentlySelectedNavigationItem.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -72,6 +73,17 @@ fun DrawerContent(
                 )
             }
         }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Version Info
+        Divider()
+        Spacer(modifier = Modifier.padding(8.dp))
+        Text(
+            text = "Version: v${appViewModel.versionInfo.versionName} (${appViewModel.versionInfo.versionCode})",
+            style = MaterialTheme.typography.caption,
+            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+        )
     }
 }
 

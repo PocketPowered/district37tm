@@ -14,6 +14,7 @@ import com.wongislandd.nexus.viewmodel.SliceableViewModel
 class AppViewModel(
     val navigationSlice: NavigationSlice,
     val notificationsSlice: NotificationsSlice,
+    val versionInfo: VersionInfo,
     favoritesSlice: FavoritedEventsSlice,
     uiEventBus: EventBus<UiEvent>,
     backChannelEventBus: EventBus<BackChannelEvent>
