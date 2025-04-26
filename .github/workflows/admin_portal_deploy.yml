@@ -1,8 +1,10 @@
-name: Deploy to GitHub Pages
+name: Deploy Admin Portal
 
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'event-manager/**'
   workflow_dispatch:
 
 permissions:
