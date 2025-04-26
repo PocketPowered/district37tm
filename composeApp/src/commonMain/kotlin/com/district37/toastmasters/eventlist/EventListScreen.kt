@@ -1,12 +1,17 @@
 package com.district37.toastmasters.eventlist
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -115,48 +120,67 @@ fun AgendaSelector(
     onMyAgendaClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
+    val indicatorOffset by animateDpAsState(
+        targetValue = if (agendaSelection == AgendaOption.FULL_AGENDA) 0.dp else 180.dp,
+        label = "IndicatorOffsetAnimation"
+    )
+
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clip(CircleShape)
-            .background(MaterialTheme.colors.onSurface.copy(alpha = 0.05f)),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .background(MaterialTheme.colors.onSurface.copy(alpha = 0.05f))
+            .padding(4.dp)
     ) {
-        Text(
-            text = "Agenda",
+        Box(
             modifier = Modifier
-                .weight(1f)
-                .clip(CircleShape)
-                .background(
-                    if (agendaSelection == AgendaOption.FULL_AGENDA) MaterialTheme.colors.secondary.copy(
-                        alpha = 0.8f
-                    )
-                    else MaterialTheme.colors.surface
-                )
-                .clickable { onFullAgendaClicked() }
-                .padding(vertical = 8.dp),
-            color = if (agendaSelection == AgendaOption.FULL_AGENDA) MaterialTheme.colors.onSecondary else MaterialTheme.colors.onSurface,
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.Medium
-        )
-        Text(
-            text = "Favorites",
+                .matchParentSize()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.5f)
+                    .offset(x = indicatorOffset)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colors.secondary)
+            )
+        }
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .clip(CircleShape)
-                .background(
-                    if (agendaSelection == AgendaOption.FAVORITES_AGENDA) MaterialTheme.colors.secondary.copy(
-                        alpha = 0.8f
-                    )
-                    else MaterialTheme.colors.surface
+                .fillMaxWidth()
+                .height(40.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable { onFullAgendaClicked() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Agenda",
+                    color = if (agendaSelection == AgendaOption.FULL_AGENDA) MaterialTheme.colors.onSecondary else MaterialTheme.colors.secondary,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
                 )
-                .clickable { onMyAgendaClicked() }
-                .padding(vertical = 8.dp),
-            color = if (agendaSelection == AgendaOption.FAVORITES_AGENDA) MaterialTheme.colors.onSecondary else MaterialTheme.colors.onSurface,
-            textAlign = TextAlign.Center,
-            fontWeight = FontWeight.Medium
-        )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable { onMyAgendaClicked() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Favorites",
+                    color = if (agendaSelection == AgendaOption.FAVORITES_AGENDA) MaterialTheme.colors.onSecondary else MaterialTheme.colors.secondary,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
     }
 }
 
