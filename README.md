@@ -10,6 +10,25 @@ Toastmasters International is a global nonprofit organization dedicated to empow
 
 This project is designed to enhance the experience of Toastmasters conferences by providing attendees with real-time information, schedules, and notifications, while giving administrators powerful tools to manage the event.
 
+## Screenshots
+
+# App
+
+| Android | iOS |
+|:-------:|:---:|
+| <img src="https://github.com/user-attachments/assets/601472b0-c010-4558-b038-2cefd40694df" width="250"/> | <img src="https://github.com/user-attachments/assets/7a0465f7-5b5e-422f-ae3a-b37046f3d4ec" width="250"/> |
+| <img src="https://github.com/user-attachments/assets/a546735b-339a-41ee-9e71-104c4685b365" width="250"/> | <img src="https://github.com/user-attachments/assets/942ffe9e-5f2a-4df0-837a-5ec18e205d68" width="250"/> |
+
+# Admin Portal
+
+![capture-2025-04-26-23 40 05@2x](https://github.com/user-attachments/assets/a5c95b17-b74f-4550-b416-cd44ccbc6965)
+![capture-2025-04-26-23 41 03@2x](https://github.com/user-attachments/assets/3b1ad91e-8530-459c-9a35-3eeb7547647b)
+![capture-2025-04-26-23 41 55@2x](https://github.com/user-attachments/assets/fc008a8e-d048-47e9-bd6e-3fe28e3a028a)
+![capture-2025-04-26-23 40 35@2x](https://github.com/user-attachments/assets/d176223e-c3bb-4917-bfa3-9d08452a27ae)
+![capture-2025-04-26-23 40 19@2x](https://github.com/user-attachments/assets/b8d7f155-9fb2-4533-84c3-5655ff601a5e)
+
+
+
 ## Architecture
 
 The project consists of three main components:
@@ -121,6 +140,7 @@ The app is in internal testing stages, follow the guide [here](https://docs.goog
    - `google-services.json` for Android
    - `GoogleService-Info.plist` for iOS
    - Firebase Admin SDK credentials for the server
+   - There's also an API Key hidden in a `.env` for the admin portal to access Firebase data
 
 ## Contributing
 
