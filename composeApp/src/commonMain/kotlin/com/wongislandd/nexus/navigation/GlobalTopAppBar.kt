@@ -30,6 +30,7 @@ fun GlobalTopAppBar(
     defaultTitle: String = "D37 Conference - 2025",
     actions: (@Composable RowScope.() -> Unit) = {},
     onHamburgerMenuClick: () -> Unit = {},
+    forceHamburgerMenu: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val navController = LocalNavHostController.current
@@ -38,7 +39,7 @@ fun GlobalTopAppBar(
         .collectAsState(initial = null)
     val canNavigateBack = previousBackStackEntry != null && showBackButton
 
-    val navAction: (@Composable () -> Unit) = if (canNavigateBack) {
+    val navAction: (@Composable () -> Unit) = if (!forceHamburgerMenu && canNavigateBack) {
         {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,

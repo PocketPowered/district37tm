@@ -26,6 +26,7 @@ fun <T> StatefulScaffold(
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
     actions: (@Composable RowScope.() -> Unit) = {},
+    forceHamburgerMenu: Boolean = false,
     resource: Resource<T>,
     successContent: @Composable (T) -> Unit
 ) {
@@ -46,26 +47,25 @@ fun <T> StatefulScaffold(
                     coroutineScope.launch(Dispatchers.Main) {
                         drawerState.open()
                     }
+                },
+                forceHamburgerMenu = forceHamburgerMenu
+            )
+        },
+        drawerContent = {
+            DrawerContent(
+                onItemClick = { key ->
+                    val navigationItem = requireNotNull(supportedNavigationItems[key]) {
+                        "Couldn't find navigation item with key $key!"
+                    }
+                    navController.navigate(navigationItem.completeRoute)
+                },
+                onCloseDrawer = {
+                    coroutineScope.launch(Dispatchers.Main) {
+                        drawerState.close()
+                    }
                 }
             )
         },
-        drawerContent = if (drawerState.isOpen || drawerState.isAnimationRunning) {
-            {
-                DrawerContent(
-                    onItemClick = { key ->
-                        val navigationItem = requireNotNull(supportedNavigationItems[key]) {
-                            "Couldn't find navigation item with key $key!"
-                        }
-                        navController.navigate(navigationItem.completeRoute)
-                    },
-                    onCloseDrawer = {
-                        coroutineScope.launch(Dispatchers.Main) {
-                            drawerState.close()
-                        }
-                    }
-                )
-            }
-        } else null,
         scaffoldState = scaffoldState,
         modifier = modifier
     ) {
@@ -90,6 +90,7 @@ fun <T> StatefulScaffold(
                             GenericErrorScreen("Successful response but no data!")
                         }
                     }
+
                     else -> {}
                 }
             }

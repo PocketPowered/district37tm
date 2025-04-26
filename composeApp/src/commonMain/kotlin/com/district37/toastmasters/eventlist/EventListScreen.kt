@@ -50,6 +50,7 @@ fun EventListScreen() {
             )
         },
         isRefreshing = isRefreshing,
+        forceHamburgerMenu = true,
         resource = screenState
     ) { data ->
         Column(

@@ -55,7 +55,6 @@ fun Instant.toHumanReadableString(): String {
 @Composable
 fun NotificationsScreen() {
     val appViewModel = LocalAppViewModel.current
-    val navController = LocalNavHostController.current
     val notifications by appViewModel.notificationsSlice.notificationsFlow.collectAsState(emptyList())
     val permissionState by appViewModel.notificationsSlice.notificationPermissionState.collectAsState()
     val showPermissionPrompt = remember { mutableStateOf(false) }
@@ -79,7 +78,8 @@ fun NotificationsScreen() {
             }) {
                 Icon(Icons.Default.Delete, contentDescription = "Clear all notifications")
             }
-        }
+        },
+        forceHamburgerMenu = true
     ) { notifs ->
         if (permissionState == NotificationPermissionState.Denied) {
             EnableNotificationsBanner(

@@ -26,7 +26,8 @@ fun ResourcesScreen() {
         resource = resourcesResource,
         onRefresh = {
             viewModel.onRefresh()
-        }
+        },
+        forceHamburgerMenu = true
     ) { resources ->
         LazyColumn(
             modifier = Modifier

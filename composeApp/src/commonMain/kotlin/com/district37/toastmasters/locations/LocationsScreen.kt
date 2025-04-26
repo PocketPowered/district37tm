@@ -47,7 +47,8 @@ fun LocationsScreen() {
         resource = locationsResource,
         onRefresh = {
             viewModel.onRefresh()
-        }
+        },
+        forceHamburgerMenu = true
     ) { locations ->
         LazyColumn(
             modifier = Modifier
