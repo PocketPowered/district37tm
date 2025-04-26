@@ -15,21 +15,23 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
 import com.district37.toastmasters.notifications.NotificationBadge
 import com.wongislandd.nexus.navigation.LocalNavHostController
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
 
 @Composable
 fun DrawerContent(
     onItemClick: (NavigationItemKey) -> Unit,
     onCloseDrawer: () -> Unit
 ) {
+    val appViewModel = LocalAppViewModel.current
+    val currentNavigationItem by
+        appViewModel.navigationSlice.currentlySelectedNavigationItem.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -53,15 +55,16 @@ fun DrawerContent(
 
         // Drawer Items
         drawerItems.forEach { item ->
+            val isSelected = currentNavigationItem.navigationKey == item.key.name
             if (item.key == NavigationItemKey.NOTIFICATIONS) {
                 NotificationEntryDrawerItem(
                     item = item,
-                    isSelected = false
+                    isSelected = isSelected
                 )
             } else {
                 DrawerItem(
                     item = item,
-                    isSelected = false,
+                    isSelected = isSelected,
                     onItemClick = {
                         onItemClick(item.key)
                         onCloseDrawer()

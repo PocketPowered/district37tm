@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +46,7 @@ import com.district37.toastmasters.navigation.EVENT_ID_ARG
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -87,6 +89,7 @@ fun EventCard(
     val navController = LocalNavHostController.current
     val appViewModel = LocalAppViewModel.current
     val coroutineScope = rememberCoroutineScope()
+    var isNavigating = remember { false }
 
     Box(
         modifier = modifier.padding(horizontal = 8.dp)
@@ -96,12 +99,20 @@ fun EventCard(
             backgroundColor = MaterialTheme.colors.onSecondary,
             modifier = Modifier.fillMaxWidth(),
             onClick = {
-                coroutineScope.launch(Dispatchers.Main) {
-                    appViewModel.navigate(
-                        navController,
-                        NavigationItemKey.EVENT_DETAILS,
-                        mapOf(EVENT_ID_ARG to eventPreview.id)
-                    )
+                if (!isNavigating) {
+                    isNavigating = true
+                    coroutineScope.launch(Dispatchers.Main) {
+                        appViewModel.navigate(
+                            navController,
+                            NavigationItemKey.EVENT_DETAILS,
+                            mapOf(EVENT_ID_ARG to eventPreview.id)
+                        )
+                        // Reset after a short delay to allow navigation to complete
+                        launch {
+                            delay(500)
+                            isNavigating = false
+                        }
+                    }
                 }
             }
         ) {

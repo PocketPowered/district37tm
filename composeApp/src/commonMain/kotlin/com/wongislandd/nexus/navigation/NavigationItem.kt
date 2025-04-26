@@ -3,7 +3,7 @@ package com.wongislandd.nexus.navigation
 class NavigationItem(
     val navigationKey: String,
     val displayName: String,
-    private val baseRoute: String,
+    val baseRoute: String,
     private val supportedArgs: List<String>? = listOf(),
 ) {
     val completeRoute: String
