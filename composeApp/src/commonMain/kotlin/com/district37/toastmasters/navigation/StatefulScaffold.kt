@@ -51,21 +51,23 @@ fun <T> StatefulScaffold(
                 forceHamburgerMenu = forceHamburgerMenu
             )
         },
-        drawerContent = {
-            DrawerContent(
-                onItemClick = { key ->
-                    val navigationItem = requireNotNull(supportedNavigationItems[key]) {
-                        "Couldn't find navigation item with key $key!"
+        drawerContent = if (drawerState.isOpen || drawerState.isAnimationRunning){
+            {
+                DrawerContent(
+                    onItemClick = { key ->
+                        val navigationItem = requireNotNull(supportedNavigationItems[key]) {
+                            "Couldn't find navigation item with key $key!"
+                        }
+                        navController.navigate(navigationItem.completeRoute)
+                    },
+                    onCloseDrawer = {
+                        coroutineScope.launch(Dispatchers.Main) {
+                            drawerState.close()
+                        }
                     }
-                    navController.navigate(navigationItem.completeRoute)
-                },
-                onCloseDrawer = {
-                    coroutineScope.launch(Dispatchers.Main) {
-                        drawerState.close()
-                    }
-                }
-            )
-        },
+                )
+            }
+        } else null,
         scaffoldState = scaffoldState,
         modifier = modifier
     ) {
