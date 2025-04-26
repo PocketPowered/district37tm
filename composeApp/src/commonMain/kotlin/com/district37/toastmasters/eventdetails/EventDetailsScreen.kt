@@ -3,6 +3,7 @@ package com.district37.toastmasters.eventdetails
 import Linkout
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,7 +43,8 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
     StatefulScaffold(resource = screenState) {
         LazyColumn(
             modifier = modifier,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(vertical = 16.dp)
         ) {
             // Event Header with Images
             item {
