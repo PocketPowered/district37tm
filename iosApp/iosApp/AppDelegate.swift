@@ -115,98 +115,97 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         }
     
         private func subscribeToTopics(fcmToken: String) {
-//            // If we've already successfully subscribed, don't do it again
-//            guard !hasSubscribedToTopics else {
-//                print("ℹ️ Already subscribed to topics, skipping")
-//                return
-//            }
-//    
-//            print("📡 Subscribing to topics with FCM token: \(fcmToken)")
-//            // Move topic subscription to background queue
-//            backgroundQueue.async { [weak self] in
-//                Messaging.messaging().subscribe(toTopic: "GENERAL") { error in
-//                    if let error = error {
-//                        print("❌ Failed to subscribe to topic: \(error)")
-//                    } else {
-//                        print("✅ Successfully subscribed to GENERAL topic")
-//                        self?.hasSubscribedToTopics = true
-//                    }
-//                }
-//            }
+            // If we've already successfully subscribed, don't do it again
+            guard !hasSubscribedToTopics else {
+                print("ℹ️ Already subscribed to topics, skipping")
+                return
+            }
+    
+            print("📡 Subscribing to topics with FCM token: \(fcmToken)")
+            // Move topic subscription to background queue
+            backgroundQueue.async { [weak self] in
+                Messaging.messaging().subscribe(toTopic: "GENERAL") { error in
+                    if let error = error {
+                        print("❌ Failed to subscribe to topic: \(error)")
+                    } else {
+                        print("✅ Successfully subscribed to GENERAL topic")
+                        self?.hasSubscribedToTopics = true
+                    }
+                }
+            }
         }
-    //
-    //    func userNotificationCenter(
-    //        _ center: UNUserNotificationCenter,
-    //        willPresent notification: UNNotification,
-    //        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
-    //    ) {
-    //        // Handle the notification data
-    //        let userInfo = notification.request.content.userInfo
-    //
-    //        // Show the notification
-    //        completionHandler([.banner, .sound, .badge])
-    //    }
-    //
-    //    func userNotificationCenter(
-    //        _ center: UNUserNotificationCenter,
-    //        didReceive response: UNNotificationResponse,
-    //        withCompletionHandler completionHandler: @escaping () -> Void
-    //    ) {
-    //        completionHandler()
-    //    }
-    //
-    //    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) {
-    //        print("📩 Received remote notification: \(userInfo)")
-    //        // Move notification handling to background queue
-    //        backgroundQueue.async { [weak self] in
-    //            self?.handleNotificationData(userInfo)
-    //        }
-    //    }
-    //
-    //    private func handleNotificationData(_ userInfo: [AnyHashable: Any]) {
-    //        // Extract data from the notification
-    //        let data = userInfo as? [String: Any] ?? [:]
-    //        let title = data["title"] as? String ?? "Notification"
-    //        let body = data["body"] as? String ?? ""
-    //        let type = data["type"] as? String ?? "notification"
-    //        let relatedEventId = data["relatedEventId"] as? String
-    //
-    //        print("📬 Received notification - Title: \(title), Body: \(body), Type: \(type), EventId: \(relatedEventId ?? "nil")")
-    //
-    //        // Insert notification into repository
-    //        do {
-    //            try notificationRepository.insertNotification(header: title, description: body)
-    //            print("✅ Successfully inserted notification into database")
-    //        } catch {
-    //            print("❌ Failed to insert notification: \(error.localizedDescription)")
-    //        }
-    //
-    //        // Create and show local notification
-    //        let content = UNMutableNotificationContent()
-    //        content.title = title
-    //        content.body = body
-    //        content.sound = .default
-    //
-    //        // Add any additional data
-    //        if let eventId = relatedEventId {
-    //            content.userInfo = ["relatedEventId": eventId]
-    //        }
-    //
-    //        // Create request
-    //        let request = UNNotificationRequest(
-    //            identifier: UUID().uuidString,
-    //            content: content,
-    //            trigger: nil // Show immediately
-    //        )
-    //
-    //        // Add request to notification center
-    //        UNUserNotificationCenter.current().add(request) { error in
-    //            if let error = error {
-    //                print("❌ Failed to show notification: \(error.localizedDescription)")
-    //            } else {
-    //                print("✅ Successfully showed notification")
-    //            }
-    //        }
-    //    }
-    //}
-}
+    
+        func userNotificationCenter(
+            _ center: UNUserNotificationCenter,
+            willPresent notification: UNNotification,
+            withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+        ) {
+            // Handle the notification data
+            let userInfo = notification.request.content.userInfo
+    
+            // Show the notification
+            completionHandler([.banner, .sound, .badge])
+        }
+    
+        func userNotificationCenter(
+            _ center: UNUserNotificationCenter,
+            didReceive response: UNNotificationResponse,
+            withCompletionHandler completionHandler: @escaping () -> Void
+        ) {
+            completionHandler()
+        }
+    
+        func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) {
+            print("📩 Received remote notification: \(userInfo)")
+            // Move notification handling to background queue
+            backgroundQueue.async { [weak self] in
+                self?.handleNotificationData(userInfo)
+            }
+        }
+    
+        private func handleNotificationData(_ userInfo: [AnyHashable: Any]) {
+            // Extract data from the notification
+            let data = userInfo as? [String: Any] ?? [:]
+            let title = data["title"] as? String ?? "Notification"
+            let body = data["body"] as? String ?? ""
+            let type = data["type"] as? String ?? "notification"
+            let relatedEventId = data["relatedEventId"] as? String
+    
+            print("📬 Received notification - Title: \(title), Body: \(body), Type: \(type), EventId: \(relatedEventId ?? "nil")")
+    
+            // Insert notification into repository
+            do {
+                try notificationRepository.insertNotification(header: title, description: body)
+                print("✅ Successfully inserted notification into database")
+            } catch {
+                print("❌ Failed to insert notification: \(error.localizedDescription)")
+            }
+    
+            // Create and show local notification
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            content.sound = .default
+    
+            // Add any additional data
+            if let eventId = relatedEventId {
+                content.userInfo = ["relatedEventId": eventId]
+            }
+    
+            // Create request
+            let request = UNNotificationRequest(
+                identifier: UUID().uuidString,
+                content: content,
+                trigger: nil // Show immediately
+            )
+    
+            // Add request to notification center
+            UNUserNotificationCenter.current().add(request) { error in
+                if let error = error {
+                    print("❌ Failed to show notification: \(error.localizedDescription)")
+                } else {
+                    print("✅ Successfully showed notification")
+                }
+            }
+        }
+    }
