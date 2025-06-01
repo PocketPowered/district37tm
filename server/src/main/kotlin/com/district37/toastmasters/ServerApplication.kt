@@ -1,5 +1,6 @@
 package com.district37.toastmasters
 
+import com.district37.toastmasters.di.firebaseModule
 import com.district37.toastmasters.di.persistentModule
 import com.district37.toastmasters.di.requestModule
 import io.ktor.http.HttpMethod
@@ -12,10 +13,16 @@ import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
 import kotlinx.serialization.json.Json
+import org.koin.core.context.startKoin
 import org.koin.ktor.plugin.Koin
 import org.koin.ktor.plugin.scope
 
 fun main() {
+    // Start Koin before the server
+    startKoin {
+        modules(requestModule, persistentModule, firebaseModule)
+    }
+
     val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
     embeddedServer(Netty, port = port, host = "0.0.0.0", module = Application::main)
         .start(wait = true)
@@ -23,7 +30,7 @@ fun main() {
 
 fun Application.main() {
     install(Koin) {
-        modules(requestModule, persistentModule)
+        modules(requestModule, persistentModule, firebaseModule)
     }
     install(ContentNegotiation) {
         json(Json {

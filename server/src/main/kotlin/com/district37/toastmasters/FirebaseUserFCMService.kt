@@ -1,11 +1,11 @@
 package com.district37.toastmasters
 
-import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.firestore.Firestore
-import com.google.cloud.firestore.FirestoreOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 @Serializable
 data class UserFCMToken(
@@ -15,16 +15,8 @@ data class UserFCMToken(
     val lastUpdated: Long = System.currentTimeMillis()
 )
 
-class FirebaseUserFCMService {
-    private val json = System.getenv("GOOGLE_CREDENTIALS_JSON")
-        ?: error("Missing GOOGLE_CREDENTIALS_JSON env variable")
-    private val serviceAccount = GoogleCredentials.fromStream(json.byteInputStream())
-
-    private val firestore: Firestore = FirestoreOptions.getDefaultInstance().toBuilder()
-        .setProjectId("district37-toastmasters")
-        .setCredentials(serviceAccount)
-        .build()
-        .service
+class FirebaseUserFCMService : KoinComponent {
+    private val firestore: Firestore by inject()
 
     suspend fun registerToken(userId: String, token: String, deviceInfo: String? = null): UserFCMToken = withContext(Dispatchers.IO) {
         // Remove any old tokens associated with this userId

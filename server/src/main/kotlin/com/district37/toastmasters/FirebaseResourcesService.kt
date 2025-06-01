@@ -1,23 +1,14 @@
 package com.district37.toastmasters
 
 import com.district37.toastmasters.models.BackendExternalLink
-import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.firestore.Firestore
-import com.google.cloud.firestore.FirestoreOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
-class FirebaseResourcesService  {
-    private val json = System.getenv("GOOGLE_CREDENTIALS_JSON")
-        ?: error("Missing GOOGLE_CREDENTIALS_JSON env variable")
-    private val serviceAccount = GoogleCredentials.fromStream(json.byteInputStream())
-
-    private val firestore: Firestore = FirestoreOptions.getDefaultInstance().toBuilder()
-        .setProjectId("district37-toastmasters")
-        .setCredentials(serviceAccount)
-        .build()
-        .service
-
+class FirebaseResourcesService : KoinComponent {
+    private val firestore: Firestore by inject()
     private val resourcesCollection = firestore.collection("resources")
     private val firstTimerResourcesCollection = firestore.collection("firstTimerResources")
 

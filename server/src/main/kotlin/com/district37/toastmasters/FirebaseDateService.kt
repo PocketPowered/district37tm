@@ -1,25 +1,15 @@
 package com.district37.toastmasters
 
 import com.district37.toastmasters.models.BackendEventDetails
-import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.firestore.Firestore
-import com.google.cloud.firestore.FirestoreOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
 class FirebaseDateService : KoinComponent {
-    private val json = System.getenv("GOOGLE_CREDENTIALS_JSON")
-        ?: error("Missing GOOGLE_CREDENTIALS_JSON env variable")
-    private val serviceAccount = GoogleCredentials.fromStream(json.byteInputStream())
+    private val firestore: Firestore by inject()
     private val eventService: FirebaseEventService by inject()
-
-    private val firestore: Firestore = FirestoreOptions.getDefaultInstance().toBuilder()
-        .setProjectId("district37-toastmasters")
-        .setCredentials(serviceAccount)
-        .build()
-        .service
 
     suspend fun getAvailableDates(): List<Long> = withContext(Dispatchers.IO) {
         firestore.collection("dates")

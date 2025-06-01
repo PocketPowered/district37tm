@@ -4,25 +4,20 @@ import com.google.auth.oauth2.GoogleCredentials
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
 
-class FirebaseNotificationService  {
+class FirebaseNotificationService : KoinComponent {
     private val gson = Gson()
     private val httpClient = HttpClient.newBuilder().build()
     private val projectId = "district37-toastmasters"
     private val fcmEndpoint = "https://fcm.googleapis.com/v1/projects/$projectId/messages:send"
-    private val credentials: GoogleCredentials
-
-    init {
-        val json = System.getenv("GOOGLE_CREDENTIALS_JSON")
-            ?: error("Missing GOOGLE_CREDENTIALS_JSON env variable")
-        credentials = GoogleCredentials.fromStream(json.byteInputStream())
-            .createScoped(listOf("https://www.googleapis.com/auth/firebase.messaging"))
-    }
+    private val credentials: GoogleCredentials by inject()
 
     /**
      * Sends a notification along to everyone
