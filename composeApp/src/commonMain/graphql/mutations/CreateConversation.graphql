@@ -1,0 +1,8 @@
+#import "../fragments/ConversationPreview.graphql"
+#import "../fragments/UserPreview.graphql"
+
+mutation CreateConversation($input: CreateConversationInput!) {
+    createConversation(input: $input) {
+        ...ConversationPreview
+    }
+}

@@ -1,0 +1,3 @@
+query GetMyRoleInOrganization($organizationId: Int!) {
+  myRoleInOrganization(organizationId: $organizationId)
+}

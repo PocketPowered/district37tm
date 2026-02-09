@@ -1,0 +1,7 @@
+#import "../fragments/PerformerPreview.graphql"
+
+query GetPerformer($id: Int!) {
+  performer(id: $id) {
+    ...PerformerPreview
+  }
+}

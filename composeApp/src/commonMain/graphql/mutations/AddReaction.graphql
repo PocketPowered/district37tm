@@ -1,0 +1,8 @@
+#import "../fragments/MessageReactionPreview.graphql"
+#import "../fragments/UserPreview.graphql"
+
+mutation AddReaction($input: AddReactionInput!) {
+    addReaction(input: $input) {
+        ...MessageReactionPreview
+    }
+}

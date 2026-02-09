@@ -1,0 +1,18 @@
+#import "../fragments/EventPreview.graphql"
+#import "../fragments/PaginationInfo.graphql"
+
+query GetMoreVenueEvents($id: Int!, $first: Int, $after: String) {
+  venue(id: $id) {
+    id
+    eventsConnection(first: $first, after: $after) {
+      edges {
+        node {
+          ...EventPreview
+        }
+      }
+      pageInfo {
+        ...PaginationInfo
+      }
+    }
+  }
+}

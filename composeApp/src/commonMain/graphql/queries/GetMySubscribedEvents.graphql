@@ -1,0 +1,19 @@
+#import "../fragments/EventPreview.graphql"
+
+query GetMySubscribedEvents($first: Int, $after: String) {
+    mySubscriptionsConnection(entityType: EVENT, first: $first, after: $after) {
+        edges {
+            node {
+                entityId
+                event {
+                    ...EventPreview
+                }
+            }
+        }
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+        totalCount
+    }
+}

@@ -1,0 +1,6 @@
+mutation SendEmailOtp($input: SendEmailOtpInput!) {
+    sendEmailOtp(input: $input) {
+        success
+        message
+    }
+}

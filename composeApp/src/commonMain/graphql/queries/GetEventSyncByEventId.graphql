@@ -1,0 +1,5 @@
+query GetEventSyncByEventId($eventId: Int!) {
+    eventSyncByEventId(eventId: $eventId) {
+        ...EventSyncFragment
+    }
+}

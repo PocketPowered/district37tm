@@ -1,0 +1,17 @@
+#import "../fragments/UserPreview.graphql"
+
+mutation AcceptCollaborationRequest($requestId: Int!) {
+    acceptCollaborationRequest(requestId: $requestId) {
+        id
+        entityType
+        entityId
+        userId
+        permissionLevel
+        isOwner
+        canManageCollaborators
+        createdAt
+        user {
+            ...UserPreview
+        }
+    }
+}

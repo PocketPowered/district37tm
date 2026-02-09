@@ -1,0 +1,14 @@
+#import "./ImageDetails.graphql"
+
+fragment PerformerPreview on Performer {
+  id
+  name
+  bio
+  imagesConnection(first: 1) {
+    edges {
+      node {
+        ...ImageDetails
+      }
+    }
+  }
+}

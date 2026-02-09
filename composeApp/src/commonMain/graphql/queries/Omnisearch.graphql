@@ -1,0 +1,33 @@
+#import "../fragments/EventPreview.graphql"
+#import "../fragments/VenuePreview.graphql"
+#import "../fragments/PerformerPreview.graphql"
+#import "../fragments/OrganizationPreview.graphql"
+
+query Omnisearch($query: String!, $limit: Int, $eventId: Int) {
+    omnisearch(query: $query, limit: $limit, eventId: $eventId) {
+        results {
+            resultType
+            event {
+                ...EventPreview
+            }
+            venue {
+                ...VenuePreview
+            }
+            performer {
+                ...PerformerPreview
+            }
+            user {
+                id
+                username
+                displayName
+                bio
+                profileImageUrl
+            }
+            organization {
+                ...OrganizationPreview
+            }
+        }
+        totalCount
+        hasMore
+    }
+}

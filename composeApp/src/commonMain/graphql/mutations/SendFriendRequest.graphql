@@ -1,0 +1,8 @@
+mutation SendFriendRequest($receiverId: String!) {
+    sendFriendRequest(input: { receiverId: $receiverId }) {
+        id
+        senderId
+        receiverId
+        createdAt
+    }
+}

@@ -1,0 +1,27 @@
+#import "../fragments/PaginationInfo.graphql"
+#import "../fragments/UserPreview.graphql"
+
+query GetCollaboratorsForEntity($entityType: String!, $entityId: Int!, $first: Int, $after: String) {
+    collaboratorsForEntity(entityType: $entityType, entityId: $entityId, first: $first, after: $after) {
+        edges {
+            cursor
+            node {
+                id
+                entityType
+                entityId
+                userId
+                permissionLevel
+                isOwner
+                canManageCollaborators
+                createdAt
+                user {
+                    ...UserPreview
+                }
+            }
+        }
+        pageInfo {
+            ...PaginationInfo
+        }
+        totalCount
+    }
+}

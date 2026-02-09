@@ -1,0 +1,8 @@
+fragment OrganizationPreview on Organization {
+  id
+  name
+  tag
+  logoUrl
+  primaryColor
+  secondaryColor
+}

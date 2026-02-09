@@ -1,0 +1,6 @@
+subscription UnreadStatusChanged {
+    unreadStatusChanged {
+        conversationId
+        hasUnread
+    }
+}

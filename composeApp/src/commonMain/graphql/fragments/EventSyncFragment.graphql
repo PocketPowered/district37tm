@@ -1,0 +1,11 @@
+fragment EventSyncFragment on EventSyncRecord {
+    id
+    eventId
+    platform
+    calendarEventId
+    calendarId
+    syncedAt
+    lastUpdatedAt
+    status
+    userId
+}

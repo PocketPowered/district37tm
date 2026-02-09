@@ -1,0 +1,13 @@
+fragment ImageDetails on Image {
+  id
+  url
+  altText
+  caption
+  archivedAt
+  focusRegion {
+    x
+    y
+    width
+    height
+  }
+}

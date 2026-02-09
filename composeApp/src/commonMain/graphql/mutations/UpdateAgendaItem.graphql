@@ -1,0 +1,7 @@
+#import "../fragments/AgendaItemDetails.graphql"
+
+mutation UpdateAgendaItem($id: Int!, $input: UpdateAgendaItemInput!) {
+  updateAgendaItem(id: $id, input: $input) {
+    ...AgendaItemDetails
+  }
+}

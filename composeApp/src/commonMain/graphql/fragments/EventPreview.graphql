@@ -1,0 +1,35 @@
+#import "./ImageDetails.graphql"
+#import "./UserEngagementDetails.graphql"
+#import "./LocalizedTime.graphql"
+
+fragment EventPreview on Event {
+    id
+    slug
+    name
+    description
+    eventType
+    venueId
+    archivedAt
+    imagesConnection(first: 5) {
+        edges {
+            node {
+                ...ImageDetails
+            }
+        }
+    }
+    venue {
+        id
+        name
+    }
+    timeRange {
+        start {
+            ...LocalizedTimeFragment
+        }
+        end {
+            ...LocalizedTimeFragment
+        }
+    }
+    userEngagement {
+        ...UserEngagementDetails
+    }
+}

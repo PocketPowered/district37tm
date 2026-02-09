@@ -1,0 +1,27 @@
+#import "../fragments/OrganizationMemberInvitationDetails.graphql"
+#import "../fragments/PaginationInfo.graphql"
+
+query GetMyOrganizationInvitations(
+  $first: Int
+  $after: String
+  $last: Int
+  $before: String
+) {
+  myOrganizationInvitations(
+    first: $first
+    after: $after
+    last: $last
+    before: $before
+  ) {
+    edges {
+      node {
+        ...OrganizationMemberInvitationDetails
+      }
+      cursor
+    }
+    pageInfo {
+      ...PaginationInfo
+    }
+    totalCount
+  }
+}

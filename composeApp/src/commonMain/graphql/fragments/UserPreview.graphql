@@ -1,0 +1,5 @@
+fragment UserPreview on User {
+    id
+    displayName
+    profileImageUrl
+}

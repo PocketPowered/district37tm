@@ -1,0 +1,54 @@
+#import "./ImageDetails.graphql"
+#import "./EventPreview.graphql"
+#import "./PaginationInfo.graphql"
+#import "./UserEngagementDetails.graphql"
+#import "./EntityPermissions.graphql"
+#import "./OrganizationMemberDetails.graphql"
+
+fragment OrganizationDetails on Organization {
+  id
+  slug
+  name
+  tag
+  description
+  logoUrl
+  website
+  email
+  phone
+  primaryColor
+  secondaryColor
+  createdAt
+  permissions {
+    ...EntityPermissionsDetails
+  }
+  eventsConnection(first: 3) {
+    edges {
+      node {
+        ...EventPreview
+      }
+    }
+    pageInfo {
+      ...PaginationInfo
+    }
+  }
+  imagesConnection(first: 10) {
+    edges {
+      node {
+        ...ImageDetails
+      }
+    }
+  }
+  membersConnection(first: 10) {
+    edges {
+      node {
+        ...OrganizationMemberDetails
+      }
+    }
+    pageInfo {
+      ...PaginationInfo
+    }
+  }
+  userEngagement {
+    ...UserEngagementDetails
+  }
+}

@@ -1,0 +1,6 @@
+fragment EntityPermissionsDetails on EntityPermissions {
+  canEdit
+  canDelete
+  canManageCollaborators
+  role
+}

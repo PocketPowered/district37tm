@@ -1,0 +1,17 @@
+mutation RegisterDeviceToken(
+    $fcmToken: String!,
+    $platform: Platform!,
+    $deviceName: String
+) {
+    registerDeviceToken(
+        fcmToken: $fcmToken,
+        platform: $platform,
+        deviceName: $deviceName
+    ) {
+        id
+        fcmToken
+        platform
+        deviceName
+        isActive
+    }
+}

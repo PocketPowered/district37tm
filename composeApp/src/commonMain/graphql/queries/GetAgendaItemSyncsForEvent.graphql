@@ -1,0 +1,5 @@
+query GetAgendaItemSyncsForEvent($eventId: Int!) {
+    agendaItemSyncsForEvent(eventId: $eventId) {
+        ...AgendaItemSyncFragment
+    }
+}

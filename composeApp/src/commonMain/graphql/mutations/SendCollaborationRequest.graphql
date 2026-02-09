@@ -1,0 +1,17 @@
+mutation SendCollaborationRequest($receiverId: String!, $entityType: String!, $entityId: Int!, $permissionLevel: String!) {
+    sendCollaborationRequest(input: {
+        receiverId: $receiverId,
+        entityType: $entityType,
+        entityId: $entityId,
+        permissionLevel: $permissionLevel
+    }) {
+        id
+        senderId
+        receiverId
+        entityType
+        entityId
+        entityName
+        permissionLevel
+        createdAt
+    }
+}

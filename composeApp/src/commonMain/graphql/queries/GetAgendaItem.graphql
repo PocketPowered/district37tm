@@ -1,0 +1,7 @@
+#import "../fragments/AgendaItemDetails.graphql"
+
+query GetAgendaItem($id: Int!) {
+  agendaItem(id: $id) {
+    ...AgendaItemDetails
+  }
+}

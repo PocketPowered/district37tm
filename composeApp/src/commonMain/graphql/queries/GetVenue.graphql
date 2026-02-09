@@ -1,0 +1,7 @@
+#import "../fragments/VenueDetails.graphql"
+
+query GetVenue($id: Int!) {
+  venue(id: $id) {
+    ...VenueDetails
+  }
+}

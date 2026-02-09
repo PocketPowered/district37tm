@@ -1,0 +1,22 @@
+query GetNotifications(
+    $first: Int,
+    $after: String,
+    $unreadOnly: Boolean
+) {
+    notificationsConnection(
+        first: $first,
+        after: $after,
+        unreadOnly: $unreadOnly
+    ) {
+        edges {
+            cursor
+            node {
+                ...NotificationPreview
+            }
+        }
+        pageInfo {
+            ...PaginationInfo
+        }
+        totalCount
+    }
+}

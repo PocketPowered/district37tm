@@ -1,0 +1,16 @@
+fragment MessagePreview on Message {
+    id
+    conversationId
+    senderId
+    content
+    imageUrl
+    createdAt
+    updatedAt
+    isEdited
+    sender {
+        ...UserPreview
+    }
+    reactions {
+        ...MessageReactionPreview
+    }
+}

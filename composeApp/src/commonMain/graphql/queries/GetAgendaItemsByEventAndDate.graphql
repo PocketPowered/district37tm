@@ -1,0 +1,33 @@
+#import "../fragments/AgendaItemPreview.graphql"
+#import "../fragments/PaginationInfo.graphql"
+
+query GetAgendaItemsByEventAndDate(
+  $eventId: Int!,
+  $date: LocalDate!,
+  $first: Int,
+  $after: String,
+  $last: Int,
+  $before: String,
+  $myScheduleOnly: Boolean! = false
+) {
+  agendaItemsByEventAndDate(
+    eventId: $eventId,
+    date: $date,
+    first: $first,
+    after: $after,
+    last: $last,
+    before: $before,
+    myScheduleOnly: $myScheduleOnly
+  ) {
+    edges {
+      cursor
+      node {
+        ...AgendaItemPreview
+      }
+    }
+    pageInfo {
+      ...PaginationInfo
+    }
+    totalCount
+  }
+}

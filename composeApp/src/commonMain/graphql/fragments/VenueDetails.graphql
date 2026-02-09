@@ -1,0 +1,39 @@
+#import "./ImageDetails.graphql"
+#import "./EventPreview.graphql"
+#import "./PaginationInfo.graphql"
+#import "./EntityPermissions.graphql"
+
+fragment VenueDetails on Venue {
+  id
+  slug
+  name
+  address
+  city
+  state
+  zipCode
+  capacity
+  latitude
+  longitude
+  createdAt
+  permissions {
+    ...EntityPermissionsDetails
+  }
+  eventsConnection(first: 3) {
+    edges {
+      node {
+        ...EventPreview
+      }
+    }
+    pageInfo {
+      ...PaginationInfo
+    }
+  }
+  eventCount
+  imagesConnection(first: 10) {
+    edges {
+      node {
+        ...ImageDetails
+      }
+    }
+  }
+}

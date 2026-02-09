@@ -1,0 +1,6 @@
+mutation SendPhoneOtp($input: SendPhoneOtpInput!) {
+    sendPhoneOtp(input: $input) {
+        success
+        message
+    }
+}

@@ -1,0 +1,45 @@
+#import "./VenuePreview.graphql"
+#import "./AgendaDateFragment.graphql"
+#import "./ImageDetails.graphql"
+#import "./PaginationInfo.graphql"
+#import "./UserEngagementDetails.graphql"
+#import "./EntityPermissions.graphql"
+#import "./LocalizedTime.graphql"
+
+fragment EventDetails on Event {
+  id
+  slug
+  name
+  description
+  eventType
+  timeRange {
+    start {
+      ...LocalizedTimeFragment
+    }
+    end {
+      ...LocalizedTimeFragment
+    }
+  }
+  venueId
+  createdAt
+  archivedAt
+  permissions {
+    ...EntityPermissionsDetails
+  }
+  venue {
+    ...VenuePreview
+  }
+  agendaDates {
+    ...AgendaDateFragment
+  }
+  imagesConnection(first: 10) {
+    edges {
+      node {
+        ...ImageDetails
+      }
+    }
+  }
+  userEngagement {
+    ...UserEngagementDetails
+  }
+}

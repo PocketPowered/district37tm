@@ -1,0 +1,29 @@
+#import "./PerformerPreview.graphql"
+#import "./LocationPreview.graphql"
+#import "./UserEngagementDetails.graphql"
+#import "./LocalizedTime.graphql"
+
+fragment AgendaItemPreview on AgendaItem {
+  id
+  eventId
+  title
+  description
+  tag
+  timeRange {
+    start {
+        ...LocalizedTimeFragment
+    }
+    end {
+        ...LocalizedTimeFragment
+    }
+  }
+  performers {
+    ...PerformerPreview
+  }
+  location {
+    ...LocationPreview
+  }
+  userEngagement {
+    ...UserEngagementDetails
+  }
+}

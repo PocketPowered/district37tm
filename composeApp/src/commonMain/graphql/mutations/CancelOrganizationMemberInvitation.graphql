@@ -1,0 +1,3 @@
+mutation CancelOrganizationMemberInvitation($invitationId: Int!) {
+  cancelOrganizationMemberInvitation(invitationId: $invitationId)
+}

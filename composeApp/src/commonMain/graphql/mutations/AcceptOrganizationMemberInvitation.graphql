@@ -1,0 +1,7 @@
+#import "../fragments/OrganizationMemberDetails.graphql"
+
+mutation AcceptOrganizationMemberInvitation($invitationId: Int!) {
+  acceptOrganizationMemberInvitation(invitationId: $invitationId) {
+    ...OrganizationMemberDetails
+  }
+}

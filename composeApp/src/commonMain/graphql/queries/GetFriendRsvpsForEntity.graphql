@@ -1,0 +1,21 @@
+#import "../fragments/PaginationInfo.graphql"
+#import "../fragments/UserPreview.graphql"
+
+query GetFriendRsvpsForEntity($entityType: EntityType!, $entityId: Int!, $first: Int = 3, $after: String) {
+    friendRsvpsForEntity(entityType: $entityType, entityId: $entityId, first: $first, after: $after) {
+        edges {
+            cursor
+            node {
+                userId
+                profileImageUrl
+                displayName
+                isSubscribed
+                status
+            }
+        }
+        pageInfo {
+            ...PaginationInfo
+        }
+        totalCount
+    }
+}

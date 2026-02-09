@@ -1,0 +1,20 @@
+#import "./ImageDetails.graphql"
+
+fragment VenuePreview on Venue {
+  id
+  slug
+  name
+  address
+  city
+  state
+  zipCode
+  latitude
+  longitude
+  imagesConnection(first: 1) {
+    edges {
+      node {
+        ...ImageDetails
+      }
+    }
+  }
+}

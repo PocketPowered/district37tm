@@ -1,0 +1,17 @@
+#import "../fragments/PerformerPreview.graphql"
+#import "../fragments/PaginationInfo.graphql"
+
+query SearchPerformers($first: Int, $after: String, $searchQuery: String) {
+  performersConnection(first: $first, after: $after, searchQuery: $searchQuery) {
+    edges {
+      cursor
+      node {
+        ...PerformerPreview
+      }
+    }
+    pageInfo {
+      ...PaginationInfo
+    }
+    totalCount
+  }
+}

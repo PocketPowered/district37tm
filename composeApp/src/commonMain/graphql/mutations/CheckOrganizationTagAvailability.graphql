@@ -1,0 +1,3 @@
+mutation CheckOrganizationTagAvailability($tag: String!) {
+  checkOrganizationTagAvailability(tag: $tag)
+}

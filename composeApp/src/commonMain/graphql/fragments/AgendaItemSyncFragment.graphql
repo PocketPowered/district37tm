@@ -1,0 +1,12 @@
+fragment AgendaItemSyncFragment on AgendaItemSyncRecord {
+    id
+    agendaItemId
+    eventId
+    platform
+    calendarEventId
+    calendarId
+    syncedAt
+    lastUpdatedAt
+    lastServerUpdatedAt
+    status
+}

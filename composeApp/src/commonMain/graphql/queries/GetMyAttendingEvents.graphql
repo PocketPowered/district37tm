@@ -1,0 +1,19 @@
+#import "../fragments/EventPreview.graphql"
+
+query GetMyAttendingEvents($first: Int, $after: String) {
+    myEngagementsConnectionByStatus(entityType: EVENT, status: GOING, first: $first, after: $after) {
+        edges {
+            node {
+                entityId
+                event {
+                    ...EventPreview
+                }
+            }
+        }
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+        totalCount
+    }
+}

@@ -1,0 +1,7 @@
+#import "../fragments/EventDetails.graphql"
+
+mutation UpdateEvent($id: Int!, $input: UpdateEventInput!) {
+  updateEvent(id: $id, input: $input) {
+    ...EventDetails
+  }
+}

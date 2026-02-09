@@ -1,0 +1,21 @@
+fragment ConversationPreview on Conversation {
+    id
+    name
+    conversationType
+    createdBy
+    createdAt
+    updatedAt
+    hasUnread
+    participants {
+        ...UserPreview
+    }
+    latestMessage {
+        id
+        content
+        senderId
+        createdAt
+        sender {
+            ...UserPreview
+        }
+    }
+}

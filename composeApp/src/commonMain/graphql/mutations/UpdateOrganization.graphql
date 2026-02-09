@@ -1,0 +1,7 @@
+#import "../fragments/OrganizationDetails.graphql"
+
+mutation UpdateOrganization($id: Int!, $input: UpdateOrganizationInput!) {
+  updateOrganization(id: $id, input: $input) {
+    ...OrganizationDetails
+  }
+}

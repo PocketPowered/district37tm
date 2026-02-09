@@ -1,0 +1,20 @@
+#import "../fragments/ConversationPreview.graphql"
+#import "../fragments/UserPreview.graphql"
+
+query GetMyConversations($first: Int, $after: String) {
+    myConversations(first: $first, after: $after) {
+        edges {
+            cursor
+            node {
+                ...ConversationPreview
+            }
+        }
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+        }
+        totalCount
+    }
+}

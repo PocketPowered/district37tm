@@ -1,0 +1,18 @@
+query GetMyFriends($first: Int, $after: String) {
+    myFriends(first: $first, after: $after) {
+        edges {
+            cursor
+            node {
+                userId
+                user {
+                    ...UserPreview
+                    username
+                }
+            }
+        }
+        pageInfo {
+            ...PaginationInfo
+        }
+        totalCount
+    }
+}

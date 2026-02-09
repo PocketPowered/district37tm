@@ -1,0 +1,124 @@
+#import "../fragments/UserPreview.graphql"
+#import "../fragments/EventPreview.graphql"
+#import "../fragments/PaginationInfo.graphql"
+#import "../fragments/VenuePreview.graphql"
+#import "../fragments/PerformerPreview.graphql"
+#import "../fragments/LocationPreview.graphql"
+#import "../fragments/AgendaItemPreview.graphql"
+#import "../fragments/OrganizationPreview.graphql"
+
+query GetMyProfile(
+    $subscribedEventsFirst: Int = 10,
+    $attendingEventsFirst: Int = 10,
+    $activityFeedFirst: Int = 10,
+    $friendRequestsFirst: Int = 10
+) {
+    getMyProfile(
+        subscribedEventsFirst: $subscribedEventsFirst,
+        attendingEventsFirst: $attendingEventsFirst,
+        activityFeedFirst: $activityFeedFirst,
+        friendRequestsFirst: $friendRequestsFirst
+    ) {
+        user {
+            id
+            username
+            displayName
+            bio
+            profileImageUrl
+            primaryColor
+            secondaryColor
+            preferences {
+                theme
+                notificationsEnabled
+                displayDensity
+            }
+            createdAt
+            updatedAt
+        }
+        subscribedEvents {
+            edges {
+                node {
+                    entityId
+                    event {
+                        ...EventPreview
+                    }
+                }
+            }
+            pageInfo {
+                ...PaginationInfo
+            }
+            totalCount
+        }
+        attendingEvents {
+            edges {
+                node {
+                    entityId
+                    event {
+                        ...EventPreview
+                    }
+                }
+            }
+            pageInfo {
+                ...PaginationInfo
+            }
+            totalCount
+        }
+        activityFeed {
+            edges {
+                cursor
+                node {
+                    id
+                    userId
+                    activityType
+                    entityType
+                    entityId
+                    createdAt
+                    user {
+                        ...UserPreview
+                    }
+                    agendaItem {
+                        ...AgendaItemPreview
+                    }
+                    event {
+                        ...EventPreview
+                    }
+                    venue {
+                        ...VenuePreview
+                    }
+                    performer {
+                        ...PerformerPreview
+                    }
+                    location {
+                        ...LocationPreview
+                    }
+                    organization {
+                        ...OrganizationPreview
+                    }
+                }
+            }
+            pageInfo {
+                ...PaginationInfo
+            }
+            totalCount
+        }
+        incomingFriendRequests {
+            edges {
+                cursor
+                node {
+                    id
+                    senderId
+                    receiverId
+                    createdAt
+                    sender {
+                        ...UserPreview
+                    }
+                }
+            }
+            pageInfo {
+                ...PaginationInfo
+            }
+            totalCount
+        }
+        friendsCount
+    }
+}

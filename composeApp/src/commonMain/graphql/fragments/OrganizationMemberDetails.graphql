@@ -1,0 +1,12 @@
+#import "./UserPreview.graphql"
+
+fragment OrganizationMemberDetails on OrganizationMember {
+  id
+  organizationId
+  userId
+  role
+  createdAt
+  userProfile {
+    ...UserPreview
+  }
+}

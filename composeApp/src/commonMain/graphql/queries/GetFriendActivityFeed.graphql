@@ -1,0 +1,50 @@
+#import "../fragments/PaginationInfo.graphql"
+#import "../fragments/UserPreview.graphql"
+#import "../fragments/EventPreview.graphql"
+#import "../fragments/VenuePreview.graphql"
+#import "../fragments/PerformerPreview.graphql"
+#import "../fragments/LocationPreview.graphql"
+#import "../fragments/AgendaItemPreview.graphql"
+#import "../fragments/OrganizationPreview.graphql"
+
+query GetFriendActivityFeed($first: Int = 10, $after: String, $includeSelf: Boolean = false) {
+    friendActivityFeed(first: $first, after: $after, includeSelf: $includeSelf) {
+        edges {
+            cursor
+            node {
+                id
+                userId
+                activityType
+                entityType
+                entityId
+                createdAt
+                isCurrentUser
+                user {
+                    ...UserPreview
+                }
+                event {
+                    ...EventPreview
+                }
+                agendaItem {
+                    ...AgendaItemPreview
+                }
+                venue {
+                    ...VenuePreview
+                }
+                performer {
+                    ...PerformerPreview
+                }
+                location {
+                    ...LocationPreview
+                }
+                organization {
+                    ...OrganizationPreview
+                }
+            }
+        }
+        pageInfo {
+            ...PaginationInfo
+        }
+        totalCount
+    }
+}

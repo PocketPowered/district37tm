@@ -1,0 +1,8 @@
+#import "../fragments/ConversationPreview.graphql"
+#import "../fragments/UserPreview.graphql"
+
+query GetConversation($id: Int!) {
+    conversation(id: $id) {
+        ...ConversationPreview
+    }
+}

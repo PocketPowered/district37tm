@@ -4,10 +4,6 @@ import UserNotifications
 import ComposeApp
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
-    private lazy var notificationRepository: NotificationRepository = {
-        return KoinBridge.shared.getNotificationsRepository()
-    }()
-    
     private var storedFCMToken: String?
     private var hasAPNSToken = false
     private var hasSubscribedToTopics = false
@@ -24,7 +20,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         print("🔥 Firebase configured")
         
         // Initialize Koin
-        AppModuleKt.initializeKoin(context: application)
+        KoinInitializer_iosKt.initializeKoin()
         print("🔄 Koin initialized")
         
         // Setup push notifications
@@ -172,14 +168,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             let relatedEventId = data["relatedEventId"] as? String
     
             print("📬 Received notification - Title: \(title), Body: \(body), Type: \(type), EventId: \(relatedEventId ?? "nil")")
-    
-            // Insert notification into repository
-            do {
-                try notificationRepository.insertNotification(header: title, description: body)
-                print("✅ Successfully inserted notification into database")
-            } catch {
-                print("❌ Failed to insert notification: \(error.localizedDescription)")
-            }
     
             // Create and show local notification
             let content = UNMutableNotificationContent()

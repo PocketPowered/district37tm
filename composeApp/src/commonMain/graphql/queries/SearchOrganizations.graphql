@@ -1,0 +1,17 @@
+#import "../fragments/OrganizationPreview.graphql"
+#import "../fragments/PaginationInfo.graphql"
+
+query SearchOrganizations($first: Int, $after: String, $searchQuery: String) {
+  organizationsConnection(first: $first, after: $after, searchQuery: $searchQuery) {
+    edges {
+      node {
+        ...OrganizationPreview
+      }
+      cursor
+    }
+    pageInfo {
+      ...PaginationInfo
+    }
+    totalCount
+  }
+}

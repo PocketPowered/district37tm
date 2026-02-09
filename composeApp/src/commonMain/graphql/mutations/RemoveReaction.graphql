@@ -1,0 +1,3 @@
+mutation RemoveReaction($input: RemoveReactionInput!) {
+    removeReaction(input: $input)
+}

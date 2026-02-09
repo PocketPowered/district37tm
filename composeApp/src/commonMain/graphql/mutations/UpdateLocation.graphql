@@ -1,0 +1,7 @@
+#import "../fragments/LocationDetails.graphql"
+
+mutation UpdateLocation($id: Int!, $input: UpdateLocationInput!) {
+  updateLocation(id: $id, input: $input) {
+    ...LocationDetails
+  }
+}

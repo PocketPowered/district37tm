@@ -1,0 +1,12 @@
+fragment NotificationPreview on Notification {
+    id
+    notificationType
+    title
+    body
+    deepLink
+    entityType
+    entityId
+    isRead
+    createdAt
+    imageUrl
+}

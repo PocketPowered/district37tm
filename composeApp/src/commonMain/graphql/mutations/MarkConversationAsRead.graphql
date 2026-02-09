@@ -1,0 +1,9 @@
+mutation MarkConversationAsRead($input: MarkAsReadInput!) {
+    markConversationAsRead(input: $input) {
+        conversationId
+        userId
+        joinedAt
+        lastReadAt
+        lastReadMessageId
+    }
+}

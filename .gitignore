@@ -2,6 +2,10 @@
 .kotlin
 .gradle
 **/build/
+**/xcode-frameworks/
+**/*.xcresult
+**/.swiftpm/
+server/bin/
 xcuserdata
 !src/**/build/
 local.properties

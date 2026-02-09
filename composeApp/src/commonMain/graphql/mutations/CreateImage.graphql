@@ -1,0 +1,5 @@
+mutation CreateImage($input: CreateImageInput!) {
+    createImage(input: $input) {
+        ...ImageDetails
+    }
+}

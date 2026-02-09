@@ -1,0 +1,90 @@
+#import "../fragments/UserPreview.graphql"
+#import "../fragments/EventPreview.graphql"
+#import "../fragments/PaginationInfo.graphql"
+#import "../fragments/VenuePreview.graphql"
+#import "../fragments/PerformerPreview.graphql"
+#import "../fragments/LocationPreview.graphql"
+#import "../fragments/AgendaItemPreview.graphql"
+#import "../fragments/OrganizationPreview.graphql"
+
+query GetUserProfile($userId: String!) {
+    getUserProfile(userId: $userId) {
+        user {
+            ...UserPreview
+            username
+            bio
+            createdAt
+            updatedAt
+            primaryColor
+        }
+        relationshipStatus {
+            isFriend
+            pendingIncomingRequest {
+                id
+                senderId
+                receiverId
+                createdAt
+            }
+            pendingOutgoingRequest {
+                id
+                senderId
+                receiverId
+                createdAt
+            }
+        }
+        attendingEvents {
+            edges {
+                node {
+                    entityId
+                    event {
+                        ...EventPreview
+                    }
+                }
+            }
+            pageInfo {
+                ...PaginationInfo
+            }
+            totalCount
+        }
+        activityFeed {
+            edges {
+                cursor
+                node {
+                    id
+                    userId
+                    activityType
+                    entityType
+                    entityId
+                    metadata
+                    createdAt
+                    isCurrentUser
+                    user {
+                        ...UserPreview
+                    }
+                    event {
+                        ...EventPreview
+                    }
+                    agendaItem {
+                        ...AgendaItemPreview
+                    }
+                    venue {
+                        ...VenuePreview
+                    }
+                    performer {
+                        ...PerformerPreview
+                    }
+                    location {
+                        ...LocationPreview
+                    }
+                    organization {
+                        ...OrganizationPreview
+                    }
+                }
+            }
+            pageInfo {
+                ...PaginationInfo
+            }
+            totalCount
+        }
+    }
+}

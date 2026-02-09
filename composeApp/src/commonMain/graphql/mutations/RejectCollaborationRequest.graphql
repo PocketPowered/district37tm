@@ -1,0 +1,3 @@
+mutation RejectCollaborationRequest($requestId: Int!) {
+    rejectCollaborationRequest(requestId: $requestId)
+}

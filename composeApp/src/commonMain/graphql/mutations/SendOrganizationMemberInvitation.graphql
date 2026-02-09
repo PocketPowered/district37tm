@@ -1,0 +1,7 @@
+#import "../fragments/OrganizationMemberInvitationDetails.graphql"
+
+mutation SendOrganizationMemberInvitation($input: SendOrganizationMemberInvitationInput!) {
+  sendOrganizationMemberInvitation(input: $input) {
+    ...OrganizationMemberInvitationDetails
+  }
+}

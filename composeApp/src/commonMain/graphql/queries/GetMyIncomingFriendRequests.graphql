@@ -1,0 +1,23 @@
+#import "../fragments/PaginationInfo.graphql"
+#import "../fragments/UserPreview.graphql"
+
+query GetMyIncomingFriendRequests($first: Int, $after: String) {
+    myIncomingFriendRequests(first: $first, after: $after) {
+        edges {
+            cursor
+            node {
+                id
+                senderId
+                receiverId
+                createdAt
+                sender {
+                    ...UserPreview
+                }
+            }
+        }
+        pageInfo {
+            ...PaginationInfo
+        }
+        totalCount
+    }
+}

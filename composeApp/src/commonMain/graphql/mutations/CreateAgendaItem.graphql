@@ -1,0 +1,7 @@
+#import "../fragments/AgendaItemDetails.graphql"
+
+mutation CreateAgendaItem($input: CreateAgendaItemInput!) {
+  createAgendaItem(input: $input) {
+    ...AgendaItemDetails
+  }
+}

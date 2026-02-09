@@ -1,0 +1,5 @@
+mutation SetEntityStatus($entityType: EntityType!, $entityId: Int!, $status: UserEngagementStatus) {
+  setEntityStatus(entityType: $entityType, entityId: $entityId, status: $status) {
+    ...UserEngagementDetails
+  }
+}

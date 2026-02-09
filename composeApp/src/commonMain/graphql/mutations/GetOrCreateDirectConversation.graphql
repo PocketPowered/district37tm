@@ -1,0 +1,8 @@
+#import "../fragments/ConversationPreview.graphql"
+#import "../fragments/UserPreview.graphql"
+
+mutation GetOrCreateDirectConversation($otherUserId: String!) {
+    getOrCreateDirectConversation(otherUserId: $otherUserId) {
+        ...ConversationPreview
+    }
+}

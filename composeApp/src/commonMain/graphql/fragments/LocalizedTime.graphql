@@ -1,0 +1,4 @@
+fragment LocalizedTimeFragment on LocalizedTime {
+  instant
+  timezone
+}

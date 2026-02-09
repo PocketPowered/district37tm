@@ -1,0 +1,7 @@
+#import "../fragments/ImageDetails.graphql"
+
+mutation ArchiveImage($id: Int!) {
+  archiveImage(id: $id) {
+    ...ImageDetails
+  }
+}

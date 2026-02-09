@@ -1,0 +1,7 @@
+#import "../fragments/VenueDetails.graphql"
+
+mutation CreateVenue($input: CreateVenueInput!) {
+  createVenue(input: $input) {
+    ...VenueDetails
+  }
+}

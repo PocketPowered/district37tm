@@ -1,0 +1,12 @@
+query GetMyPermissionForEntity($entityType: String!, $entityId: Int!) {
+    myPermissionForEntity(entityType: $entityType, entityId: $entityId) {
+        id
+        entityType
+        entityId
+        userId
+        permissionLevel
+        isOwner
+        canManageCollaborators
+        createdAt
+    }
+}

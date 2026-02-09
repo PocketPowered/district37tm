@@ -1,0 +1,2256 @@
+type ActivityFeedConnection {
+  edges: [ActivityFeedEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type ActivityFeedEdge {
+  cursor: String!
+
+  node: ActivityFeedItem!
+}
+
+type ActivityFeedItem {
+  activityType: ActivityType!
+
+  createdAt: Instant!
+
+  entityId: Int!
+
+  entityType: EntityType!
+
+  id: Int!
+
+  metadata: String
+
+  userId: String!
+
+  agendaItem: AgendaItem
+
+  event: Event
+
+  isCurrentUser: Boolean!
+
+  location: Location
+
+  organization: Organization
+
+  performer: Performer
+
+  user: User
+
+  venue: Venue
+}
+
+enum ActivityType {
+  RSVP_GOING
+
+  RSVP_NOT_GOING
+
+  RSVP_UNDECIDED
+
+  SUBSCRIBED
+
+  UNSUBSCRIBED
+
+  CREATED
+
+  STARTED_COLLABORATING
+}
+
+input AddOrganizationMemberInput {
+  organizationId: Int!
+
+  role: OrganizationRole!
+
+  userId: String!
+}
+
+input AddReactionInput {
+  emoji: String!
+
+  messageId: Int!
+}
+
+type AgendaDate {
+  date: LocalDate!
+
+  itemCount: Int!
+}
+
+type AgendaItem {
+  createdAt: Instant
+
+  description: String
+
+  eventId: Int!
+
+  id: Int!
+
+  locationId: Int
+
+  performerIds: [Int!]!
+
+  tag: AgendaItemTag
+
+  timeRange: LocalizedTimeRange
+
+  title: String!
+
+  event: Event!
+
+  imagesConnection(first: Int, after: String, last: Int, before: String): ImageConnection!
+
+  location: Location
+
+  performers: [Performer!]!
+
+  permissions: EntityPermissions!
+
+  resourcesConnection(first: Int, after: String, last: Int, before: String): ResourceConnection!
+
+  socialEngagement(first: Int): SocialEngagementConnection
+
+  userEngagement: UserEntityEngagement
+}
+
+type AgendaItemConnection {
+  edges: [AgendaItemEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type AgendaItemEdge {
+  cursor: String!
+
+  node: AgendaItem!
+}
+
+type AgendaItemSyncRecord {
+  agendaItemId: Int!
+
+  calendarEventId: String!
+
+  calendarId: String
+
+  eventId: Int!
+
+  id: Long!
+
+  lastServerUpdatedAt: Instant
+
+  lastUpdatedAt: Instant
+
+  platform: Platform!
+
+  status: CalendarSyncStatus!
+
+  syncedAt: Instant
+
+  userId: String!
+}
+
+enum AgendaItemTag {
+  HIGHLIGHTED
+
+  SPECIAL
+
+  LIMITED
+}
+
+type AuthResult {
+  accessToken: String!
+
+  expiresIn: Int!
+
+  isNewUser: Boolean!
+
+  refreshToken: String!
+
+  user: User!
+}
+
+enum CalendarSyncStatus {
+  SYNCED
+
+  DELETED
+
+  ERROR
+
+  NEEDS_UPDATE
+}
+
+enum CarouselDisplayFormat {
+  HERO
+
+  MEDIUM
+}
+
+type CollaborationRequest {
+  createdAt: Instant!
+
+  entityId: Int!
+
+  entityType: String!
+
+  id: Int!
+
+  permissionLevel: String!
+
+  receiverId: String!
+
+  senderId: String!
+
+  entityName: String
+
+  receiver: User
+
+  sender: User
+}
+
+type CollaborationRequestConnection {
+  edges: [CollaborationRequestEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type CollaborationRequestEdge {
+  cursor: String!
+
+  node: CollaborationRequest!
+}
+
+type Collaborator {
+  canManageCollaborators: Boolean!
+
+  createdAt: Instant!
+
+  entityId: Int!
+
+  entityType: String!
+
+  id: String!
+
+  isOwner: Boolean!
+
+  permissionLevel: String!
+
+  userId: String!
+
+  user: User
+}
+
+type CollaboratorConnection {
+  edges: [CollaboratorEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type CollaboratorEdge {
+  cursor: String!
+
+  node: Collaborator!
+}
+
+type Conversation {
+  conversationType: ConversationType!
+
+  createdAt: Instant
+
+  createdBy: String
+
+  id: Int!
+
+  name: String
+
+  updatedAt: Instant
+
+  hasUnread: Boolean!
+
+  latestMessage: Message
+
+  participants: [User!]!
+}
+
+type ConversationConnection {
+  edges: [ConversationEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type ConversationEdge {
+  cursor: String!
+
+  node: Conversation!
+}
+
+type ConversationParticipant {
+  conversationId: Int!
+
+  joinedAt: Instant
+
+  lastReadAt: Instant
+
+  lastReadMessageId: Int
+
+  userId: String!
+}
+
+enum ConversationType {
+  DIRECT
+
+  GROUP
+}
+
+input CreateAgendaItemInput {
+  description: String
+
+  endTime: Instant
+
+  eventId: Int!
+
+  locationId: Int
+
+  performerIds: [Int!]
+
+  startTime: Instant
+
+  tag: AgendaItemTag
+
+  title: String!
+}
+
+input CreateConversationInput {
+  initialMessage: String
+
+  name: String
+
+  participantIds: [String!]!
+}
+
+input CreateEventInput {
+  description: String
+
+  endDate: Instant!
+
+  eventType: EventType
+
+  name: String!
+
+  organizationId: Int
+
+  slug: String
+
+  startDate: Instant!
+
+  venueId: Int!
+}
+
+type CreateHub {
+  myEvents: EventsWithPagination!
+
+  myOrganizations: OrganizationsWithPagination!
+
+  myPerformers: PerformersWithPagination!
+
+  myVenues: VenuesWithPagination!
+}
+
+input CreateImageInput {
+  altText: String
+
+  caption: String
+
+  displayOrder: Int
+
+  entityId: Int!
+
+  entityType: EntityType!
+
+  focusRegion: FocusRegionInput
+
+  url: String!
+}
+
+input CreateLocationInput {
+  capacity: Int
+
+  description: String
+
+  floorLevel: String
+
+  locationType: String
+
+  name: String!
+
+  slug: String
+
+  venueId: Int
+}
+
+input CreateOrganizationInput {
+  description: String
+
+  email: String
+
+  logoUrl: String
+
+  name: String!
+
+  phone: String
+
+  primaryColor: String
+
+  secondaryColor: String
+
+  slug: String
+
+  tag: String!
+
+  website: String
+}
+
+input CreatePerformerInput {
+  bio: String
+
+  name: String!
+
+  performerType: String
+
+  slug: String
+}
+
+input CreateResourceInput {
+  description: String
+
+  entityId: Int!
+
+  entityType: EntityType!
+
+  title: String!
+
+  url: String!
+}
+
+input CreateVenueInput {
+  address: String
+
+  capacity: Int
+
+  city: String
+
+  name: String!
+
+  slug: String
+
+  state: String
+
+  zipCode: String
+}
+
+type DeviceToken {
+  createdAt: Instant
+
+  deviceName: String
+
+  fcmToken: String!
+
+  id: Int!
+
+  isActive: Boolean!
+
+  platform: Platform!
+
+  updatedAt: Instant
+
+  userId: String!
+}
+
+input EditMessageInput {
+  content: String!
+
+  messageId: Int!
+}
+
+type EntityPermissions {
+  canDelete: Boolean!
+
+  canEdit: Boolean!
+
+  canManageCollaborators: Boolean!
+
+  role: PermissionRole!
+}
+
+enum EntityType {
+  EVENT
+
+  VENUE
+
+  PERFORMER
+
+  LOCATION
+
+  AGENDAITEM
+
+  ORGANIZATION
+}
+
+type Event {
+  archivedAt: Instant
+
+  createdAt: Instant
+
+  description: String
+
+  eventType: EventType
+
+  id: Int!
+
+  isArchived: Boolean!
+
+  name: String!
+
+  organizationId: Int
+
+  slug: String
+
+  venueId: Int
+
+  agendaDates: [AgendaDate!]!
+
+  imagesConnection(first: Int, after: String, last: Int, before: String): ImageConnection!
+
+  organization: Organization
+
+  permissions: EntityPermissions!
+
+  resourcesConnection(first: Int, after: String, last: Int, before: String): ResourceConnection!
+
+  socialEngagement(first: Int): SocialEngagementConnection
+
+  timeRange: LocalizedTimeRange
+
+  userEngagement: UserEntityEngagement
+
+  venue: Venue
+}
+
+type EventCarousel {
+  displayFormat: CarouselDisplayFormat!
+
+  events: [Event!]!
+
+  hasMore: Boolean!
+
+  title: String!
+
+  totalCount: Int!
+}
+
+type EventConnection {
+  edges: [EventEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type EventEdge {
+  cursor: String!
+
+  node: Event!
+}
+
+type EventSyncRecord {
+  calendarEventId: String!
+
+  calendarId: String
+
+  eventId: Int!
+
+  id: Long!
+
+  lastUpdatedAt: Instant
+
+  platform: Platform!
+
+  status: CalendarSyncStatus!
+
+  syncedAt: Instant
+
+  userId: String!
+}
+
+enum EventType {
+  CONFERENCE
+
+  CONCERT
+
+  FESTIVAL
+
+  WORKSHOP
+
+  SYMPOSIUM
+
+  FORUM
+
+  EXPO
+
+  PITCH_EVENT
+
+  HACKATHON
+}
+
+type EventsWithPagination {
+  hasMore: Boolean!
+
+  items: [Event!]!
+
+  totalCount: Int!
+}
+
+type ExplorePage {
+  carousels: [EventCarousel!]!
+
+  nearbyCity: NearbyCity
+}
+
+type FocusRegion {
+  height: Float!
+
+  width: Float!
+
+  x: Float!
+
+  y: Float!
+}
+
+input FocusRegionInput {
+  height: Float!
+
+  width: Float!
+
+  x: Float!
+
+  y: Float!
+}
+
+type Friend {
+  friendsSince: Instant!
+
+  userId: String!
+
+  user: User
+}
+
+type FriendConnection {
+  edges: [FriendEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type FriendEdge {
+  cursor: String!
+
+  node: Friend!
+}
+
+type FriendEngagement {
+  displayName: String
+
+  isSubscribed: Boolean!
+
+  profileImageUrl: String
+
+  status: UserEngagementStatus
+
+  userId: String!
+}
+
+type FriendRequest {
+  createdAt: Instant!
+
+  id: Int!
+
+  receiverId: String!
+
+  senderId: String!
+
+  receiver: User
+
+  sender: User
+}
+
+type FriendRequestConnection {
+  edges: [FriendRequestEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type FriendRequestEdge {
+  cursor: String!
+
+  node: FriendRequest!
+}
+
+type Image {
+  altText: String
+
+  archivedAt: Instant
+
+  caption: String
+
+  createdAt: Instant
+
+  displayOrder: Int
+
+  focusRegion: FocusRegion
+
+  id: Int!
+
+  isArchived: Boolean!
+
+  url: String!
+}
+
+type ImageConnection {
+  edges: [ImageEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type ImageEdge {
+  cursor: String!
+
+  node: Image!
+}
+
+"""
+An instant in time in ISO-8601 format (e.g., 2024-10-15T10:00:00Z)
+"""
+scalar Instant
+
+"""
+A date without a time-zone in ISO-8601 format (YYYY-MM-DD)
+"""
+scalar LocalDate
+
+type LocalizedTime {
+  instant: Instant!
+
+  timezone: String!
+}
+
+type LocalizedTimeRange {
+  end: LocalizedTime
+
+  start: LocalizedTime
+}
+
+type Location {
+  capacity: Int
+
+  createdAt: Instant
+
+  description: String
+
+  floorLevel: String
+
+  id: Int!
+
+  locationType: String
+
+  name: String!
+
+  slug: String
+
+  venueId: Int
+
+  imagesConnection(first: Int, after: String, last: Int, before: String): ImageConnection!
+
+  resourcesConnection(first: Int, after: String, last: Int, before: String): ResourceConnection!
+
+  venue: Venue!
+}
+
+type LocationConnection {
+  edges: [LocationEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type LocationEdge {
+  cursor: String!
+
+  node: Location!
+}
+
+"""
+A 64-bit signed integer represented as a string to avoid precision loss in JavaScript
+"""
+scalar Long
+
+input MarkAsReadInput {
+  conversationId: Int!
+
+  messageId: Int
+}
+
+type Message {
+  content: String!
+
+  conversationId: Int!
+
+  createdAt: Instant
+
+  id: Int!
+
+  imageUrl: String
+
+  isEdited: Boolean!
+
+  senderId: String!
+
+  updatedAt: Instant
+
+  reactions: [MessageReaction!]!
+
+  sender: User
+}
+
+type MessageConnection {
+  edges: [MessageEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type MessageEdge {
+  cursor: String!
+
+  node: Message!
+}
+
+type MessageReaction {
+  createdAt: Instant
+
+  emoji: String!
+
+  id: Int!
+
+  messageId: Int!
+
+  userId: String!
+
+  user: User
+}
+
+type Mutation {
+  archiveEvent(id: Int!): Event!
+
+  createEvent(input: CreateEventInput!): Event!
+
+  createTestUpcomingEvent: Event!
+
+  deleteEvent(id: Int!): Boolean!
+
+  updateEvent(id: Int!, input: UpdateEventInput!): Event!
+
+  createVenue(input: CreateVenueInput!): Venue!
+
+  deleteVenue(id: Int!): Boolean!
+
+  updateVenue(id: Int!, input: UpdateVenueInput!): Venue!
+
+  createPerformer(input: CreatePerformerInput!): Performer!
+
+  deletePerformer(id: Int!): Boolean!
+
+  updatePerformer(id: Int!, input: UpdatePerformerInput!): Performer!
+
+  createLocation(input: CreateLocationInput!): Location!
+
+  deleteLocation(id: Int!): Boolean!
+
+  updateLocation(id: Int!, input: UpdateLocationInput!): Location!
+
+  createAgendaItem(input: CreateAgendaItemInput!): AgendaItem!
+
+  deleteAgendaItem(id: Int!): Boolean!
+
+  updateAgendaItem(id: Int!, input: UpdateAgendaItemInput!): AgendaItem!
+
+  archiveResource(id: Int!): Resource!
+
+  createResource(input: CreateResourceInput!): Resource!
+
+  deleteResource(id: Int!): Boolean!
+
+  updateResource(id: Int!, input: UpdateResourceInput!): Resource!
+
+  archiveImage(id: Int!): Image!
+
+  createImage(input: CreateImageInput!): Image!
+
+  deleteImage(id: Int!): Boolean!
+
+  updateImage(id: Int!, input: UpdateImageInput!): Image!
+
+  checkUsernameAvailability(username: String!): Boolean!
+
+  setEntityStatus(entityType: EntityType!, entityId: Int!, status: UserEngagementStatus): UserEntityEngagement
+
+  subscribeToEntity(entityType: EntityType!, entityId: Int!): UserEntityEngagement!
+
+  unsubscribeFromEntity(entityType: EntityType!, entityId: Int!): UserEntityEngagement
+
+  updateMyUser(input: UpdateUserInput!): User!
+
+  acceptFriendRequest(requestId: Int!): Friend!
+
+  cancelFriendRequest(requestId: Int!): Boolean!
+
+  rejectFriendRequest(requestId: Int!): Boolean!
+
+  removeFriend(friendId: String!): Boolean!
+
+  sendFriendRequest(input: SendFriendRequestInput!): FriendRequest!
+
+  acceptCollaborationRequest(requestId: Int!): Collaborator!
+
+  cancelCollaborationRequest(requestId: Int!): Boolean!
+
+  rejectCollaborationRequest(requestId: Int!): Boolean!
+
+  removeCollaborator(collaboratorId: String!): Boolean!
+
+  sendCollaborationRequest(input: SendCollaborationRequestInput!): CollaborationRequest!
+
+  transferOwnership(entityType: String!, entityId: Int!, newOwnerId: String!): Boolean!
+
+  updateCollaboratorPermission(collaboratorId: String!, newPermissionLevel: String!): Collaborator!
+
+  acceptOrganizationMemberInvitation(invitationId: Int!): OrganizationMember!
+
+  addOrganizationMember(input: AddOrganizationMemberInput!): OrganizationMember!
+
+  cancelOrganizationMemberInvitation(invitationId: Int!): Boolean!
+
+  checkOrganizationTagAvailability(tag: String!): Boolean!
+
+  createOrganization(input: CreateOrganizationInput!): Organization!
+
+  deleteOrganization(id: Int!): Boolean!
+
+  rejectOrganizationMemberInvitation(invitationId: Int!): Boolean!
+
+  removeOrganizationMember(organizationId: Int!, userId: String!): Boolean!
+
+  sendOrganizationMemberInvitation(input: SendOrganizationMemberInvitationInput!): OrganizationMemberInvitation!
+
+  updateOrganization(id: Int!, input: UpdateOrganizationInput!): Organization!
+
+  updateOrganizationMemberRole(input: UpdateOrganizationMemberInput!): OrganizationMember!
+
+  addParticipantToConversation(conversationId: Int!, userId: String!): Boolean!
+
+  addReaction(input: AddReactionInput!): MessageReaction!
+
+  createConversation(input: CreateConversationInput!): Conversation!
+
+  deleteMessage(messageId: Int!): Boolean!
+
+  editMessage(input: EditMessageInput!): Message!
+
+  getOrCreateDirectConversation(otherUserId: String!): Conversation!
+
+  leaveConversation(conversationId: Int!): Boolean!
+
+  markConversationAsRead(input: MarkAsReadInput!): ConversationParticipant!
+
+  removeReaction(input: RemoveReactionInput!): Boolean!
+
+  sendMessage(input: SendMessageInput!): Message!
+
+  markAllNotificationsRead: Int!
+
+  markNotificationRead(notificationId: Int!): Notification!
+
+  registerDeviceToken(fcmToken: String!, platform: Platform!, deviceName: String): DeviceToken!
+
+  sendTestNotification: Boolean!
+
+  unregisterDeviceToken(fcmToken: String!): Boolean!
+
+  markEventSyncDeleted(eventId: Int!, platform: Platform!): EventSyncRecord
+
+  recordEventSync(eventId: Int!, platform: Platform!, calendarEventId: String!, calendarId: String): EventSyncRecord!
+
+  removeEventSync(eventId: Int!): Boolean!
+
+  markAgendaItemSyncDeleted(agendaItemId: Int!, platform: Platform!): AgendaItemSyncRecord
+
+  recordAgendaItemSync(agendaItemId: Int!, eventId: Int!, platform: Platform!, calendarEventId: String!, calendarId: String): AgendaItemSyncRecord!
+
+  recordAgendaItemSyncsBulk(inputs: [RecordAgendaItemSyncInput!]!): [AgendaItemSyncRecord!]!
+
+  removeAgendaItemSync(agendaItemId: Int!): Boolean!
+
+  removeAllAgendaItemSyncsForEvent(eventId: Int!): Int!
+
+  sendEmailOtp(input: SendEmailOtpInput!): SendEmailOtpResult!
+
+  sendPhoneOtp(input: SendPhoneOtpInput!): SendPhoneOtpResult!
+
+  verifyEmailOtp(input: VerifyEmailOtpInput!): AuthResult!
+
+  verifyPhoneOtp(input: VerifyPhoneOtpInput!): AuthResult!
+}
+
+type MyProfile {
+  activityFeed: ActivityFeedConnection!
+
+  attendingEvents: UserEntityEngagementConnection!
+
+  friendsCount: Int!
+
+  incomingFriendRequests: FriendRequestConnection!
+
+  subscribedEvents: UserEntityEngagementConnection!
+
+  user: User!
+}
+
+type NearbyCity {
+  city: String!
+
+  distanceMiles: Float!
+
+  eventCount: Int!
+
+  state: String
+
+  venueIds: [Int!]!
+}
+
+type Notification {
+  body: String!
+
+  createdAt: Instant
+
+  deepLink: String
+
+  entityId: Int
+
+  entityType: String
+
+  id: Int!
+
+  imageUrl: String
+
+  isRead: Boolean!
+
+  metadata: String
+
+  notificationType: NotificationType!
+
+  pushSent: Boolean!
+
+  pushSentAt: Instant
+
+  title: String!
+
+  userId: String!
+}
+
+type NotificationConnection {
+  edges: [NotificationEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type NotificationEdge {
+  cursor: String!
+
+  node: Notification!
+}
+
+enum NotificationType {
+  EVENT_RESCHEDULED
+
+  EVENT_VENUE_CHANGED
+
+  EVENT_CANCELLED
+
+  VENUE_ADDRESS_CHANGED
+
+  PERFORMER_ADDED_TO_EVENT
+
+  PERFORMER_REMOVED_FROM_EVENT
+
+  ORGANIZATION_UPDATED
+
+  AGENDA_ITEM_UPDATED
+
+  MESSAGE_RECEIVED
+
+  FRIEND_REQUEST_RECEIVED
+
+  FRIEND_REQUEST_ACCEPTED
+
+  FRIEND_REQUEST_DECLINED
+
+  COLLABORATION_REQUEST_RECEIVED
+
+  COLLABORATION_REQUEST_ACCEPTED
+
+  COLLABORATION_REQUEST_DECLINED
+
+  GENERAL
+}
+
+type OmnisearchResult {
+  hasMore: Boolean!
+
+  results: [OmnisearchResultItem!]!
+
+  totalCount: Int!
+}
+
+type OmnisearchResultItem {
+  event: Event
+
+  organization: Organization
+
+  performer: Performer
+
+  resultType: OmnisearchResultType!
+
+  user: User
+
+  venue: Venue
+}
+
+enum OmnisearchResultType {
+  EVENT
+
+  VENUE
+
+  PERFORMER
+
+  USER
+
+  ORGANIZATION
+}
+
+type Organization {
+  createdAt: Instant
+
+  description: String
+
+  email: String
+
+  id: Int!
+
+  logoUrl: String
+
+  name: String!
+
+  phone: String
+
+  primaryColor: String
+
+  secondaryColor: String
+
+  slug: String
+
+  tag: String
+
+  website: String
+
+  eventsConnection(first: Int, after: String, last: Int, before: String): EventConnection!
+
+  imagesConnection(first: Int, after: String, last: Int, before: String): ImageConnection!
+
+  membersConnection(first: Int, after: String, last: Int, before: String): OrganizationMemberConnection!
+
+  permissions: EntityPermissions!
+
+  resourcesConnection(first: Int, after: String, last: Int, before: String): ResourceConnection!
+
+  userEngagement: UserEntityEngagement
+}
+
+type OrganizationConnection {
+  edges: [OrganizationEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type OrganizationEdge {
+  cursor: String!
+
+  node: Organization!
+}
+
+type OrganizationMember {
+  createdAt: Instant
+
+  id: Int!
+
+  organizationId: Int!
+
+  role: OrganizationRole!
+
+  updatedAt: Instant
+
+  userId: String!
+
+  userProfile: User
+}
+
+type OrganizationMemberConnection {
+  edges: [OrganizationMemberEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type OrganizationMemberEdge {
+  cursor: String!
+
+  node: OrganizationMember!
+}
+
+type OrganizationMemberInvitation {
+  createdAt: Instant
+
+  id: Int!
+
+  organizationId: Int!
+
+  receiverId: String!
+
+  role: OrganizationRole!
+
+  senderId: String!
+
+  organization: Organization
+
+  receiver: User
+
+  sender: User
+}
+
+type OrganizationMemberInvitationConnection {
+  edges: [OrganizationMemberInvitationEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type OrganizationMemberInvitationEdge {
+  cursor: String!
+
+  node: OrganizationMemberInvitation!
+}
+
+enum OrganizationRole {
+  OWNER
+
+  ADMIN
+
+  MEMBER
+}
+
+type OrganizationsWithPagination {
+  hasMore: Boolean!
+
+  items: [Organization!]!
+
+  totalCount: Int!
+}
+
+type PageInfo {
+  endCursor: String
+
+  hasNextPage: Boolean!
+
+  hasPreviousPage: Boolean!
+
+  startCursor: String
+}
+
+type Performer {
+  bio: String
+
+  createdAt: Instant
+
+  id: Int!
+
+  name: String!
+
+  performerType: String
+
+  slug: String
+
+  eventCount: Int!
+
+  eventsConnection(first: Int, after: String, last: Int, before: String): EventConnection!
+
+  imagesConnection(first: Int, after: String, last: Int, before: String): ImageConnection!
+
+  permissions: EntityPermissions!
+
+  resourcesConnection(first: Int, after: String, last: Int, before: String): ResourceConnection!
+}
+
+type PerformerConnection {
+  edges: [PerformerEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type PerformerEdge {
+  cursor: String!
+
+  node: Performer!
+}
+
+type PerformersWithPagination {
+  hasMore: Boolean!
+
+  items: [Performer!]!
+
+  totalCount: Int!
+}
+
+enum PermissionRole {
+  NONE
+
+  OWNER
+
+  EDITOR
+
+  VIEWER
+}
+
+enum Platform {
+  ANDROID
+
+  IOS
+}
+
+type Query {
+  checkEventSlugAvailability(slug: String!, excludeId: Int): Boolean!
+
+  event(id: Int, slug: String): Event
+
+  eventsConnection(first: Int, after: String, last: Int, before: String, searchQuery: String, venueId: Int, eventType: EventType): EventConnection!
+
+  explorePage(eventsPerCarousel: Int!, latitude: Float, longitude: Float, radiusMiles: Float!): ExplorePage!
+
+  suggestEventSlug(name: String!, excludeId: Int): String!
+
+  checkVenueSlugAvailability(slug: String!, excludeId: Int): Boolean!
+
+  suggestVenueSlug(name: String!, excludeId: Int): String!
+
+  venue(id: Int, slug: String): Venue
+
+  venuesConnection(first: Int, after: String, last: Int, before: String, searchQuery: String): VenueConnection!
+
+  checkPerformerSlugAvailability(slug: String!, excludeId: Int): Boolean!
+
+  performer(id: Int, slug: String): Performer
+
+  performersConnection(first: Int, after: String, last: Int, before: String, searchQuery: String): PerformerConnection!
+
+  suggestPerformerSlug(name: String!, excludeId: Int): String!
+
+  checkLocationSlugAvailability(slug: String!, excludeId: Int): Boolean!
+
+  location(id: Int, slug: String): Location
+
+  locationsConnection(first: Int, after: String, last: Int, before: String, venueId: Int, searchQuery: String): LocationConnection!
+
+  suggestLocationSlug(name: String!, excludeId: Int): String!
+
+  agendaItem(id: Int!): AgendaItem
+
+  agendaItemsByEventAndDate(eventId: Int!, date: LocalDate!, first: Int, after: String, last: Int, before: String, myScheduleOnly: Boolean!): AgendaItemConnection!
+
+  agendaItemsConnection(first: Int, after: String, last: Int, before: String, searchQuery: String, eventId: Int, locationId: Int, performerId: Int): AgendaItemConnection!
+
+  resource(id: Int!): Resource
+
+  resourcesConnection(first: Int, after: String, last: Int, before: String, searchQuery: String, entityType: EntityType, entityId: Int): ResourceConnection!
+
+  getMyProfile(subscribedEventsFirst: Int, attendingEventsFirst: Int, activityFeedFirst: Int, friendRequestsFirst: Int): MyProfile
+
+  getUserProfile(userId: String!): UserProfile
+
+  myEngagement(entityType: EntityType!, entityId: Int!): UserEntityEngagement
+
+  myEngagementsConnection(entityType: EntityType!, first: Int, after: String, last: Int, before: String): UserEntityEngagementConnection!
+
+  myEngagementsConnectionByStatus(entityType: EntityType!, status: UserEngagementStatus!, first: Int, after: String, last: Int, before: String): UserEntityEngagementConnection!
+
+  mySubscriptionsConnection(entityType: EntityType!, first: Int, after: String, last: Int, before: String): UserEntityEngagementConnection!
+
+  myUser: User
+
+  user(userId: String!): User
+
+  areFriends(userId: String!): Boolean!
+
+  friendRsvpsForEntity(entityType: EntityType!, entityId: Int!, first: Int!, after: String): SocialEngagementConnection!
+
+  myFriends(first: Int, after: String, last: Int, before: String): FriendConnection!
+
+  myIncomingFriendRequests(first: Int, after: String, last: Int, before: String): FriendRequestConnection!
+
+  myOutgoingFriendRequests(first: Int, after: String, last: Int, before: String): FriendRequestConnection!
+
+  relationshipStatus(userId: String!): UserRelationshipStatus!
+
+  createHub: CreateHub!
+
+  myArchivedEventsConnection(first: Int, after: String): EventConnection!
+
+  myEditableEventsConnection(first: Int, after: String): EventConnection!
+
+  myEditablePerformersConnection(first: Int, after: String): PerformerConnection!
+
+  myEditableVenuesConnection(first: Int, after: String): VenueConnection!
+
+  omnisearch(query: String!, limit: Int, eventId: Int): OmnisearchResult!
+
+  friendActivityFeed(first: Int!, after: String, includeSelf: Boolean!): ActivityFeedConnection!
+
+  myActivityFeed(first: Int!, after: String): ActivityFeedConnection!
+
+  userActivityFeed(userId: String!, first: Int!, after: String): ActivityFeedConnection!
+
+  collaboratorsForEntity(entityType: String!, entityId: Int!, first: Int, after: String, last: Int, before: String): CollaboratorConnection!
+
+  myIncomingCollaborationRequests(first: Int, after: String, last: Int, before: String): CollaborationRequestConnection!
+
+  myOutgoingCollaborationRequests(first: Int, after: String, last: Int, before: String): CollaborationRequestConnection!
+
+  myPermissionForEntity(entityType: String!, entityId: Int!): Collaborator
+
+  canManageOrganizationEvents(organizationId: Int!): Boolean!
+
+  checkOrganizationSlugAvailability(slug: String!, excludeId: Int): Boolean!
+
+  myOrganizationInvitations(first: Int, after: String, last: Int, before: String): OrganizationMemberInvitationConnection!
+
+  myRoleInOrganization(organizationId: Int!): OrganizationRole
+
+  organization(id: Int, slug: String): Organization
+
+  organizationMemberInvitations(organizationId: Int!, first: Int, after: String, last: Int, before: String): OrganizationMemberInvitationConnection!
+
+  organizationsConnection(first: Int, after: String, last: Int, before: String, searchQuery: String): OrganizationConnection!
+
+  suggestOrganizationSlug(name: String!, excludeId: Int): String!
+
+  conversation(id: Int!): Conversation
+
+  hasAnyUnreadConversations: Boolean!
+
+  messagesInConversation(conversationId: Int!, first: Int, after: String, last: Int, before: String): MessageConnection!
+
+  myConversations(first: Int, after: String, last: Int, before: String): ConversationConnection!
+
+  notificationsConnection(first: Int, after: String, last: Int, before: String, unreadOnly: Boolean): NotificationConnection!
+
+  unreadNotificationCount: Int!
+
+  eventSyncByEventId(eventId: Int!): EventSyncRecord
+
+  isEventSyncedToCalendar(eventId: Int!): Boolean!
+
+  myEventSyncs: [EventSyncRecord!]!
+
+  agendaItemSyncByAgendaItemId(agendaItemId: Int!): AgendaItemSyncRecord
+
+  agendaItemSyncsForEvent(eventId: Int!): [AgendaItemSyncRecord!]!
+
+  isAgendaItemSyncedToCalendar(agendaItemId: Int!): Boolean!
+
+  myAgendaItemSyncs: [AgendaItemSyncRecord!]!
+}
+
+input RecordAgendaItemSyncInput {
+  agendaItemId: Int!
+
+  calendarEventId: String!
+
+  calendarId: String
+
+  eventId: Int!
+
+  platform: Platform!
+}
+
+input RemoveReactionInput {
+  emoji: String!
+
+  messageId: Int!
+}
+
+type Resource {
+  archivedAt: Instant
+
+  createdAt: Instant
+
+  description: String
+
+  id: Int!
+
+  isArchived: Boolean!
+
+  title: String!
+
+  url: String!
+}
+
+type ResourceConnection {
+  edges: [ResourceEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type ResourceEdge {
+  cursor: String!
+
+  node: Resource!
+}
+
+input SendCollaborationRequestInput {
+  entityId: Int!
+
+  entityType: String!
+
+  permissionLevel: String!
+
+  receiverId: String!
+}
+
+input SendEmailOtpInput {
+  email: String!
+}
+
+type SendEmailOtpResult {
+  message: String!
+
+  success: Boolean!
+}
+
+input SendFriendRequestInput {
+  receiverId: String!
+}
+
+input SendMessageInput {
+  content: String!
+
+  conversationId: Int!
+
+  imageUrl: String
+}
+
+input SendOrganizationMemberInvitationInput {
+  organizationId: Int!
+
+  receiverId: String!
+
+  role: OrganizationRole!
+}
+
+input SendPhoneOtpInput {
+  phoneNumber: String!
+}
+
+type SendPhoneOtpResult {
+  message: String!
+
+  success: Boolean!
+}
+
+type SocialEngagementConnection {
+  edges: [SocialEngagementEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type SocialEngagementEdge {
+  cursor: String!
+
+  node: FriendEngagement!
+}
+
+type Subscription {
+  messageReceived(conversationId: Int!): Message!
+
+  unreadStatusChanged: UnreadStatusUpdate!
+}
+
+type UnreadStatusUpdate {
+  conversationId: Int!
+
+  hasUnread: Boolean!
+}
+
+input UpdateAgendaItemInput {
+  description: String
+
+  endTime: Instant
+
+  locationId: Int
+
+  performerIds: [Int!]
+
+  startTime: Instant
+
+  tag: AgendaItemTag
+
+  title: String
+}
+
+input UpdateEventInput {
+  description: String
+
+  endDate: Instant
+
+  eventType: EventType
+
+  name: String
+
+  organizationId: Int
+
+  slug: String
+
+  startDate: Instant
+
+  venueId: Int
+}
+
+input UpdateImageInput {
+  altText: String
+
+  caption: String
+
+  displayOrder: Int
+
+  focusRegion: FocusRegionInput
+
+  url: String
+}
+
+input UpdateLocationInput {
+  capacity: Int
+
+  description: String
+
+  floorLevel: String
+
+  locationType: String
+
+  name: String
+
+  slug: String
+
+  venueId: Int
+}
+
+input UpdateOrganizationInput {
+  description: String
+
+  email: String
+
+  logoUrl: String
+
+  name: String
+
+  phone: String
+
+  primaryColor: String
+
+  secondaryColor: String
+
+  slug: String
+
+  tag: String
+
+  website: String
+}
+
+input UpdateOrganizationMemberInput {
+  organizationId: Int!
+
+  role: OrganizationRole!
+
+  userId: String!
+}
+
+input UpdatePerformerInput {
+  bio: String
+
+  name: String
+
+  performerType: String
+
+  slug: String
+}
+
+input UpdateResourceInput {
+  description: String
+
+  title: String
+
+  url: String
+}
+
+input UpdateUserInput {
+  bio: String
+
+  displayName: String
+
+  preferences: UserPreferencesInput
+
+  primaryColor: String
+
+  profileImageUrl: String
+
+  secondaryColor: String
+
+  username: String
+}
+
+input UpdateVenueInput {
+  address: String
+
+  capacity: Int
+
+  city: String
+
+  name: String
+
+  slug: String
+
+  state: String
+
+  zipCode: String
+}
+
+type User {
+  bio: String
+
+  createdAt: Instant
+
+  displayName: String
+
+  effectiveDisplayName: String!
+
+  email: String!
+
+  hasCompletedOnboarding: Boolean!
+
+  hasCustomProfile: Boolean!
+
+  id: String!
+
+  needsOnboarding: Boolean!
+
+  preferences: UserPreferences
+
+  primaryColor: String
+
+  profileImageUrl: String
+
+  secondaryColor: String
+
+  updatedAt: Instant
+
+  username: String
+}
+
+enum UserEngagementStatus {
+  UNDECIDED
+
+  NOT_GOING
+
+  GOING
+}
+
+type UserEntityEngagement {
+  createdAt: Instant
+
+  entityId: Int!
+
+  entityType: EntityType!
+
+  id: Int!
+
+  isSubscribed: Boolean!
+
+  status: UserEngagementStatus
+
+  updatedAt: Instant
+
+  userId: String!
+
+  event: Event
+}
+
+type UserEntityEngagementConnection {
+  edges: [UserEntityEngagementEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type UserEntityEngagementEdge {
+  cursor: String!
+
+  node: UserEntityEngagement!
+}
+
+type UserPreferences {
+  displayDensity: String
+
+  notificationsEnabled: Boolean
+
+  theme: String
+}
+
+input UserPreferencesInput {
+  displayDensity: String
+
+  notificationsEnabled: Boolean
+
+  theme: String
+}
+
+type UserProfile {
+  activityFeed: ActivityFeedConnection
+
+  attendingEvents: UserEntityEngagementConnection
+
+  relationshipStatus: UserRelationshipStatus!
+
+  user: User!
+}
+
+type UserRelationshipStatus {
+  isFriend: Boolean!
+
+  pendingIncomingRequest: FriendRequest
+
+  pendingOutgoingRequest: FriendRequest
+}
+
+type Venue {
+  address: String
+
+  capacity: Int
+
+  city: String
+
+  createdAt: Instant
+
+  id: Int!
+
+  latitude: Float!
+
+  longitude: Float!
+
+  name: String!
+
+  slug: String
+
+  state: String
+
+  timezone: String
+
+  zipCode: String
+
+  eventCount: Int!
+
+  eventsConnection(first: Int, after: String, last: Int, before: String): EventConnection!
+
+  imagesConnection(first: Int, after: String, last: Int, before: String): ImageConnection!
+
+  permissions: EntityPermissions!
+
+  resourcesConnection(first: Int, after: String, last: Int, before: String): ResourceConnection!
+}
+
+type VenueConnection {
+  edges: [VenueEdge!]!
+
+  pageInfo: PageInfo!
+
+  totalCount: Int!
+}
+
+type VenueEdge {
+  cursor: String!
+
+  node: Venue!
+}
+
+type VenuesWithPagination {
+  hasMore: Boolean!
+
+  items: [Venue!]!
+
+  totalCount: Int!
+}
+
+input VerifyEmailOtpInput {
+  email: String!
+
+  otp: String!
+}
+
+input VerifyPhoneOtpInput {
+  otp: String!
+
+  phoneNumber: String!
+}
+
+type __Directive {
+  """
+  The __Directive type represents a Directive that a server supports.
+  """
+  name: String!
+
+  description: String
+
+  isRepeatable: Boolean!
+
+  locations: [__DirectiveLocation!]!
+
+  args(includeDeprecated: Boolean = false): [__InputValue!]!
+}
+
+"""
+An enum describing valid locations where a directive can be placed
+"""
+enum __DirectiveLocation {
+  """
+  Indicates the directive is valid on queries.
+  """
+  QUERY
+
+  """
+  Indicates the directive is valid on mutations.
+  """
+  MUTATION
+
+  """
+  Indicates the directive is valid on subscriptions.
+  """
+  SUBSCRIPTION
+
+  """
+  Indicates the directive is valid on fields.
+  """
+  FIELD
+
+  """
+  Indicates the directive is valid on fragment definitions.
+  """
+  FRAGMENT_DEFINITION
+
+  """
+  Indicates the directive is valid on fragment spreads.
+  """
+  FRAGMENT_SPREAD
+
+  """
+  Indicates the directive is valid on inline fragments.
+  """
+  INLINE_FRAGMENT
+
+  """
+  Indicates the directive is valid on variable definitions.
+  """
+  VARIABLE_DEFINITION
+
+  """
+  Indicates the directive is valid on a schema SDL definition.
+  """
+  SCHEMA
+
+  """
+  Indicates the directive is valid on a scalar SDL definition.
+  """
+  SCALAR
+
+  """
+  Indicates the directive is valid on an object SDL definition.
+  """
+  OBJECT
+
+  """
+  Indicates the directive is valid on a field SDL definition.
+  """
+  FIELD_DEFINITION
+
+  """
+  Indicates the directive is valid on a field argument SDL definition.
+  """
+  ARGUMENT_DEFINITION
+
+  """
+  Indicates the directive is valid on an interface SDL definition.
+  """
+  INTERFACE
+
+  """
+  Indicates the directive is valid on an union SDL definition.
+  """
+  UNION
+
+  """
+  Indicates the directive is valid on an enum SDL definition.
+  """
+  ENUM
+
+  """
+  Indicates the directive is valid on an enum value SDL definition.
+  """
+  ENUM_VALUE
+
+  """
+  Indicates the directive is valid on an input object SDL definition.
+  """
+  INPUT_OBJECT
+
+  """
+  Indicates the directive is valid on an input object field SDL definition.
+  """
+  INPUT_FIELD_DEFINITION
+}
+
+type __EnumValue {
+  name: String!
+
+  description: String
+
+  isDeprecated: Boolean!
+
+  deprecationReason: String
+}
+
+type __Field {
+  name: String!
+
+  description: String
+
+  args(includeDeprecated: Boolean = false): [__InputValue!]!
+
+  type: __Type!
+
+  isDeprecated: Boolean!
+
+  deprecationReason: String
+}
+
+type __InputValue {
+  name: String!
+
+  description: String
+
+  type: __Type!
+
+  defaultValue: String
+
+  isDeprecated: Boolean
+
+  deprecationReason: String
+}
+
+"""
+A GraphQL Introspection defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, the entry points for query, mutation, and subscription operations.
+"""
+type __Schema {
+  description: String
+
+  """
+  A list of all types supported by this server.
+  """
+  types: [__Type!]!
+
+  """
+  The type that query operations will be rooted at.
+  """
+  queryType: __Type!
+
+  """
+  If this server supports mutation, the type that mutation operations will be rooted at.
+  """
+  mutationType: __Type
+
+  """
+  'A list of all directives supported by this server.
+  """
+  directives: [__Directive!]!
+
+  """
+  'If this server support subscription, the type that subscription operations will be rooted at.
+  """
+  subscriptionType: __Type
+}
+
+type __Type {
+  kind: __TypeKind!
+
+  name: String
+
+  description: String
+
+  fields(includeDeprecated: Boolean = false): [__Field!]
+
+  interfaces: [__Type!]
+
+  possibleTypes: [__Type!]
+
+  enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
+
+  inputFields(includeDeprecated: Boolean = false): [__InputValue!]
+
+  ofType: __Type
+
+  """
+  This field is considered experimental because it has not yet been ratified in the graphql specification
+  """
+  isOneOf: Boolean
+
+  specifiedByURL: String
+
+  specifiedByUrl: String @deprecated(reason: "This legacy name has been replaced by `specifiedByURL`")
+}
+
+"""
+An enum describing what kind of type a given __Type is
+"""
+enum __TypeKind {
+  """
+  Indicates this type is a scalar. 'specifiedByURL' is a valid field
+  """
+  SCALAR
+
+  """
+  Indicates this type is an object. `fields` and `interfaces` are valid fields.
+  """
+  OBJECT
+
+  """
+  Indicates this type is an interface. `fields` and `possibleTypes` are valid fields.
+  """
+  INTERFACE
+
+  """
+  Indicates this type is a union. `possibleTypes` is a valid field.
+  """
+  UNION
+
+  """
+  Indicates this type is an enum. `enumValues` is a valid field.
+  """
+  ENUM
+
+  """
+  Indicates this type is an input object. `inputFields` is a valid field.
+  """
+  INPUT_OBJECT
+
+  """
+  Indicates this type is a list. `ofType` is a valid field.
+  """
+  LIST
+
+  """
+  Indicates this type is a non-null. `ofType` is a valid field.
+  """
+  NON_NULL
+}
+
+"""
+Directs the executor to include this field or fragment only when the `if` argument is true
+"""
+directive @include ("Included when true." if: Boolean!) on FIELD|FRAGMENT_SPREAD|INLINE_FRAGMENT
+
+"""
+Directs the executor to skip this field or fragment when the `if` argument is true.
+"""
+directive @skip ("Skipped when true." if: Boolean!) on FIELD|FRAGMENT_SPREAD|INLINE_FRAGMENT
+
+"""
+Marks the field, argument, input field or enum value as deprecated
+"""
+directive @deprecated ("The reason for the deprecation" reason: String! = "No longer supported") on FIELD_DEFINITION|ARGUMENT_DEFINITION|ENUM_VALUE|INPUT_FIELD_DEFINITION
+
+"""
+Exposes a URL that specifies the behaviour of this scalar.
+"""
+directive @specifiedBy ("The URL that specifies the behaviour of this scalar." url: String!) on SCALAR
+
+"""
+Indicates an Input Object is a OneOf Input Object.
+"""
+directive @oneOf on INPUT_OBJECT
+
+"""
+This directive allows results to be deferred during execution
+"""
+directive @defer ("Deferred behaviour is controlled by this argument" if: Boolean! = true, "A unique label that represents the fragment being deferred" label: String) on FRAGMENT_SPREAD|INLINE_FRAGMENT
+
+"""
+This directive disables error propagation when a non nullable field returns null for the given operation.
+"""
+directive @experimental_disableErrorPropagation on QUERY|MUTATION|SUBSCRIPTION
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}

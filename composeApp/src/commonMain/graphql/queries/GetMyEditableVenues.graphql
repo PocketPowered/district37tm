@@ -1,0 +1,16 @@
+#import "../fragments/VenuePreview.graphql"
+#import "../fragments/PaginationInfo.graphql"
+
+query GetMyEditableVenues($first: Int, $after: String) {
+    myEditableVenuesConnection(first: $first, after: $after) {
+        edges {
+            node {
+                ...VenuePreview
+            }
+        }
+        pageInfo {
+            ...PaginationInfo
+        }
+        totalCount
+    }
+}

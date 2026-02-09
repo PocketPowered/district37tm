@@ -1,0 +1,3 @@
+query CanManageOrganizationEvents($organizationId: Int!) {
+  canManageOrganizationEvents(organizationId: $organizationId)
+}

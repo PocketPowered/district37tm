@@ -1,0 +1,6 @@
+mutation AcceptFriendRequest($requestId: Int!) {
+    acceptFriendRequest(requestId: $requestId) {
+        userId
+        friendsSince
+    }
+}

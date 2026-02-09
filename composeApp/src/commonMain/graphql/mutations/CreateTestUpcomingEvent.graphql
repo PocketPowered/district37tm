@@ -1,0 +1,7 @@
+#import "../fragments/EventDetails.graphql"
+
+mutation CreateTestUpcomingEvent {
+  createTestUpcomingEvent {
+    ...EventDetails
+  }
+}

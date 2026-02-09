@@ -1,0 +1,7 @@
+#import "../fragments/EventDetails.graphql"
+
+query GetEvent($id: Int!) {
+  event(id: $id) {
+    ...EventDetails
+  }
+}

@@ -1,0 +1,29 @@
+query GetExplorePage(
+    $eventsPerCarousel: Int!,
+    $latitude: Float,
+    $longitude: Float,
+    $radiusMiles: Float = 25
+) {
+    explorePage(
+        eventsPerCarousel: $eventsPerCarousel,
+        latitude: $latitude,
+        longitude: $longitude,
+        radiusMiles: $radiusMiles
+    ) {
+        carousels {
+            title
+            totalCount
+            hasMore
+            displayFormat
+            events {
+                ...EventPreview
+            }
+        }
+        nearbyCity {
+            city
+            state
+            eventCount
+            distanceMiles
+        }
+    }
+}

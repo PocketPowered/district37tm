@@ -1,0 +1,7 @@
+#import "../fragments/OrganizationMemberDetails.graphql"
+
+mutation AddOrganizationMember($input: AddOrganizationMemberInput!) {
+  addOrganizationMember(input: $input) {
+    ...OrganizationMemberDetails
+  }
+}

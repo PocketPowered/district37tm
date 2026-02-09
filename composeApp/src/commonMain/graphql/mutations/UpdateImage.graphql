@@ -1,0 +1,5 @@
+mutation UpdateImage($id: Int!, $input: UpdateImageInput!) {
+    updateImage(id: $id, input: $input) {
+        ...ImageDetails
+    }
+}

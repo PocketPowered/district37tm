@@ -1,0 +1,16 @@
+#import "../fragments/EventPreview.graphql"
+#import "../fragments/PaginationInfo.graphql"
+
+query GetMyArchivedEvents($first: Int, $after: String) {
+    myArchivedEventsConnection(first: $first, after: $after) {
+        edges {
+            node {
+                ...EventPreview
+            }
+        }
+        pageInfo {
+            ...PaginationInfo
+        }
+        totalCount
+    }
+}

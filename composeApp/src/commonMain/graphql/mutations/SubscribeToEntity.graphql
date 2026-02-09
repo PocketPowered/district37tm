@@ -1,0 +1,5 @@
+mutation SubscribeToEntity($entityType: EntityType!, $entityId: Int!) {
+  subscribeToEntity(entityType: $entityType, entityId: $entityId) {
+    ...UserEngagementDetails
+  }
+}

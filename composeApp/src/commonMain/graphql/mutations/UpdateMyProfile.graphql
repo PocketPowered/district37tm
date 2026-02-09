@@ -1,0 +1,18 @@
+mutation UpdateMyProfile($input: UpdateUserInput!) {
+  updateMyUser(input: $input) {
+    id
+    username
+    displayName
+    bio
+    profileImageUrl
+    primaryColor
+    secondaryColor
+    hasCompletedOnboarding
+    preferences {
+      theme
+      notificationsEnabled
+      displayDensity
+    }
+    updatedAt
+  }
+}

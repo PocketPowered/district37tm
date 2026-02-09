@@ -10,6 +10,29 @@
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Take photos for events, venues, and performers</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Select photos for events, venues, and performers</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Gather uses your location to show events near you.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Gather syncs events you're attending to your calendar.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Gather syncs events you're attending to your calendar.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.pocketpowered.eventsidekick</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>eventsidekick</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>

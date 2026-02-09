@@ -1,0 +1,17 @@
+query GetRelationshipStatus($userId: String!) {
+    relationshipStatus(userId: $userId) {
+        isFriend
+        pendingIncomingRequest {
+            id
+            senderId
+            receiverId
+            createdAt
+        }
+        pendingOutgoingRequest {
+            id
+            senderId
+            receiverId
+            createdAt
+        }
+    }
+}

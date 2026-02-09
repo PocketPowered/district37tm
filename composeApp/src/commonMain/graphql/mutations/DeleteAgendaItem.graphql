@@ -1,0 +1,3 @@
+mutation DeleteAgendaItem($id: Int!) {
+  deleteAgendaItem(id: $id)
+}

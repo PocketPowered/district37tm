@@ -1,0 +1,17 @@
+mutation RecordAgendaItemSync(
+    $agendaItemId: Int!,
+    $eventId: Int!,
+    $platform: Platform!,
+    $calendarEventId: String!,
+    $calendarId: String
+) {
+    recordAgendaItemSync(
+        agendaItemId: $agendaItemId,
+        eventId: $eventId,
+        platform: $platform,
+        calendarEventId: $calendarEventId,
+        calendarId: $calendarId
+    ) {
+        ...AgendaItemSyncFragment
+    }
+}

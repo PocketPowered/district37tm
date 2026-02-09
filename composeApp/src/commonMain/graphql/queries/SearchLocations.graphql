@@ -1,0 +1,17 @@
+#import "../fragments/LocationPreview.graphql"
+#import "../fragments/PaginationInfo.graphql"
+
+query SearchLocations($first: Int, $after: String, $venueId: Int, $searchQuery: String) {
+  locationsConnection(first: $first, after: $after, venueId: $venueId, searchQuery: $searchQuery) {
+    edges {
+      cursor
+      node {
+        ...LocationPreview
+      }
+    }
+    pageInfo {
+      ...PaginationInfo
+    }
+    totalCount
+  }
+}

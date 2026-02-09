@@ -1,0 +1,8 @@
+#import "../fragments/LocationDetails.graphql"
+#import "../fragments/ImageDetails.graphql"
+
+query GetLocationDetails($id: Int!) {
+  location(id: $id) {
+    ...LocationDetails
+  }
+}

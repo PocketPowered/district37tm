@@ -29,5 +29,5 @@ dependencyResolutionManagement {
 }
 
 include(":composeApp")
-include(":server")
-include(":shared")
+// include(":server")
+// include(":shared") // no longer used by Gather app

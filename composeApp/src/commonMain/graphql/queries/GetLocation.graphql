@@ -1,0 +1,7 @@
+#import "../fragments/LocationPreview.graphql"
+
+query GetLocation($id: Int!) {
+  location(id: $id) {
+    ...LocationPreview
+  }
+}

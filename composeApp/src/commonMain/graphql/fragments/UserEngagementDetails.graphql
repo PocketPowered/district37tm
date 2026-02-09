@@ -1,0 +1,5 @@
+fragment UserEngagementDetails on UserEntityEngagement {
+  id
+  isSubscribed
+  status
+}

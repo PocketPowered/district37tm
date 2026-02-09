@@ -1,0 +1,17 @@
+#import "../fragments/UserPreview.graphql"
+
+mutation UpdateCollaboratorPermission($collaboratorId: String!, $newPermissionLevel: String!) {
+    updateCollaboratorPermission(collaboratorId: $collaboratorId, newPermissionLevel: $newPermissionLevel) {
+        id
+        entityType
+        entityId
+        userId
+        permissionLevel
+        isOwner
+        canManageCollaborators
+        createdAt
+        user {
+            ...UserPreview
+        }
+    }
+}

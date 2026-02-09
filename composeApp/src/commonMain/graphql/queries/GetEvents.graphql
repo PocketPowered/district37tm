@@ -1,0 +1,17 @@
+#import "../fragments/EventPreview.graphql"
+#import "../fragments/PaginationInfo.graphql"
+
+query GetEvents($first: Int, $after: String, $last: Int, $before: String, $searchQuery: String, $eventType: EventType) {
+  eventsConnection(first: $first, after: $after, last: $last, before: $before, searchQuery: $searchQuery, eventType: $eventType) {
+    edges {
+      cursor
+      node {
+        ...EventPreview
+      }
+    }
+    pageInfo {
+      ...PaginationInfo
+    }
+    totalCount
+  }
+}

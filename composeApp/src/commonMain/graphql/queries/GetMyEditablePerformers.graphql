@@ -1,0 +1,16 @@
+#import "../fragments/PerformerPreview.graphql"
+#import "../fragments/PaginationInfo.graphql"
+
+query GetMyEditablePerformers($first: Int, $after: String) {
+    myEditablePerformersConnection(first: $first, after: $after) {
+        edges {
+            node {
+                ...PerformerPreview
+            }
+        }
+        pageInfo {
+            ...PaginationInfo
+        }
+        totalCount
+    }
+}

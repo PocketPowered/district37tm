@@ -1,0 +1,5 @@
+mutation UnsubscribeFromEntity($entityType: EntityType!, $entityId: Int!) {
+  unsubscribeFromEntity(entityType: $entityType, entityId: $entityId) {
+    ...UserEngagementDetails
+  }
+}

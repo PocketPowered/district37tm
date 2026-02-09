@@ -1,0 +1,4 @@
+fragment AgendaDateFragment on AgendaDate {
+  date
+  itemCount
+}

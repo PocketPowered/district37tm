@@ -1,0 +1,16 @@
+#import "../fragments/AgendaItemDetails.graphql"
+#import "../fragments/PaginationInfo.graphql"
+
+query GetPerformerAgendaItems($performerId: Int!, $first: Int, $after: String) {
+  agendaItemsConnection(performerId: $performerId, first: $first, after: $after) {
+    edges {
+      node {
+        ...AgendaItemDetails
+      }
+    }
+    pageInfo {
+      ...PaginationInfo
+    }
+    totalCount
+  }
+}

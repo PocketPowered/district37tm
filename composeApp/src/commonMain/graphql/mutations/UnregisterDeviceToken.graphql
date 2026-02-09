@@ -1,0 +1,3 @@
+mutation UnregisterDeviceToken($fcmToken: String!) {
+    unregisterDeviceToken(fcmToken: $fcmToken)
+}

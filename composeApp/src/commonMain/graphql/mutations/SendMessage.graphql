@@ -1,0 +1,9 @@
+#import "../fragments/MessagePreview.graphql"
+#import "../fragments/MessageReactionPreview.graphql"
+#import "../fragments/UserPreview.graphql"
+
+mutation SendMessage($input: SendMessageInput!) {
+    sendMessage(input: $input) {
+        ...MessagePreview
+    }
+}

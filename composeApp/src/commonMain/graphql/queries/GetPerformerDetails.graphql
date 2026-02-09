@@ -1,0 +1,8 @@
+#import "../fragments/PerformerDetails.graphql"
+#import "../fragments/ImageDetails.graphql"
+
+query GetPerformerDetails($id: Int!) {
+  performer(id: $id) {
+    ...PerformerDetails
+  }
+}

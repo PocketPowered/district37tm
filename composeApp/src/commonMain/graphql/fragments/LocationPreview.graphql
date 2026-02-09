@@ -1,0 +1,5 @@
+fragment LocationPreview on Location {
+  id
+  name
+  description
+}

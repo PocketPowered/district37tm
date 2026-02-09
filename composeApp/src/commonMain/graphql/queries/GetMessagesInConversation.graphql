@@ -1,0 +1,21 @@
+#import "../fragments/MessagePreview.graphql"
+#import "../fragments/MessageReactionPreview.graphql"
+#import "../fragments/UserPreview.graphql"
+
+query GetMessagesInConversation($conversationId: Int!, $first: Int, $after: String, $last: Int, $before: String) {
+    messagesInConversation(conversationId: $conversationId, first: $first, after: $after, last: $last, before: $before) {
+        edges {
+            cursor
+            node {
+                ...MessagePreview
+            }
+        }
+        pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+        }
+        totalCount
+    }
+}

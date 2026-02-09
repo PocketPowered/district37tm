@@ -1,0 +1,10 @@
+fragment MessageReactionPreview on MessageReaction {
+    id
+    messageId
+    userId
+    emoji
+    createdAt
+    user {
+        ...UserPreview
+    }
+}

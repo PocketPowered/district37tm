@@ -1,0 +1,3 @@
+mutation RemoveEventSync($eventId: Int!) {
+    removeEventSync(eventId: $eventId)
+}

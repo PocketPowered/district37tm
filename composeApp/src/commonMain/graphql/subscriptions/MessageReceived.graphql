@@ -1,0 +1,5 @@
+subscription MessageReceived($conversationId: Int!) {
+    messageReceived(conversationId: $conversationId) {
+        ...MessagePreview
+    }
+}

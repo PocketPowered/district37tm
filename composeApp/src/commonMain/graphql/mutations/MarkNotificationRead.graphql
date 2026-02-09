@@ -1,0 +1,5 @@
+mutation MarkNotificationRead($notificationId: Int!) {
+    markNotificationRead(notificationId: $notificationId) {
+        ...NotificationPreview
+    }
+}

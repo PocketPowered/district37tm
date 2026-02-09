@@ -1,0 +1,7 @@
+#import "../fragments/PerformerDetails.graphql"
+
+mutation CreatePerformer($input: CreatePerformerInput!) {
+  createPerformer(input: $input) {
+    ...PerformerDetails
+  }
+}

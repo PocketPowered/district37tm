@@ -1,0 +1,3 @@
+mutation RemoveAgendaItemSync($agendaItemId: Int!) {
+    removeAgendaItemSync(agendaItemId: $agendaItemId)
+}

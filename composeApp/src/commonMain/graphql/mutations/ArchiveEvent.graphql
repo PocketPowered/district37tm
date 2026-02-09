@@ -1,0 +1,7 @@
+#import "../fragments/EventDetails.graphql"
+
+mutation ArchiveEvent($id: Int!) {
+  archiveEvent(id: $id) {
+    ...EventDetails
+  }
+}

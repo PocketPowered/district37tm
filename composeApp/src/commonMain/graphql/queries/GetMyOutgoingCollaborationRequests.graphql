@@ -1,0 +1,27 @@
+#import "../fragments/PaginationInfo.graphql"
+#import "../fragments/UserPreview.graphql"
+
+query GetMyOutgoingCollaborationRequests($first: Int, $after: String) {
+    myOutgoingCollaborationRequests(first: $first, after: $after) {
+        edges {
+            cursor
+            node {
+                id
+                senderId
+                receiverId
+                entityType
+                entityId
+                entityName
+                permissionLevel
+                createdAt
+                receiver {
+                    ...UserPreview
+                }
+            }
+        }
+        pageInfo {
+            ...PaginationInfo
+        }
+        totalCount
+    }
+}

@@ -1,0 +1,37 @@
+#import "../fragments/EventPreview.graphql"
+#import "../fragments/VenuePreview.graphql"
+#import "../fragments/PerformerPreview.graphql"
+#import "../fragments/OrganizationPreview.graphql"
+
+query GetCreateHub {
+    createHub {
+        myEvents {
+            items {
+                ...EventPreview
+            }
+            totalCount
+            hasMore
+        }
+        myVenues {
+            items {
+                ...VenuePreview
+            }
+            totalCount
+            hasMore
+        }
+        myPerformers {
+            items {
+                ...PerformerPreview
+            }
+            totalCount
+            hasMore
+        }
+        myOrganizations {
+            items {
+                ...OrganizationPreview
+            }
+            totalCount
+            hasMore
+        }
+    }
+}
