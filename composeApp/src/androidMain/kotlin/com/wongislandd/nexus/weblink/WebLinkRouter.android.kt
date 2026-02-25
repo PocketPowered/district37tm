@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 
 actual class WebLinkRouterImpl actual constructor(private val context: Any?) : WebLinkRouter {
-    override fun openWebLink(url: String) {
+    actual override fun openWebLink(url: String) {
         val realContext = requireNotNull(context as Context) {
             "Context must be provided"
         }

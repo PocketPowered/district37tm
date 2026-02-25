@@ -2,6 +2,7 @@ package com.district37.toastmasters.eventdetails
 
 import com.district37.toastmasters.EventRepository
 import com.district37.toastmasters.LocationsRepository
+import com.district37.toastmasters.locations.SearchLocationNodeTransformer
 import com.district37.toastmasters.models.EventDetails
 import com.district37.toastmasters.models.Location
 import com.wongislandd.nexus.util.ErrorType
@@ -27,7 +28,8 @@ data class EventDetailsScreenState(
 class EventDetailsScreenStateSlice(
     private val eventRepository: EventRepository,
     private val locationsRepository: LocationsRepository,
-    private val eventDetailsTransformer: EventDetailsTransformer
+    private val eventDetailsTransformer: EventDetailsTransformer,
+    private val searchLocationNodeTransformer: SearchLocationNodeTransformer
 ) : ViewModelSlice() {
 
     private val _eventDetails: MutableStateFlow<Resource<EventDetails>> =
@@ -90,6 +92,9 @@ class EventDetailsScreenStateSlice(
     private fun fetchLocation(locationInfo: String) {
         sliceScope.launch(Dispatchers.IO) {
             locationsRepository.searchLocationsByName(locationInfo)
+                .map { locations ->
+                    locations.map { searchLocationNodeTransformer.transform(it) }
+                }
                 .handle(
                     onSuccess = { locations ->
                         _location.update { Resource.Success(locations.firstOrNull()) }

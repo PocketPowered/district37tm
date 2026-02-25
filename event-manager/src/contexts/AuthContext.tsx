@@ -1,11 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  User,
-  signInWithPopup,
-  signOut,
-  onAuthStateChanged
-} from 'firebase/auth';
-import { auth, googleProvider } from '../firebase';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
 import { isUserAuthorized } from '../services/authService';
 
 interface AuthContextType {
@@ -42,8 +37,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      await checkAuthorization(result.user);
+      const redirectTo = `${window.location.origin}${window.location.pathname}`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo },
+      });
+      if (error) throw error;
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;
@@ -52,7 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await signOut(auth);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       setIsAuthorized(false);
     } catch (error) {
       console.error('Error signing out:', error);
@@ -61,13 +61,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      const user = data.session?.user || null;
       setCurrentUser(user);
       await checkAuthorization(user);
       setLoading(false);
     });
 
-    return unsubscribe;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const user = session?.user || null;
+      setCurrentUser(user);
+      await checkAuthorization(user);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const value = {

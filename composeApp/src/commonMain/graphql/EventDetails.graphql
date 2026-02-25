@@ -1,0 +1,20 @@
+query EventDetails($id: BigInt!) {
+  eventsCollection(first: 1, filter: { id: { eq: $id } }) {
+    edges {
+      node {
+        id
+        images
+        title
+        description
+        start_time
+        end_time
+        location_info
+        agenda
+        additional_links
+        date_key
+        tag
+      }
+    }
+  }
+}
+

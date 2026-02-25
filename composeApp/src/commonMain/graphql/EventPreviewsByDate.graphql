@@ -1,0 +1,19 @@
+query EventPreviewsByDate($dateKey: BigInt!) {
+  eventsCollection(
+    filter: { date_key: { eq: $dateKey } }
+    orderBy: [{ start_time: AscNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        images
+        title
+        start_time
+        end_time
+        location_info
+        tag
+      }
+    }
+  }
+}
+

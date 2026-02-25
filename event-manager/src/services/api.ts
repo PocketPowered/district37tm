@@ -1,121 +1,117 @@
-import axios from 'axios';
 import { Event } from '../types/Event';
 import { BackendExternalLink } from '../types/BackendExternalLink';
-import { apiConfig } from '../config/api';
-
-const api = axios.create({
-  baseURL: apiConfig.baseUrl,
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  },
-  withCredentials: true, // This is important for CORS
-});
-
-// Add a response interceptor for logging
-api.interceptors.response.use(
-  (response) => {
-    console.log('API Response:', response);
-    return response;
-  },
-  (error) => {
-    console.error('API Error:', error);
-    return Promise.reject(error);
-  }
-);
+import { supabase } from '../lib/supabase';
+import { toEvent, toEventInsert, toResource, toResourceInsert } from './supabaseMappers';
 
 export const eventService = {
   getAllEvents: async (): Promise<Event[]> => {
-    const response = await fetch(`${apiConfig.baseUrl}/events/all`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch events');
-    }
-    return response.json();
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('start_time', { ascending: true });
+    if (error) throw error;
+    return (data || []).map(toEvent);
   },
 
   getEventsByDate: async (date: number): Promise<Event[]> => {
-    const response = await fetch(`${apiConfig.baseUrl}/events?date=${date}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch events for date');
-    }
-    return response.json();
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('date_key', date)
+      .order('start_time', { ascending: true });
+    if (error) throw error;
+    return (data || []).map(toEvent);
   },
 
   getEvent: async (id: number): Promise<Event> => {
-    const response = await fetch(`${apiConfig.baseUrl}/event/${id}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch event');
-    }
-    return response.json();
+    const { data, error } = await supabase.from('events').select('*').eq('id', id).single();
+    if (error) throw error;
+    return toEvent(data);
   },
 
-  createEvent: async (event: Event) => {
-    try {
-      const response = await api.post('/events', event, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      console.log('Create Event Response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating event:', error);
-      throw error;
-    }
+  createEvent: async (event: Event): Promise<Event> => {
+    const { data, error } = await supabase.from('events').insert(toEventInsert(event)).select().single();
+    if (error) throw error;
+    return toEvent(data);
   },
-  updateEvent: async (id: number, event: Event) => {
-    try {
-      const response = await api.put(`/event/${id}`, event, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      console.log('Update Event Response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error updating event:', error);
-      throw error;
-    }
+
+  updateEvent: async (id: number, event: Event): Promise<Event> => {
+    const { data, error } = await supabase
+      .from('events')
+      .update(toEventInsert({ ...event, id }))
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return toEvent(data);
   },
-  deleteEvent: (id: number) => api.delete(`/event/${id}`).then(res => res.data),
+
+  deleteEvent: async (id: number): Promise<void> => {
+    const { error } = await supabase.from('events').delete().eq('id', id);
+    if (error) throw error;
+  },
 };
 
 export const notificationService = {
-  sendNotification: (title: string, body: string, topic: string) =>
-    api.post('/notifications', {
-      title,
-      body,
-      topic
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then(res => res.data)
+  sendNotification: async (title: string, body: string, topic: string) => {
+    const { data: inserted, error: insertError } = await supabase
+      .from('notifications')
+      .insert({
+        title,
+        body,
+        topic: topic || 'GENERAL',
+      })
+      .select('id')
+      .single();
+    if (insertError) throw insertError;
+
+    const { data, error } = await supabase.functions.invoke('send-notification', {
+      body: {
+        notificationId: inserted.id,
+      },
+    });
+    if (error) throw error;
+    return data;
+  },
 };
 
 export const referenceService = {
   getAllReferences: async (): Promise<BackendExternalLink[]> => {
-    const response = await fetch(`${apiConfig.baseUrl}/references`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch references');
-    }
-    return response.json();
+    const { data, error } = await supabase
+      .from('resources')
+      .select('id, display_name, url, description')
+      .eq('resource_type', 'general')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(toResource);
   },
 
-  createReference: (reference: Omit<BackendExternalLink, 'id'>) => 
-    api.post('/references', reference, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then(res => res.data),
+  createReference: async (reference: Omit<BackendExternalLink, 'id'>) => {
+    const { data, error } = await supabase
+      .from('resources')
+      .insert(toResourceInsert({ ...reference, id: null }, 'general'))
+      .select('id, display_name, url, description')
+      .single();
+    if (error) throw error;
+    return toResource(data);
+  },
 
-  updateReference: (id: string, reference: Omit<BackendExternalLink, 'id'>) => 
-    api.put(`/references/${id}`, reference, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then(res => res.data),
+  updateReference: async (id: string, reference: Omit<BackendExternalLink, 'id'>) => {
+    const { data, error } = await supabase
+      .from('resources')
+      .update(toResourceInsert({ ...reference, id: null }, 'general'))
+      .eq('id', id)
+      .eq('resource_type', 'general')
+      .select('id, display_name, url, description')
+      .single();
+    if (error) throw error;
+    return toResource(data);
+  },
 
-  deleteReference: (id: string) => 
-    api.delete(`/references/${id}`).then(res => res.data),
+  deleteReference: async (id: string) => {
+    const { error } = await supabase.from('resources').delete().eq('id', id).eq('resource_type', 'general');
+    if (error) throw error;
+    return true;
+  },
 };
+

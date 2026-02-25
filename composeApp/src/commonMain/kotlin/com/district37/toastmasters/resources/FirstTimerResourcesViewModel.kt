@@ -2,7 +2,7 @@ package com.district37.toastmasters.resources
 
 import androidx.lifecycle.viewModelScope
 import com.district37.toastmasters.ResourcesRepository
-import com.district37.toastmasters.models.BackendExternalLink
+import com.district37.toastmasters.models.ExternalLink
 import com.wongislandd.nexus.events.BackChannelEvent
 import com.wongislandd.nexus.events.EventBus
 import com.wongislandd.nexus.events.UiEvent
@@ -18,12 +18,13 @@ import kotlinx.coroutines.launch
 
 class FirstTimerResourcesViewModel(
     private val repository: ResourcesRepository,
+    private val resourceLinkTransformer: ResourceLinkTransformer,
     uiEvent: EventBus<UiEvent>,
     backChannelEventBus: EventBus<BackChannelEvent>
 ) : SliceableViewModel(uiEvent, backChannelEventBus) {
 
-    private val _resources = MutableStateFlow<Resource<List<BackendExternalLink>>>(Resource.Loading)
-    val resources: StateFlow<Resource<List<BackendExternalLink>>> = _resources.asStateFlow()
+    private val _resources = MutableStateFlow<Resource<List<ExternalLink>>>(Resource.Loading)
+    val resources: StateFlow<Resource<List<ExternalLink>>> = _resources.asStateFlow()
 
     init {
         loadResources()
@@ -32,7 +33,9 @@ class FirstTimerResourcesViewModel(
     private fun loadResources() {
         viewModelScope.launch(Dispatchers.IO) {
             _resources.update {
-                repository.getAllFirstTimerResources()
+                repository.getAllFirstTimerResources().map { resources ->
+                    resources.mapNotNull { resourceLinkTransformer.transform(it) }
+                }
             }
         }
     }

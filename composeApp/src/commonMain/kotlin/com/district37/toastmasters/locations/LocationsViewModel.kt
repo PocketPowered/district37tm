@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 
 class LocationsViewModel(
     private val repository: LocationsRepository,
+    private val allLocationNodeTransformer: AllLocationNodeTransformer,
     uiEvent: EventBus<UiEvent>,
     backChannelEventBus: EventBus<BackChannelEvent>
 ) : SliceableViewModel(uiEvent, backChannelEventBus) {
@@ -33,7 +34,11 @@ class LocationsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _locations.update {
                 repository.getAllLocations()
-                    .map { it.filter { location -> location.locationImages.isNotEmpty() } }
+                    .map { locations ->
+                        locations
+                            .map { allLocationNodeTransformer.transform(it) }
+                            .filter { location -> location.locationImages.isNotEmpty() }
+                    }
             }
         }
     }

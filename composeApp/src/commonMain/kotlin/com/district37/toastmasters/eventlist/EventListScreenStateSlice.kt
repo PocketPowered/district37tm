@@ -4,7 +4,7 @@ import com.district37.toastmasters.EventRepository
 import com.district37.toastmasters.database.FavoritesRepository
 import com.district37.toastmasters.models.DateTabInfo
 import com.district37.toastmasters.models.EventPreview
-import com.district37.toastmasters.models.findSelectedTab
+import com.district37.toastmasters.models.findSelectedTabOrNull
 import com.wongislandd.nexus.events.UiEvent
 import com.wongislandd.nexus.util.ErrorType
 import com.wongislandd.nexus.util.Resource
@@ -66,7 +66,17 @@ class EventListScreenStateSlice(
             return@combine Resource.Error(ErrorType.CLIENT_ERROR)
         }
         if (availableTabs is Resource.Success && eventList is Resource.NotLoading) {
-            val selectedTabKey = availableTabs.data.findSelectedTab().dateKey
+            val selectedTab = availableTabs.data.findSelectedTabOrNull()
+            if (selectedTab == null) {
+                return@combine Resource.Success(
+                    EventListScreenState(
+                        events = emptyList(),
+                        availableTabs = availableTabs.data,
+                        agendaOption = agendaOption
+                    )
+                )
+            }
+            val selectedTabKey = selectedTab.dateKey
             fetchEventsByDate(selectedTabKey)
             return@combine Resource.Loading
         }
@@ -107,9 +117,12 @@ class EventListScreenStateSlice(
             RefreshTriggered -> {
                 _screenState.value.handle(
                     onSuccess = { currentValue ->
-                        val currentlySelectedKey =
-                            currentValue.availableTabs.findSelectedTab().dateKey
-                        fetchEventsByDate(currentlySelectedKey)
+                        val selectedTab = currentValue.availableTabs.findSelectedTabOrNull()
+                        if (selectedTab != null) {
+                            fetchEventsByDate(selectedTab.dateKey)
+                        } else {
+                            fetchAvailableTabs()
+                        }
                     },
                     onError = { _, _ ->
                         fetchAvailableTabs()

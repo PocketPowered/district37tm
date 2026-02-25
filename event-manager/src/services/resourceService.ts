@@ -1,97 +1,86 @@
-import { apiConfig } from '../config/api';
 import { BackendExternalLink } from '../types/BackendExternalLink';
+import { supabase } from '../lib/supabase';
+import { toResource, toResourceInsert } from './supabaseMappers';
 
-const API_BASE_URL = apiConfig.baseUrl;
+const fields = 'id, display_name, url, description';
 
 export const resourceService = {
   async getAllResources(): Promise<BackendExternalLink[]> {
-    const response = await fetch(`${API_BASE_URL}/resources`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch resources');
-    }
-    return response.json();
+    const { data, error } = await supabase
+      .from('resources')
+      .select(fields)
+      .eq('resource_type', 'general')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(toResource);
   },
 
   async createResource(resource: BackendExternalLink): Promise<BackendExternalLink> {
-    const response = await fetch(`${API_BASE_URL}/resources`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(resource),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to create resource');
-    }
-    return response.json();
+    const { data, error } = await supabase
+      .from('resources')
+      .insert(toResourceInsert(resource, 'general'))
+      .select(fields)
+      .single();
+    if (error) throw error;
+    return toResource(data);
   },
 
   async updateResource(id: string, resource: BackendExternalLink): Promise<BackendExternalLink> {
-    const response = await fetch(`${API_BASE_URL}/resources/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(resource),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to update resource');
-    }
-    return response.json();
+    const { data, error } = await supabase
+      .from('resources')
+      .update(toResourceInsert(resource, 'general'))
+      .eq('id', id)
+      .eq('resource_type', 'general')
+      .select(fields)
+      .single();
+    if (error) throw error;
+    return toResource(data);
   },
 
   async deleteResource(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/resources/${id}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      throw new Error('Failed to delete resource');
-    }
+    const { error } = await supabase.from('resources').delete().eq('id', id).eq('resource_type', 'general');
+    if (error) throw error;
   },
 
-  // First-timer resources methods
   async getAllFirstTimerResources(): Promise<BackendExternalLink[]> {
-    const response = await fetch(`${API_BASE_URL}/first-timer-resources`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch first-timer resources');
-    }
-    return response.json();
+    const { data, error } = await supabase
+      .from('resources')
+      .select(fields)
+      .eq('resource_type', 'first_timer')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(toResource);
   },
 
   async createFirstTimerResource(resource: BackendExternalLink): Promise<BackendExternalLink> {
-    const response = await fetch(`${API_BASE_URL}/first-timer-resources`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(resource),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to create first-timer resource');
-    }
-    return response.json();
+    const { data, error } = await supabase
+      .from('resources')
+      .insert(toResourceInsert(resource, 'first_timer'))
+      .select(fields)
+      .single();
+    if (error) throw error;
+    return toResource(data);
   },
 
   async updateFirstTimerResource(id: string, resource: BackendExternalLink): Promise<BackendExternalLink> {
-    const response = await fetch(`${API_BASE_URL}/first-timer-resources/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(resource),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to update first-timer resource');
-    }
-    return response.json();
+    const { data, error } = await supabase
+      .from('resources')
+      .update(toResourceInsert(resource, 'first_timer'))
+      .eq('id', id)
+      .eq('resource_type', 'first_timer')
+      .select(fields)
+      .single();
+    if (error) throw error;
+    return toResource(data);
   },
 
   async deleteFirstTimerResource(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/first-timer-resources/${id}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      throw new Error('Failed to delete first-timer resource');
-    }
+    const { error } = await supabase
+      .from('resources')
+      .delete()
+      .eq('id', id)
+      .eq('resource_type', 'first_timer');
+    if (error) throw error;
   },
-}; 
+};
+

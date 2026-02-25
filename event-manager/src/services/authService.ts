@@ -1,14 +1,20 @@
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
-import { app } from '../firebase';
-
-const db = getFirestore(app);
+import { supabase } from '../lib/supabase';
 
 export const isUserAuthorized = async (email: string): Promise<boolean> => {
   try {
-    const userDoc = await getDoc(doc(db, 'authorizedUsers', email));
-    return userDoc.exists();
+    const { data, error } = await supabase
+      .from('authorized_users')
+      .select('email')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
+    if (error) {
+      console.error('Error checking user authorization:', error);
+      return false;
+    }
+    return Boolean(data?.email);
   } catch (error) {
     console.error('Error checking user authorization:', error);
     return false;
   }
-}; 
+};
+

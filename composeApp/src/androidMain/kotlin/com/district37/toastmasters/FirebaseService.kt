@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import co.touchlab.kermit.Logger
 import com.district37.toastmasters.database.NotificationRepository
@@ -26,6 +27,19 @@ class FirebaseService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Logger.d("[FCM] New token: $token")
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+                    ?: "unknown-device"
+                fcmRepository.registerToken(
+                    userId = deviceId,
+                    token = token,
+                    deviceInfo = "${Build.MANUFACTURER} ${Build.MODEL}"
+                )
+            } catch (e: Exception) {
+                Logger.e("[FCM] Failed to register token with Supabase: ${e.message}")
+            }
+        }
         // Subscribe to topics
         subscribeToTopics()
     }

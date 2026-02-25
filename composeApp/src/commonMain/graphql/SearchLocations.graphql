@@ -1,0 +1,15 @@
+query SearchLocations($nameLike: String!) {
+  locationsCollection(
+    filter: { location_name: { ilike: $nameLike } }
+    orderBy: [{ location_name: AscNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        location_name
+        location_images
+      }
+    }
+  }
+}
+

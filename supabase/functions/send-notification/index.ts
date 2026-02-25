@@ -1,0 +1,178 @@
+import { GoogleAuth } from "npm:google-auth-library@9.15.1";
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+type NotificationRequest = {
+  notificationId?: string;
+  title?: string;
+  body?: string;
+  topic?: string;
+};
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const json = (status: number, payload: unknown) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+    },
+  });
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const firebaseServiceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
+    const firebaseProjectId = Deno.env.get("FIREBASE_PROJECT_ID");
+
+    if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+      return json(500, { error: "Missing Supabase secrets for edge function runtime" });
+    }
+    if (!firebaseServiceAccountJson || !firebaseProjectId) {
+      return json(500, { error: "Missing Firebase secrets (FIREBASE_SERVICE_ACCOUNT_JSON / FIREBASE_PROJECT_ID)" });
+    }
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return json(401, { error: "Missing Authorization header" });
+    }
+
+    const callerClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    const {
+      data: { user },
+      error: userError,
+    } = await callerClient.auth.getUser();
+    if (userError || !user?.email) {
+      return json(401, { error: "Unauthorized user" });
+    }
+
+    const { data: allowed, error: allowedError } = await adminClient
+      .from("authorized_users")
+      .select("email")
+      .eq("email", user.email.toLowerCase())
+      .maybeSingle();
+    if (allowedError || !allowed) {
+      return json(403, { error: "Caller is not an authorized admin" });
+    }
+
+    const requestBody = (await req.json()) as NotificationRequest;
+    let notificationId = requestBody.notificationId;
+    let title = requestBody.title;
+    let body = requestBody.body;
+    let topic = requestBody.topic || "GENERAL";
+
+    if (notificationId) {
+      const { data: notification, error: notificationError } = await adminClient
+        .from("notifications")
+        .select("id, title, body, topic")
+        .eq("id", notificationId)
+        .single();
+      if (notificationError || !notification) {
+        return json(404, { error: "Notification not found" });
+      }
+      title = notification.title;
+      body = notification.body;
+      topic = notification.topic || "GENERAL";
+    } else {
+      if (!title || !body) {
+        return json(400, { error: "Provide notificationId or both title/body" });
+      }
+      const { data: inserted, error: insertError } = await adminClient
+        .from("notifications")
+        .insert({
+          title,
+          body,
+          topic,
+          created_by: user.email.toLowerCase(),
+          status: "queued",
+        })
+        .select("id")
+        .single();
+      if (insertError || !inserted) {
+        return json(500, { error: "Failed to create notification record" });
+      }
+      notificationId = inserted.id;
+    }
+
+    const credentials = JSON.parse(firebaseServiceAccountJson);
+    const auth = new GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+    });
+    const authClient = await auth.getClient();
+    const accessToken = await authClient.getAccessToken();
+
+    if (!accessToken.token) {
+      throw new Error("Could not obtain Firebase access token");
+    }
+
+    const fcmResponse = await fetch(
+      `https://fcm.googleapis.com/v1/projects/${firebaseProjectId}/messages:send`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: {
+            topic,
+            data: {
+              title: title || "",
+              body: body || "",
+            },
+          },
+        }),
+      },
+    );
+
+    const responseText = await fcmResponse.text();
+    const parsedResponse = (() => {
+      try {
+        return JSON.parse(responseText);
+      } catch {
+        return { raw: responseText };
+      }
+    })();
+
+    await adminClient.from("notification_deliveries").insert({
+      notification_id: notificationId,
+      token: topic,
+      success: fcmResponse.ok,
+      response: parsedResponse,
+    });
+
+    await adminClient
+      .from("notifications")
+      .update({ status: fcmResponse.ok ? "sent" : "failed" })
+      .eq("id", notificationId);
+
+    if (!fcmResponse.ok) {
+      return json(502, { error: "FCM request failed", details: parsedResponse });
+    }
+
+    return json(200, {
+      ok: true,
+      notificationId,
+      topic,
+      response: parsedResponse,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return json(500, { error: message });
+  }
+});
+

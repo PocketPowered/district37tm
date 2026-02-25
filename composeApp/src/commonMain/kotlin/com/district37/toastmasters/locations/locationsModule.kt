@@ -7,5 +7,7 @@ import org.koin.dsl.module
 
 val locationsModule = module {
     singleOf(::LocationsRepository)
+    singleOf(::AllLocationNodeTransformer)
+    singleOf(::SearchLocationNodeTransformer)
     viewModelOf(::LocationsViewModel)
 } 

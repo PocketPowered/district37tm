@@ -1,0 +1,16 @@
+query ResourcesByType($resourceType: String!) {
+  resourcesCollection(
+    filter: { resource_type: { eq: $resourceType } }
+    orderBy: [{ created_at: DescNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        display_name
+        url
+        description
+      }
+    }
+  }
+}
+

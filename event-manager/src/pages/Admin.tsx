@@ -12,8 +12,7 @@ import {
   Paper
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { getFirestore, collection, setDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { supabase } from '../lib/supabase';
 
 interface AuthorizedUser {
   id: string;
@@ -27,10 +26,14 @@ const Admin: React.FC = () => {
 
   const fetchAuthorizedUsers = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'authorizedUsers'));
-      const users = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        email: doc.id
+      const { data, error } = await supabase
+        .from('authorized_users')
+        .select('email')
+        .order('email', { ascending: true });
+      if (error) throw error;
+      const users = (data || []).map((row) => ({
+        id: row.email,
+        email: row.email,
       }));
       setAuthorizedUsers(users);
     } catch (error) {
@@ -47,9 +50,10 @@ const Admin: React.FC = () => {
 
     try {
       setLoading(true);
-      await setDoc(doc(db, 'authorizedUsers', email), {
-        addedAt: new Date().toISOString()
+      const { error } = await supabase.from('authorized_users').upsert({
+        email: email.toLowerCase(),
       });
+      if (error) throw error;
       setEmail('');
       await fetchAuthorizedUsers();
     } catch (error) {
@@ -62,7 +66,8 @@ const Admin: React.FC = () => {
   const handleRemoveUser = async (email: string) => {
     try {
       setLoading(true);
-      await deleteDoc(doc(db, 'authorizedUsers', email));
+      const { error } = await supabase.from('authorized_users').delete().eq('email', email.toLowerCase());
+      if (error) throw error;
       await fetchAuthorizedUsers();
     } catch (error) {
       console.error('Error removing authorized user:', error);

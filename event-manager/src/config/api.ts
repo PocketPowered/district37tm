@@ -1,10 +1,10 @@
 export interface ApiConfig {
-  baseUrl: string;
+  supabaseUrl: string;
   isProduction: boolean;
 }
 
-const LOCAL_API_URL = 'http://localhost:8080';
-const PROD_API_URL = 'https://district37tm-dve3cncpajdnh5h3.eastus2-01.azurewebsites.net';
+const LOCAL_SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL_DEV || 'https://yarbshxeeufpgquawcuy.supabase.co';
+const PROD_SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || 'https://yarbshxeeufpgquawcuy.supabase.co';
 
 // Get the current environment from localStorage or default to production
 const getEnvironment = (): boolean => {
@@ -13,7 +13,7 @@ const getEnvironment = (): boolean => {
 };
 
 export const apiConfig: ApiConfig = {
-  baseUrl: getEnvironment() ? PROD_API_URL : LOCAL_API_URL,
+  supabaseUrl: getEnvironment() ? PROD_SUPABASE_URL : LOCAL_SUPABASE_URL,
   isProduction: getEnvironment()
 };
 
@@ -21,6 +21,6 @@ export const toggleEnvironment = () => {
   const newIsProduction = !apiConfig.isProduction;
   localStorage.setItem('apiEnvironment', JSON.stringify(newIsProduction));
   apiConfig.isProduction = newIsProduction;
-  apiConfig.baseUrl = newIsProduction ? PROD_API_URL : LOCAL_API_URL;
+  apiConfig.supabaseUrl = newIsProduction ? PROD_SUPABASE_URL : LOCAL_SUPABASE_URL;
   window.location.reload(); // Reload to apply changes
 }; 

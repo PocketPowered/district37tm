@@ -7,11 +7,16 @@ plugins {
     alias(libs.plugins.kotlinxSerialization)
     alias(libs.plugins.crashlytics)
     alias(libs.plugins.sqldelight)
+    alias(libs.plugins.apollo3)
 }
 
 kotlin {
     androidTarget {
-
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "21"
+            }
+        }
     }
 
     listOf(
@@ -48,6 +53,7 @@ kotlin {
             implementation(libs.bundles.landscapist)
             implementation(libs.accompanist.placeholder)
             implementation(libs.coroutines.extensions)
+            implementation(libs.apollo.runtime)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -84,6 +90,8 @@ android {
 }
 
 dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    androidTestImplementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     debugImplementation(compose.uiTooling)
     implementation(libs.accompanist.pager)
     implementation(libs.coil.compose)
@@ -95,4 +103,19 @@ sqldelight {
             packageName.set("com.district37.toastmasters.database")
         }
     }
+}
+
+apollo {
+    service("supabase") {
+        packageName.set("com.district37.toastmasters.graphql")
+        srcDir("src/commonMain/graphql")
+        schemaFile.set(file("src/commonMain/graphql/schema.graphqls"))
+        mapScalar("BigInt", "kotlin.Long", "com.apollographql.apollo3.api.LongAdapter")
+        mapScalar("JSON", "kotlin.Any", "com.apollographql.apollo3.api.AnyAdapter")
+        mapScalar("UUID", "kotlin.String", "com.apollographql.apollo3.api.StringAdapter")
+    }
+}
+
+tasks.matching { it.name == "packageDebug" }.configureEach {
+    dependsOn("writeDebugAppMetadata")
 }

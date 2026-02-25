@@ -13,9 +13,9 @@ import io.ktor.http.takeFrom
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
-private const val PROD_HOST = "https://district37tm-dve3cncpajdnh5h3.eastus2-01.azurewebsites.net"
-private const val DEV_HOST = "http://0.0.0.0:8080"
-// Adjust this to true to hit local server, never commit with this as true
+private const val PROD_HOST = "https://yarbshxeeufpgquawcuy.supabase.co"
+private const val DEV_HOST = "https://yarbshxeeufpgquawcuy.supabase.co"
+private const val SUPABASE_PUBLISHABLE_KEY = "sb_publishable_pnaLVfP6H6Kxi5wCPhSO2A_aK4zo24t"
 private const val useDevHost = false
 
 private val HOST = if (useDevHost) DEV_HOST else PROD_HOST
@@ -24,6 +24,9 @@ fun createHttpClient(engine: HttpClientEngine): HttpClient {
     return HttpClient(engine) {
         defaultRequest {
             url.takeFrom(HOST)
+            headers.append("apikey", SUPABASE_PUBLISHABLE_KEY)
+            headers.append("Authorization", "Bearer $SUPABASE_PUBLISHABLE_KEY")
+            headers.append("Accept", "application/json")
         }
         install(Logging) {
             logger = object : Logger {

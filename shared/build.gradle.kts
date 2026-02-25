@@ -16,13 +16,23 @@ buildkonfig {
 
 kotlin {
     androidTarget {
-
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "21"
+            }
+        }
     }
 
     iosX64()
     iosArm64()
     iosSimulatorArm64()
-    jvm()
+    jvm {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "21"
+            }
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {

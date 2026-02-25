@@ -1,24 +1,30 @@
 package com.district37.toastmasters
 
-import com.district37.toastmasters.models.BackendExternalLink
-import com.wongislandd.nexus.networking.HttpMethod
-import com.wongislandd.nexus.networking.NetworkClient
+import com.apollographql.apollo3.ApolloClient
+import com.district37.toastmasters.graphql.ResourcesByTypeQuery
+import com.wongislandd.nexus.util.ErrorType
 import com.wongislandd.nexus.util.Resource
-import io.ktor.client.HttpClient
 
-class ResourcesRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
+class ResourcesRepository(private val apolloClient: ApolloClient) {
 
-    suspend fun getAllResources(): Resource<List<BackendExternalLink>> {
-        return makeRequest(
-            "resources",
-            HttpMethod.GET
-        )
+    private suspend fun getResourcesByType(resourceType: String): Resource<List<ResourcesByTypeQuery.Node>> {
+        return try {
+            val response = apolloClient.query(ResourcesByTypeQuery(resourceType)).execute()
+            if (response.hasErrors()) {
+                return Resource.Error(ErrorType.CLIENT_ERROR)
+            }
+            val resources = response.data?.resourcesCollection?.edges?.map { it.node } ?: emptyList()
+            Resource.Success(resources)
+        } catch (e: Exception) {
+            Resource.Error(ErrorType.UNKNOWN, e)
+        }
     }
 
-    suspend fun getAllFirstTimerResources(): Resource<List<BackendExternalLink>> {
-        return makeRequest(
-            "first-timer-resources",
-            HttpMethod.GET
-        )
+    suspend fun getAllResources(): Resource<List<ResourcesByTypeQuery.Node>> {
+        return getResourcesByType("general")
     }
-} 
+
+    suspend fun getAllFirstTimerResources(): Resource<List<ResourcesByTypeQuery.Node>> {
+        return getResourcesByType("first_timer")
+    }
+}

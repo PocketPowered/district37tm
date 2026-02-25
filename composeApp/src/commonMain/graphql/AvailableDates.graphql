@@ -1,0 +1,10 @@
+query AvailableDates {
+  conference_datesCollection(orderBy: [{ date_key: AscNullsLast }]) {
+    edges {
+      node {
+        date_key
+      }
+    }
+  }
+}
+

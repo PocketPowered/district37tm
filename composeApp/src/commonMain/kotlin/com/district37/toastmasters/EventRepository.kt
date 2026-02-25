@@ -1,35 +1,56 @@
 package com.district37.toastmasters
 
-import com.district37.toastmasters.models.BackendEventDetails
-import com.district37.toastmasters.models.BackendEventPreview
-import com.district37.toastmasters.models.BackendTabInfo
-import com.wongislandd.nexus.networking.HttpMethod
-import com.wongislandd.nexus.networking.NetworkClient
+import com.apollographql.apollo3.ApolloClient
+import com.district37.toastmasters.graphql.AvailableDatesQuery
+import com.district37.toastmasters.graphql.EventDetailsQuery
+import com.district37.toastmasters.graphql.EventPreviewsByDateQuery
+import com.wongislandd.nexus.util.ErrorType
 import com.wongislandd.nexus.util.Resource
-import io.ktor.client.HttpClient
 
-class EventRepository(okHttpClient: HttpClient) : NetworkClient(okHttpClient) {
+class EventRepository(private val apolloClient: ApolloClient) {
 
-    suspend fun getEventDetails(id: Int): Resource<BackendEventDetails> {
-        return makeRequest(
-            "event/${id}",
-            HttpMethod.GET
-        )
+    suspend fun getEventDetails(id: Int): Resource<EventDetailsQuery.Node> {
+        return try {
+            val response = apolloClient.query(EventDetailsQuery(id.toLong())).execute()
+            if (response.hasErrors()) {
+                return Resource.Error(ErrorType.CLIENT_ERROR)
+            }
+
+            val node = response.data?.eventsCollection?.edges?.firstOrNull()?.node
+                ?: return Resource.Error(ErrorType.NOT_FOUND)
+
+            Resource.Success(node)
+        } catch (e: Exception) {
+            Resource.Error(ErrorType.UNKNOWN, e)
+        }
     }
 
-    suspend fun getEventsByKey(dateKey: Long): Resource<List<BackendEventPreview>> {
-        return makeRequest(
-            "events",
-            HttpMethod.GET,
-        ) {
-            url.parameters.append("date", dateKey.toString())
+    suspend fun getEventsByKey(dateKey: Long): Resource<List<EventPreviewsByDateQuery.Node>> {
+        return try {
+            val response = apolloClient.query(EventPreviewsByDateQuery(dateKey)).execute()
+            if (response.hasErrors()) {
+                return Resource.Error(ErrorType.CLIENT_ERROR)
+            }
+
+            val previews = response.data?.eventsCollection?.edges?.map { it.node } ?: emptyList()
+
+            Resource.Success(previews)
+        } catch (e: Exception) {
+            Resource.Error(ErrorType.UNKNOWN, e)
         }
     }
 
     suspend fun getAvailableDates(): Resource<List<Long>> {
-        return makeRequest(
-            "dates",
-            HttpMethod.GET
-        )
+        return try {
+            val response = apolloClient.query(AvailableDatesQuery()).execute()
+            if (response.hasErrors()) {
+                return Resource.Error(ErrorType.CLIENT_ERROR)
+            }
+
+            val dates = response.data?.conference_datesCollection?.edges?.map { it.node.date_key } ?: emptyList()
+            Resource.Success(dates)
+        } catch (e: Exception) {
+            Resource.Error(ErrorType.UNKNOWN, e)
+        }
     }
 }

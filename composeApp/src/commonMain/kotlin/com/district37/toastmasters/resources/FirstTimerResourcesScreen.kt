@@ -25,7 +25,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import co.touchlab.kermit.Logger
-import com.district37.toastmasters.models.BackendExternalLink
+import com.district37.toastmasters.models.ExternalLink
 import com.district37.toastmasters.navigation.StatefulScaffold
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -74,7 +74,7 @@ fun FirstTimerResourcesScreen() {
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ResourceItem(resource: BackendExternalLink) {
+fun ResourceItem(resource: ExternalLink) {
     val urlHandler = LocalUriHandler.current
 
     Card(

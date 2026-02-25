@@ -12,6 +12,7 @@ import com.district37.toastmasters.eventlist.eventListModule
 import com.district37.toastmasters.favorites.FavoritedEventsSlice
 import com.district37.toastmasters.fcm.FCMRepository
 import com.district37.toastmasters.getVersionInfo
+import com.district37.toastmasters.graphql.createSupabaseApolloClient
 import com.district37.toastmasters.locations.locationsModule
 import com.district37.toastmasters.navigation.supportedNavigationItems
 import com.district37.toastmasters.notifications.NotificationsSlice
@@ -21,6 +22,7 @@ import com.wongislandd.nexus.di.infraModule
 import com.wongislandd.nexus.navigation.NavigationItem
 import com.wongislandd.nexus.navigation.NavigationSlice
 import com.wongislandd.nexus.weblink.webLinkModule
+import com.apollographql.apollo3.ApolloClient
 import org.koin.compose.viewmodel.dsl.viewModelOf
 import org.koin.core.context.startKoin
 import org.koin.core.module.dsl.factoryOf
@@ -32,6 +34,7 @@ fun appModule(appContext: Any? = null) = module {
     factoryOf(::NavigationSlice)
     factoryOf(::NotificationsSlice)
     singleOf(::EventRepository)
+    single<ApolloClient> { createSupabaseApolloClient() }
     single<Set<NavigationItem>> { supportedNavigationItems.values.toSet() }
     single { DatabaseFactory(appContext) }
     single { TMDatabase(get<DatabaseFactory>().createDriver()) }
