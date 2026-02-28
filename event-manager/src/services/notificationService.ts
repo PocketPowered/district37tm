@@ -1,9 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { getEnvironment, getSupabaseUrl } from '../config/api';
-
-const SUPABASE_URL = getSupabaseUrl(getEnvironment());
-const SUPABASE_PUBLISHABLE_KEY =
-  process.env.REACT_APP_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_pnaLVfP6H6Kxi5wCPhSO2A_aK4zo24t';
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config/supabase';
 
 export const notificationService = {
   sendNotification: async (title: string, body: string, topic: string) => {

@@ -23,7 +23,6 @@ import EventList from './components/EventList';
 import EventForm from './components/EventForm';
 import NotificationForm from './components/NotificationForm';
 import DateManager from './pages/DateManager';
-import EnvironmentToggle from './components/EnvironmentToggle';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
@@ -229,7 +228,6 @@ const AppContent: React.FC = () => {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Container>
-        <EnvironmentToggle />
       </div>
     </ThemeProvider>
   );
