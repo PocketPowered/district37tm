@@ -7,7 +7,7 @@ import {
     Paper, 
     Alert
 } from '@mui/material';
-import { notificationService } from '../services/api';
+import { notificationService } from '../services/notificationService';
 
 interface NotificationFormProps {
     onSuccess?: () => void;
@@ -27,10 +27,10 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
         setSuccess(null);
 
         try {
-            const response = await notificationService.sendNotification(
+            await notificationService.sendNotification(
                 title,
                 body,
-                'all_users' // Global topic for all users
+                'GENERAL' // Global topic for all users
             );
 
             setSuccess('Notification sent successfully to all users!');
@@ -38,7 +38,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
             setBody('');
             if (onSuccess) onSuccess();
         } catch (err) {
-            setError('Failed to send notification. Please try again.');
+            setError(err instanceof Error ? err.message : 'Failed to send notification. Please try again.');
             console.error('Error sending notification:', err);
         } finally {
             setLoading(false);

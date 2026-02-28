@@ -18,7 +18,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { Event, AgendaItem, ExternalLink, TimeRange, EventTag } from '../types/Event';
 import { Location } from '../types/Location';
-import { eventService } from '../services/api';
+import { eventService } from '../services/eventService';
 import { dateService } from '../services/dateService';
 import { locationService } from '../services/locationService';
 import AddIcon from '@mui/icons-material/Add';

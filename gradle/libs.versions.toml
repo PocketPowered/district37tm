@@ -9,9 +9,6 @@ androidx-lifecycle = "2.8.4"
 buildkonfig = "0.15.2"
 coilCompose = "2.2.2"
 compose-multiplatform = "1.7.0"
-firebaseAdmin = "9.2.0"
-googleCloudFirestore = "3.13.4"
-grpcNetty = "1.58.0"
 junit = "4.13.2"
 kermit="2.0.4"
 kotlin = "2.1.0"
@@ -22,9 +19,7 @@ kotlinx-coroutines = "1.9.0"
 koinCompose = "4.0.0"
 koinComposeViewModel = "1.2.0-Beta5"
 ktor = "3.0.2"
-logback = "1.5.12"
 koinCore = "4.0.0"
-koinKtor = "3.5.0"
 okio = "3.9.1"
 kotlin-datetime="0.6.1"
 firebase-messaging="24.1.1"
@@ -35,9 +30,6 @@ lifecycleViewmodelCompose = "2.7.0"
 material3 = "1.2.0"
 apollo = "3.8.2"
 
-#Gitlive / Firebase
-firebase-gitlive-sdk = "2.1.0"
-crashlytics = "3.0.3"
 google-services = "4.4.2"
 
 
@@ -45,24 +37,12 @@ google-services = "4.4.2"
 accompanist-pager = { module = "com.google.accompanist:accompanist-pager", version.ref = "accompanistPager" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqlDelight" }
-firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebaseAdmin" }
-google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version.ref = "googleCloudFirestore" }
-grpc-core = { module = "io.grpc:grpc-core", version.ref = "grpcNetty" }
-grpc-netty = { module = "io.grpc:grpc-netty", version.ref = "grpcNetty" }
-grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpcNetty" }
-grpc-services = { module = "io.grpc:grpc-services", version.ref = "grpcNetty" }
-grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpcNetty" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 androidx-lifecycle-viewmodel = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtime-compose = { group = "org.jetbrains.androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
-logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
-ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
-ktor-server-tests = { module = "io.ktor:ktor-server-tests", version.ref = "ktor" }
-ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
@@ -71,20 +51,13 @@ ktor-client-serialization = { group = "io.ktor", name = "ktor-client-serializati
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-json = { group = "io.ktor", name = "ktor-client-json", version.ref = "ktor" }
 ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
-ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
-ktor-server-content-negotation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koinCore" }
-koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koinKtor" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koinCompose" }
 koin-composeViewModel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koinComposeViewModel" }
 squareup-okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlin-datetime" }
 kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization"}
-gitlive-firebase-kotlin-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "firebase-gitlive-sdk" }
-gitlive-firebase-kotlin-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "firebase-gitlive-sdk" }
-gitlive-firebase-kotlin-performance = { module = "dev.gitlive:firebase-perf", version.ref = "firebase-gitlive-sdk" }
-gitlive-firebase-kotlin-installations = { module = "dev.gitlive:firebase-installations", version.ref = "firebase-gitlive-sdk" }
 landscapist-coil = { module = "com.github.skydoves:landscapist-coil3", version.ref = "landscapist" }
 landscapist-placeholder = { module = "com.github.skydoves:landscapist-placeholder", version.ref = "landscapist" }
 accompanist-placeholder = { module = "com.google.accompanist:accompanist-swiperefresh", version.ref = "accompanist" }
@@ -103,15 +76,12 @@ androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlytics" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 # Nexus
 buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfig" }
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqlDelight" }
-ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 apollo3 = { id = "com.apollographql.apollo3", version.ref = "apollo" }
 
 
@@ -137,11 +107,4 @@ nexus = [
 landscapist = [
     "landscapist-coil",
     "landscapist-placeholder"
-]
-
-gitlive = [
-    "gitlive-firebase-kotlin-crashlytics",
-    "gitlive-firebase-kotlin-analytics",
-    "gitlive-firebase-kotlin-performance",
-    "gitlive-firebase-kotlin-installations"
 ]

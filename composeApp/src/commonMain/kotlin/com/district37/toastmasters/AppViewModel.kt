@@ -5,23 +5,32 @@ import co.touchlab.kermit.Logger
 import com.district37.toastmasters.favorites.FavoritedEventsSlice
 import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.notifications.NotificationsSlice
+import com.district37.toastmasters.splash.SplashRepository
 import com.wongislandd.nexus.events.BackChannelEvent
 import com.wongislandd.nexus.events.EventBus
 import com.wongislandd.nexus.events.UiEvent
 import com.wongislandd.nexus.navigation.NavigationSlice
 import com.wongislandd.nexus.viewmodel.SliceableViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class AppViewModel(
     val navigationSlice: NavigationSlice,
     val notificationsSlice: NotificationsSlice,
     val versionInfo: VersionInfo,
     favoritesSlice: FavoritedEventsSlice,
+    private val splashRepository: SplashRepository,
     uiEventBus: EventBus<UiEvent>,
     backChannelEventBus: EventBus<BackChannelEvent>
 ) : SliceableViewModel(uiEventBus, backChannelEventBus) {
 
     init {
         registerSlices(navigationSlice, notificationsSlice, favoritesSlice)
+        // Keep splash override cache fresh at app scope, even after splash navigation.
+        viewModelScope.launch(Dispatchers.Default) {
+            splashRepository.syncSplashImageUrlFromNetwork()
+        }
     }
 
     fun navigate(

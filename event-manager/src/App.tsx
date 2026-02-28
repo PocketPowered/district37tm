@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { 
   ThemeProvider, 
   CssBaseline, 
@@ -38,6 +38,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ResourcesManager from './pages/ResourcesManager';
 import LocationsManager from './pages/LocationsManager';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
 const AppContent: React.FC = () => {
@@ -225,6 +226,7 @@ const AppContent: React.FC = () => {
                 </ProtectedRoute>
               }
             />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Container>
         <EnvironmentToggle />
@@ -236,9 +238,11 @@ const AppContent: React.FC = () => {
 const App = () => {
   return (
     <Router>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ErrorBoundary>
     </Router>
   );
 };

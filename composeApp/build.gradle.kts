@@ -5,7 +5,6 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.google.services)
     alias(libs.plugins.kotlinxSerialization)
-    alias(libs.plugins.crashlytics)
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.apollo3)
 }
@@ -49,7 +48,6 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.koin.core)
             implementation(projects.shared)
-            implementation(libs.bundles.gitlive)
             implementation(libs.bundles.landscapist)
             implementation(libs.accompanist.placeholder)
             implementation(libs.coroutines.extensions)

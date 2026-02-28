@@ -12,6 +12,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+const AUTH_CHECK_TIMEOUT_MS = 8000;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -28,7 +29,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkAuthorization = async (user: User | null) => {
     if (user?.email) {
-      const authorized = await isUserAuthorized(user.email);
+      const authorized = await Promise.race<boolean>([
+        isUserAuthorized(user.email),
+        new Promise<boolean>((resolve) => {
+          window.setTimeout(() => resolve(false), AUTH_CHECK_TIMEOUT_MS);
+        }),
+      ]);
       setIsAuthorized(authorized);
     } else {
       setIsAuthorized(false);
@@ -61,23 +67,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
-      const user = data.session?.user || null;
-      setCurrentUser(user);
-      await checkAuthorization(user);
-      setLoading(false);
-    });
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        setLoading(true);
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        const user = data.session?.user || null;
+        setCurrentUser(user);
+        await checkAuthorization(user);
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (!mounted) return;
+        setCurrentUser(null);
+        setIsAuthorized(false);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const user = session?.user || null;
-      setCurrentUser(user);
-      await checkAuthorization(user);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const user = session?.user || null;
+        setCurrentUser(user);
+        await checkAuthorization(user);
+      } catch (error) {
+        console.error('Error handling auth state change:', error);
+        setCurrentUser(null);
+        setIsAuthorized(false);
+      } finally {
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const value = {
@@ -90,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 }; 

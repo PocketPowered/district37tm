@@ -1,65 +1,40 @@
-# Supabase Direct Migration Plan
+# Supabase Direct Migration Plan (Completed)
 
 ## Goal
 Remove Firebase/Firestore as the application data source and have clients communicate directly with Supabase for app data, while preserving push notifications.
 
-## Current State
-- Data and admin authz are stored in Firebase Firestore.
-- Admin auth is Firebase Auth (Google).
-- Mobile and admin clients fetch data through the Ktor server.
-- Android push delivery uses FCM.
+## Completion Status
+- Status: **Completed**
+- Legacy Ktor backend: **Removed**
+- Legacy Azure deployment workflow: **Removed**
+- Backward compatibility with legacy REST API: **Not maintained by design**
 
-## Target State
-- Supabase Postgres is the source of truth for events, dates, locations, resources, authorized users, and push tokens.
-- Clients read/write data directly to Supabase (no Ktor API dependency for these paths).
-- Notifications are sent through a Supabase Edge Function that calls FCM HTTP v1.
-- Firebase Firestore is removed from runtime data flow.
+## Final Runtime Architecture
+- Supabase Postgres is the source of truth for events, dates, locations, resources, authorized users, push tokens, notifications, and delivery logs.
+- Clients read/write directly to Supabase (no Ktor API dependency).
+- Notifications are sent via Supabase Edge Function `send-notification`.
+- Edge Function calls FCM HTTP v1 for delivery.
 
-## Notifications Plan
-1. Keep FCM for delivery to Android/iOS devices.
+## Notifications (Final)
+1. Keep FCM for Android delivery.
 2. Store device tokens in Supabase table `push_tokens`.
-3. Admin app inserts a `notifications` record and invokes `send-notification` Edge Function.
-4. Edge Function uses Firebase service account credentials (stored as Supabase secrets) to call FCM.
+3. Admin app inserts a `notifications` record and invokes `send-notification`.
+4. Edge Function uses Firebase service account credentials (Supabase secrets) to call FCM.
 5. Delivery results are stored in `notification_deliveries`.
+6. Broadcast topic standard is `GENERAL`.
 
-## Database Plan
-Create/maintain these public tables:
+## Database (Final)
 - `conference_dates` (`date_key` bigint PK)
-- `events` (event payload with time fields, agenda/additional links JSON, FK to dates)
+- `events`
 - `locations`
-- `resources` (with `resource_type` = `general` | `first_timer`)
-- `authorized_users` (admin allowlist by email)
+- `resources` (`resource_type` = `general` | `first_timer` | `splash`)
+- `authorized_users`
 - `push_tokens`
 - `notifications`
 - `notification_deliveries`
+- RPC: `search_locations(query_text text)`
 
-Create helper RPC:
-- `search_locations(query_text text)` for tokenized case-insensitive search.
-
-## Client Migration Plan
-### Admin Portal (`event-manager`)
-1. Replace Firebase Auth with Supabase Auth (Google OAuth).
-2. Replace Firestore allowlist checks with `authorized_users` table queries.
-3. Replace REST API service calls with direct Supabase table operations.
-4. Replace `/notifications` API call with Edge Function invoke.
-
-### Mobile App (`composeApp`)
-1. Repoint networking to Supabase REST (`/rest/v1`) with publishable key.
-2. Replace server endpoint calls in repositories with PostgREST queries/RPC.
-3. Register FCM tokens by writing to `push_tokens`.
-4. Keep local SQLDelight tables for favorites/received notifications.
-
-## Rollout Sequence
-1. Add Supabase schema + RLS + helper RPC.
-2. Migrate admin portal reads/writes.
-3. Migrate mobile reads/writes.
-4. Add Edge Function notification sender.
-5. Validate parity against existing app behavior.
-6. Decommission server Firebase/Firestore paths.
-
-## Open Items
-- Google OAuth provider must be configured in Supabase Auth.
-- Supabase Edge Function secrets required:
-  - Firebase service account JSON or generated OAuth access token inputs.
-  - Firebase project ID.
-- RLS policy hardening after parity verification.
+## Operational Notes
+- Google OAuth provider is configured in Supabase Auth for admin login.
+- Supabase Edge Function secrets must include Firebase service account JSON and Firebase project ID.
+- RLS should be continuously reviewed as app/admin capabilities evolve.

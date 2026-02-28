@@ -130,9 +130,34 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           message: {
             topic,
+            notification: {
+              title: title || "",
+              body: body || "",
+            },
             data: {
               title: title || "",
               body: body || "",
+            },
+            android: {
+              priority: "high",
+              notification: {
+                sound: "default",
+              },
+            },
+            apns: {
+              headers: {
+                "apns-priority": "10",
+                "apns-push-type": "alert",
+              },
+              payload: {
+                aps: {
+                  alert: {
+                    title: title || "",
+                    body: body || "",
+                  },
+                  sound: "default",
+                },
+              },
             },
           },
         }),
@@ -175,4 +200,3 @@ Deno.serve(async (req) => {
     return json(500, { error: message });
   }
 });
-

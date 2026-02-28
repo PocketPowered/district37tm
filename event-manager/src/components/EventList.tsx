@@ -25,7 +25,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { Event, formatTimeRange } from '../types/Event';
-import { eventService } from '../services/api';
+import { eventService } from '../services/eventService';
 import { dateService } from '../services/dateService';
 
 type SortConfig = {
@@ -278,7 +278,6 @@ const EventList: React.FC = () => {
                   width: '100%',
                   overflowX: 'auto',
                   WebkitOverflowScrolling: 'touch',
-                  '-webkit-overflow-scrolling': 'touch',
                   msOverflowStyle: 'none',
                   scrollbarWidth: 'none',
                   '&::-webkit-scrollbar': {
