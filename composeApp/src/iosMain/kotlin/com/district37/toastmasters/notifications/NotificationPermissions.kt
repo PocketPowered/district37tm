@@ -6,32 +6,42 @@ import platform.Foundation.NSLog
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication.Companion.sharedApplication
 import platform.UIKit.UIApplicationOpenSettingsURLString
+import platform.UserNotifications.UNAuthorizationOptionAlert
+import platform.UserNotifications.UNAuthorizationOptionBadge
+import platform.UserNotifications.UNAuthorizationOptionSound
 import platform.UserNotifications.UNAuthorizationStatusAuthorized
 import platform.UserNotifications.UNAuthorizationStatusDenied
+import platform.UserNotifications.UNAuthorizationStatusEphemeral
 import platform.UserNotifications.UNAuthorizationStatusNotDetermined
+import platform.UserNotifications.UNAuthorizationStatusProvisional
 import platform.UserNotifications.UNUserNotificationCenter
 
 actual class NotificationPermissions {
     private val notificationCenter = UNUserNotificationCenter.currentNotificationCenter()
-    private val _permissionState = MutableStateFlow(getCurrentPermissionState())
+    private val _permissionState =
+        MutableStateFlow<NotificationPermissionState>(NotificationPermissionState.NotDetermined)
     actual val permissionState: StateFlow<NotificationPermissionState> = _permissionState
 
-    private fun getCurrentPermissionState(): NotificationPermissionState {
-        var currentState: NotificationPermissionState = NotificationPermissionState.NotDetermined
+    init {
+        refreshPermissionState()
+    }
+
+    private fun refreshPermissionState() {
         notificationCenter.getNotificationSettingsWithCompletionHandler { settings ->
-            currentState = when (settings?.authorizationStatus) {
-                UNAuthorizationStatusAuthorized -> NotificationPermissionState.Granted
+            _permissionState.value = when (settings?.authorizationStatus) {
+                UNAuthorizationStatusAuthorized,
+                UNAuthorizationStatusProvisional,
+                UNAuthorizationStatusEphemeral -> NotificationPermissionState.Granted
                 UNAuthorizationStatusDenied -> NotificationPermissionState.Denied
                 UNAuthorizationStatusNotDetermined -> NotificationPermissionState.NotDetermined
                 else -> NotificationPermissionState.NotDetermined
             }
         }
-        return currentState
     }
 
     actual suspend fun requestPermission() {
         notificationCenter.requestAuthorizationWithOptions(
-            options = 0u, // This is a bitmask of UNAuthorizationOptions
+            options = UNAuthorizationOptionAlert or UNAuthorizationOptionSound or UNAuthorizationOptionBadge,
             completionHandler = { granted, error ->
                 if (error != null) {
                     NSLog("Error requesting notification permission: ${error.localizedDescription}")
@@ -51,4 +61,4 @@ actual class NotificationPermissions {
             NSLog("Failed to open notification settings")
         }
     }
-} 
+}

@@ -1,19 +1,24 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Container, Typography, Box, Paper } from '@mui/material';
 import GoogleSignInButton from '../components/GoogleSignInButton';
 
 const Login: React.FC = () => {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, currentUser, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
 
+  useEffect(() => {
+    if (!loading && currentUser) {
+      navigate(from, { replace: true });
+    }
+  }, [currentUser, from, loading, navigate]);
+
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
-      navigate(from, { replace: true });
     } catch (error) {
       console.error('Failed to sign in:', error);
     }
@@ -71,4 +76,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login; 
+export default Login;

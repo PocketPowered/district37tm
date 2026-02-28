@@ -15,9 +15,6 @@ import {
   DialogActions,
   TextField,
   IconButton,
-  Card,
-  CardContent,
-  Grid
 } from '@mui/material';
 import { locationService } from '../services/locationService';
 import { Location } from '../types/Location';
@@ -26,6 +23,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { handleImageLoadError } from '../utils/imageFallback';
 
 const LocationsManager: React.FC = () => {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -61,7 +59,7 @@ const LocationsManager: React.FC = () => {
 
   const handleAddLocation = async () => {
     try {
-      const newLocation = await locationService.createLocation(formData);
+      await locationService.createLocation(formData);
       await fetchLocations();
       setFormData({ id: '', locationName: '', locationImages: [] });
       setOpenDialog(false);
@@ -357,8 +355,7 @@ const LocationsManager: React.FC = () => {
                           borderRadius: 1
                         }}
                         onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'https://via.placeholder.com/150?text=Image+Not+Found';
+                          handleImageLoadError(e.currentTarget);
                         }}
                       />
                       <Typography

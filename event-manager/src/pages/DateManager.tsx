@@ -18,8 +18,8 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { dateService } from '../services/dateService';
-import { format } from 'date-fns';
 import AddIcon from '@mui/icons-material/Add';
+import { createUtcDateKeyFromDate, formatDateKey } from '../utils/dateKey';
 
 const DateManager: React.FC = () => {
   const [dates, setDates] = useState<number[]>([]);
@@ -51,7 +51,7 @@ const DateManager: React.FC = () => {
     if (!selectedDate) return;
     
     try {
-      await dateService.addDate(selectedDate.getTime());
+      await dateService.addDate(createUtcDateKeyFromDate(selectedDate));
       await fetchDates();
       setSelectedDate(null);
       setOpenDialog(false);
@@ -131,7 +131,12 @@ const DateManager: React.FC = () => {
                 <Paper key={timestamp} sx={{ p: 2 }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography>
-                      {format(new Date(timestamp), 'PPP')}
+                      {formatDateKey(timestamp, {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
                     </Typography>
                     <Button
                       color="error"

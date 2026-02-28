@@ -10,6 +10,11 @@ val supportedNavigationItems = mutableMapOf(
         "",
         "splash"
     ),
+    NavigationItemKey.NOTIFICATION_ONBOARDING to NavigationItem(
+        NavigationItemKey.NOTIFICATION_ONBOARDING.name,
+        "Enable Notifications",
+        "notification-onboarding"
+    ),
     NavigationItemKey.LANDING_PAGE to NavigationItem(
         NavigationItemKey.LANDING_PAGE.name,
         "District 37 Toastmasters",
@@ -35,11 +40,6 @@ val supportedNavigationItems = mutableMapOf(
         NavigationItemKey.RESOURCES.name,
         "Resources",
         "resources"
-    ),
-    NavigationItemKey.FIRST_TIMER_RESOURCES to NavigationItem(
-        NavigationItemKey.FIRST_TIMER_RESOURCES.name,
-        "First Timer",
-        "first-timer-resources"
     ),
     NavigationItemKey.MAPS to NavigationItem(
         NavigationItemKey.MAPS.name,

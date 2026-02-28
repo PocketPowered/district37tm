@@ -33,35 +33,34 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         Messaging.messaging().delegate = self
         print("🔔 Notification delegates set")
 
+        registerForRemoteNotificationsIfAuthorized(application)
+
+        return true
+    }
+
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        registerForRemoteNotificationsIfAuthorized(application)
+    }
+
+    private func registerForRemoteNotificationsIfAuthorized(_ application: UIApplication) {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             print("📱 Current notification settings: \(settings.authorizationStatus.rawValue)")
 
             switch settings.authorizationStatus {
             case .authorized, .provisional, .ephemeral:
                 DispatchQueue.main.async {
-                    application.registerForRemoteNotifications()
+                    if !self.hasAPNSToken {
+                        application.registerForRemoteNotifications()
+                    }
                 }
             case .notDetermined:
-                UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-                    if let error = error {
-                        print("❌ Push permission error: \(error.localizedDescription)")
-                        return
-                    }
-                    print("📲 Push permission granted: \(granted)")
-                    if granted {
-                        DispatchQueue.main.async {
-                            application.registerForRemoteNotifications()
-                        }
-                    }
-                }
+                print("ℹ️ Notification permission has not been requested yet")
             case .denied:
                 print("❌ Notifications denied by user")
             @unknown default:
                 print("❓ Unknown authorization status")
             }
         }
-
-        return true
     }
 
     func application(

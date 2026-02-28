@@ -9,6 +9,12 @@ data class TimeRange(
     val endTime: Long
 )
 
+private fun formatHourMinute(hour: Int, minute: Int): String {
+    val period = if (hour < 12) "AM" else "PM"
+    val formattedHour = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+    return "${formattedHour}:${minute.toString().padStart(2, '0')} $period"
+}
+
 fun TimeRange.toHumanReadableString(showDate: Boolean = true): String {
     val startDateTime = Instant.fromEpochMilliseconds(startTime).toLocalDateTime(TimeZone.currentSystemDefault())
     val endDateTime = Instant.fromEpochMilliseconds(endTime).toLocalDateTime(TimeZone.currentSystemDefault())
@@ -24,14 +30,8 @@ fun TimeRange.toHumanReadableString(showDate: Boolean = true): String {
     val endYear = endDateTime.year
     val endHour = endDateTime.hour
     val endMinute = endDateTime.minute
-    
-    val startPeriod = if (startHour < 12) "AM" else "PM"
-    val endPeriod = if (endHour < 12) "AM" else "PM"
-    
-    val formattedStartHour = if (startHour == 0) 12 else if (startHour > 12) startHour - 12 else startHour
-    val formattedEndHour = if (endHour == 0) 12 else if (endHour > 12) endHour - 12 else endHour
-    
-    val timeString = "${formattedStartHour}:${startMinute.toString().padStart(2, '0')}$startPeriod - ${formattedEndHour}:${endMinute.toString().padStart(2, '0')}$endPeriod"
+
+    val timeString = "${formatHourMinute(startHour, startMinute)} - ${formatHourMinute(endHour, endMinute)}"
     
     if (!showDate) {
         return timeString
@@ -44,6 +44,6 @@ fun TimeRange.toHumanReadableString(showDate: Boolean = true): String {
     return if (isSameDay) {
         "$startMonth $startDay, $startYear $timeString"
     } else {
-        "$startMonth $startDay, $startYear ${formattedStartHour}:${startMinute.toString().padStart(2, '0')}$startPeriod - $endMonth $endDay, $endYear ${formattedEndHour}:${endMinute.toString().padStart(2, '0')}$endPeriod"
+        "$startMonth $startDay, $startYear ${formatHourMinute(startHour, startMinute)} - $endMonth $endDay, $endYear ${formatHourMinute(endHour, endMinute)}"
     }
 } 

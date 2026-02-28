@@ -2,7 +2,6 @@ package com.district37.toastmasters.navigation
 
 import EventIcon
 import Menu
-import Rocket
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -34,10 +33,5 @@ val drawerItems = listOf(
         key = NavigationItemKey.RESOURCES,
         title = "Resources",
         icon = Menu,
-    ),
-    DrawerItem(
-        key = NavigationItemKey.FIRST_TIMER_RESOURCES,
-        title = "First Timers",
-        icon = Rocket
     ),
 ) 

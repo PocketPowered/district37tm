@@ -4,6 +4,7 @@ import androidx.navigation.NavController
 import co.touchlab.kermit.Logger
 import com.district37.toastmasters.favorites.FavoritedEventsSlice
 import com.district37.toastmasters.navigation.NavigationItemKey
+import com.district37.toastmasters.notifications.NotificationOnboardingStore
 import com.district37.toastmasters.notifications.NotificationsSlice
 import com.district37.toastmasters.splash.SplashRepository
 import com.wongislandd.nexus.events.BackChannelEvent
@@ -20,6 +21,7 @@ class AppViewModel(
     val notificationsSlice: NotificationsSlice,
     val versionInfo: VersionInfo,
     favoritesSlice: FavoritedEventsSlice,
+    private val notificationOnboardingStore: NotificationOnboardingStore,
     private val splashRepository: SplashRepository,
     uiEventBus: EventBus<UiEvent>,
     backChannelEventBus: EventBus<BackChannelEvent>
@@ -46,5 +48,9 @@ class AppViewModel(
             args,
             removeSelfFromStack
         )
+    }
+
+    fun completeNotificationOnboarding() {
+        notificationOnboardingStore.setCompletedOnboarding(true)
     }
 }

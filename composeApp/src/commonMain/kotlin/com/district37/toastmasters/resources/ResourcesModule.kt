@@ -9,5 +9,4 @@ val resourcesModule = module {
     viewModelOf(::ResourcesViewModel)
     singleOf(::ResourcesRepository)
     singleOf(::ResourceLinkTransformer)
-    viewModelOf(::FirstTimerResourcesViewModel)
 } 

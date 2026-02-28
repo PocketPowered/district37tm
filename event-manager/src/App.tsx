@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HashRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { 
   ThemeProvider, 
   CssBaseline, 
@@ -13,6 +13,7 @@ import {
   Drawer,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   ListItemIcon,
   useTheme,
@@ -42,6 +43,7 @@ import './App.css';
 
 const AppContent: React.FC = () => {
   const { currentUser, logout, isAuthorized } = useAuth();
+  const location = useLocation();
   const isDarkMode = false;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -51,8 +53,16 @@ const AppContent: React.FC = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const handleNavigation = (path: string) => {
+  const handleNavigation = () => {
     setMobileOpen(false);
+  };
+
+  const isPathActive = (path: string): boolean => {
+    if (path === '/') {
+      return location.pathname === '/' || location.pathname.startsWith('/events/');
+    }
+
+    return location.pathname.startsWith(path);
   };
 
   const navigationItems = isAuthorized ? [
@@ -67,24 +77,28 @@ const AppContent: React.FC = () => {
   const drawer = (
     <List>
       {navigationItems.map((item) => (
-        <ListItem 
-          key={item.text} 
-          component={Link} 
-          to={item.path}
-          onClick={() => handleNavigation(item.path)}
-        >
-          <ListItemIcon sx={{ minWidth: 40 }}>
-            {item.icon}
-          </ListItemIcon>
-          <ListItemText primary={item.text} />
+        <ListItem key={item.text} disablePadding>
+          <ListItemButton
+            component={Link}
+            to={item.path}
+            onClick={handleNavigation}
+            selected={isPathActive(item.path)}
+          >
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              {item.icon}
+            </ListItemIcon>
+            <ListItemText primary={item.text} />
+          </ListItemButton>
         </ListItem>
       ))}
       {currentUser && (
-        <ListItem onClick={logout}>
-          <ListItemIcon sx={{ minWidth: 40 }}>
-            <LogoutIcon />
-          </ListItemIcon>
-          <ListItemText primary="Logout" />
+        <ListItem disablePadding>
+          <ListItemButton onClick={logout}>
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText primary="Logout" />
+          </ListItemButton>
         </ListItem>
       )}
     </List>
@@ -126,6 +140,11 @@ const AppContent: React.FC = () => {
                     color="inherit"
                     component={Link}
                     to={item.path}
+                    sx={{
+                      borderBottom: isPathActive(item.path) ? '2px solid rgba(255, 255, 255, 0.95)' : '2px solid transparent',
+                      borderRadius: 0,
+                      opacity: isPathActive(item.path) ? 1 : 0.88,
+                    }}
                   >
                     {item.text}
                   </Button>

@@ -1,4 +1,4 @@
-import { AgendaItem, Event, EventTag, ExternalLink, TimeRange } from '../types/Event';
+import { AgendaItem, Event, EventTag, ExternalLink } from '../types/Event';
 import { BackendExternalLink } from '../types/BackendExternalLink';
 import { Location } from '../types/Location';
 
@@ -21,6 +21,7 @@ type ResourceRow = {
   display_name: string | null;
   url: string | null;
   description: string | null;
+  resource_type: string;
 };
 
 type LocationRow = {
@@ -75,12 +76,12 @@ export const toResource = (row: ResourceRow): BackendExternalLink => ({
   displayName: row.display_name || '',
   url: row.url || '',
   description: row.description,
+  resourceType: row.resource_type,
 });
 
-export const toResourceInsert = (resource: BackendExternalLink, resourceType: 'general' | 'first_timer') => ({
+export const toResourceInsert = (resource: BackendExternalLink, resourceType: string) => ({
   display_name: resource.displayName || '',
   url: resource.url || '',
   description: resource.description || null,
   resource_type: resourceType,
 });
-

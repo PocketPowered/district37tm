@@ -21,7 +21,9 @@ class DateTransformer : Transformer<List<Long>, List<DateTabInfo>> {
 
 private fun Long.toHumanReadableDate(): String {
     val instant = Instant.fromEpochMilliseconds(this)
-    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    // date_key values represent calendar-day boundaries; keep them in UTC so the tab label
+    // matches the backend day key regardless of the attendee device time zone.
+    val localDateTime = instant.toLocalDateTime(TimeZone.UTC)
 
     val month = localDateTime.month.name.lowercase().replaceFirstChar { it.uppercase() }
     val day = localDateTime.dayOfMonth

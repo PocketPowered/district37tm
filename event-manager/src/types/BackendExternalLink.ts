@@ -3,4 +3,5 @@ export interface BackendExternalLink {
   displayName?: string;
   url?: string;
   description?: string | null;
+  resourceType?: string;
 } 

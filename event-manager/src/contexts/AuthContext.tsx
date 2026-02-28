@@ -13,6 +13,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 const AUTH_CHECK_TIMEOUT_MS = 8000;
+const AUTH_REDIRECT_URL_OVERRIDE = process.env.REACT_APP_AUTH_REDIRECT_URL?.trim();
+
+const ensureTrailingSlash = (value: string) => (value.endsWith('/') ? value : `${value}/`);
+
+const getAuthRedirectUrl = (): string => {
+  if (AUTH_REDIRECT_URL_OVERRIDE) {
+    return ensureTrailingSlash(AUTH_REDIRECT_URL_OVERRIDE);
+  }
+
+  const publicUrl = process.env.PUBLIC_URL?.trim();
+  if (publicUrl) {
+    try {
+      return ensureTrailingSlash(new URL(publicUrl, window.location.origin).toString());
+    } catch {
+      // Fall through to runtime origin/path detection below.
+    }
+  }
+
+  const currentPath = window.location.pathname || '/';
+  return ensureTrailingSlash(`${window.location.origin}${currentPath}`);
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -43,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
-      const redirectTo = `${window.location.origin}${window.location.pathname}`;
+      const redirectTo = getAuthRedirectUrl();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo },
@@ -68,6 +89,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
+    const loadingFailSafe = window.setTimeout(() => {
+      if (mounted) {
+        setLoading(false);
+      }
+    }, AUTH_CHECK_TIMEOUT_MS * 2);
 
     const initializeAuth = async () => {
       try {
@@ -95,7 +121,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       try {
-        setLoading(true);
         const user = session?.user || null;
         setCurrentUser(user);
         await checkAuthorization(user);
@@ -103,13 +128,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error handling auth state change:', error);
         setCurrentUser(null);
         setIsAuthorized(false);
-      } finally {
-        setLoading(false);
       }
     });
 
     return () => {
       mounted = false;
+      window.clearTimeout(loadingFailSafe);
       subscription.unsubscribe();
     };
   }, []);
@@ -119,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     isAuthorized,
     signInWithGoogle,
-    logout
+    logout,
   };
 
   return (
@@ -127,4 +151,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-}; 
+};

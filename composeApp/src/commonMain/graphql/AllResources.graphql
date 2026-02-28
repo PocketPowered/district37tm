@@ -1,0 +1,15 @@
+query AllResources {
+  resourcesCollection(
+    orderBy: [{ resource_type: AscNullsLast }, { created_at: DescNullsLast }]
+  ) {
+    edges {
+      node {
+        id
+        resource_type
+        display_name
+        url
+        description
+      }
+    }
+  }
+}

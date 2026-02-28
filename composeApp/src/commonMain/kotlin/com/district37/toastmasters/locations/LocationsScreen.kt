@@ -1,5 +1,6 @@
 package com.district37.toastmasters.locations
 
+import Linkout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,15 +17,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.models.Location
@@ -33,8 +37,13 @@ import com.skydoves.landscapist.ImageOptions
 import com.skydoves.landscapist.coil3.CoilImage
 import com.skydoves.landscapist.components.rememberImageComponent
 import com.skydoves.landscapist.placeholder.shimmer.ShimmerPlugin
+import io.ktor.http.encodeURLQueryComponent
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
+
+private fun mapsSearchUrl(locationName: String): String {
+    return "https://www.google.com/maps/search/?api=1&query=${locationName.encodeURLQueryComponent()}"
+}
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
@@ -59,7 +68,9 @@ fun LocationsScreen() {
                 item {
                     Text(
                         text = "No locations available",
-                        modifier = Modifier.padding(16.dp).fillMaxSize(),
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxSize(),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -82,6 +93,8 @@ fun LocationsScreen() {
 
 @Composable
 private fun LocationItem(location: Location) {
+    val uriHandler = LocalUriHandler.current
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         elevation = 4.dp,
@@ -98,6 +111,23 @@ private fun LocationItem(location: Location) {
 
             if (location.locationImages.isNotEmpty()) {
                 LocationImageCarousel(location.locationImages)
+            }
+
+            TextButton(
+                onClick = {
+                    uriHandler.openUri(mapsSearchUrl(location.locationName))
+                },
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Icon(
+                    imageVector = Linkout,
+                    contentDescription = "Open in maps",
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "Open in Maps",
+                    modifier = Modifier.padding(start = 6.dp)
+                )
             }
         }
     }
@@ -118,7 +148,7 @@ private fun LocationImageCarousel(images: List<String>) {
                 .height(200.dp)
         ) { page ->
             CoilImage(
-                imageModel = { images[page] } ,
+                imageModel = { images[page] },
                 component = component,
                 imageOptions = ImageOptions(
                     contentScale = ContentScale.Crop,
@@ -129,13 +159,20 @@ private fun LocationImageCarousel(images: List<String>) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(MaterialTheme.colors.error)
-                    )
+                            .background(MaterialTheme.colors.onSurface.copy(alpha = 0.08f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Image unavailable",
+                            style = MaterialTheme.typography.body2,
+                            color = MaterialTheme.colors.onSurface.copy(alpha = 0.65f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             )
         }
 
-        // Page indicator
         Row(
             modifier = Modifier
                 .fillMaxWidth()

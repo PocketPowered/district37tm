@@ -37,7 +37,6 @@ class LocationsViewModel(
                     .map { locations ->
                         locations
                             .map { allLocationNodeTransformer.transform(it) }
-                            .filter { location -> location.locationImages.isNotEmpty() }
                     }
             }
         }

@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.wongislandd.nexus.GenericErrorScreen
+import com.wongislandd.nexus.GenericLoadingScreen
 import com.wongislandd.nexus.navigation.GlobalTopAppBar
 import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.PullToRefreshWrapper
@@ -82,7 +83,7 @@ fun <T> StatefulScaffold(
                     }
 
                     is Resource.Loading -> {
-                        //GenericLoadingScreen()
+                        GenericLoadingScreen()
                     }
 
                     is Resource.Success -> {

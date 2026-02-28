@@ -2,35 +2,63 @@ import { BackendExternalLink } from '../types/BackendExternalLink';
 import { supabase } from '../lib/supabase';
 import { toResource, toResourceInsert } from './supabaseMappers';
 
-const fields = 'id, display_name, url, description';
+const fields = 'id, resource_type, display_name, url, description';
+
+const applyExcludedTypes = <T extends { neq: (column: string, value: string) => T }>(
+  query: T,
+  excludedTypes: string[]
+): T => {
+  let nextQuery = query;
+  excludedTypes.forEach((type) => {
+    nextQuery = nextQuery.neq('resource_type', type);
+  });
+  return nextQuery;
+};
 
 export const resourceService = {
-  async getAllResources(): Promise<BackendExternalLink[]> {
-    const { data, error } = await supabase
+  async getAllResources(excludedTypes: string[] = []): Promise<BackendExternalLink[]> {
+    let query = supabase
       .from('resources')
       .select(fields)
-      .eq('resource_type', 'general')
+      .order('resource_type', { ascending: true })
       .order('created_at', { ascending: false });
+
+    query = applyExcludedTypes(query, excludedTypes);
+
+    const { data, error } = await query;
     if (error) throw error;
     return (data || []).map(toResource);
   },
 
-  async createResource(resource: BackendExternalLink): Promise<BackendExternalLink> {
+  async getResourceCategories(excludedTypes: string[] = []): Promise<string[]> {
+    let query = supabase
+      .from('resources')
+      .select('resource_type')
+      .order('resource_type', { ascending: true });
+
+    query = applyExcludedTypes(query, excludedTypes);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    return Array.from(new Set((data || []).map((row) => row.resource_type).filter(Boolean)));
+  },
+
+  async createResource(resource: BackendExternalLink, resourceType: string): Promise<BackendExternalLink> {
     const { data, error } = await supabase
       .from('resources')
-      .insert(toResourceInsert(resource, 'general'))
+      .insert(toResourceInsert(resource, resourceType))
       .select(fields)
       .single();
     if (error) throw error;
     return toResource(data);
   },
 
-  async updateResource(id: string, resource: BackendExternalLink): Promise<BackendExternalLink> {
+  async updateResource(id: string, resource: BackendExternalLink, resourceType: string): Promise<BackendExternalLink> {
     const { data, error } = await supabase
       .from('resources')
-      .update(toResourceInsert(resource, 'general'))
+      .update(toResourceInsert(resource, resourceType))
       .eq('id', id)
-      .eq('resource_type', 'general')
       .select(fields)
       .single();
     if (error) throw error;
@@ -38,49 +66,7 @@ export const resourceService = {
   },
 
   async deleteResource(id: string): Promise<void> {
-    const { error } = await supabase.from('resources').delete().eq('id', id).eq('resource_type', 'general');
-    if (error) throw error;
-  },
-
-  async getAllFirstTimerResources(): Promise<BackendExternalLink[]> {
-    const { data, error } = await supabase
-      .from('resources')
-      .select(fields)
-      .eq('resource_type', 'first_timer')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return (data || []).map(toResource);
-  },
-
-  async createFirstTimerResource(resource: BackendExternalLink): Promise<BackendExternalLink> {
-    const { data, error } = await supabase
-      .from('resources')
-      .insert(toResourceInsert(resource, 'first_timer'))
-      .select(fields)
-      .single();
-    if (error) throw error;
-    return toResource(data);
-  },
-
-  async updateFirstTimerResource(id: string, resource: BackendExternalLink): Promise<BackendExternalLink> {
-    const { data, error } = await supabase
-      .from('resources')
-      .update(toResourceInsert(resource, 'first_timer'))
-      .eq('id', id)
-      .eq('resource_type', 'first_timer')
-      .select(fields)
-      .single();
-    if (error) throw error;
-    return toResource(data);
-  },
-
-  async deleteFirstTimerResource(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('resources')
-      .delete()
-      .eq('id', id)
-      .eq('resource_type', 'first_timer');
+    const { error } = await supabase.from('resources').delete().eq('id', id);
     if (error) throw error;
   },
 };
-

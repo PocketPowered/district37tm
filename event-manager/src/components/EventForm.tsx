@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   TextField,
@@ -9,14 +9,15 @@ import {
   Alert,
   Stack,
   IconButton,
-  Divider,
   Select,
   MenuItem,
   FormControl,
   InputLabel,
+  FormHelperText,
+  Chip,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Event, AgendaItem, ExternalLink, TimeRange, EventTag } from '../types/Event';
+import { Event, AgendaItem, ExternalLink, EventTag } from '../types/Event';
 import { Location } from '../types/Location';
 import { eventService } from '../services/eventService';
 import { dateService } from '../services/dateService';
@@ -24,7 +25,6 @@ import { locationService } from '../services/locationService';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LinkIcon from '@mui/icons-material/Link';
-import ImageIcon from '@mui/icons-material/Image';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
@@ -32,281 +32,439 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { formatDateKey, getUtcDateKeyParts, mergeDateKeyWithLocalTime } from '../utils/dateKey';
+import { handleImageLoadError } from '../utils/imageFallback';
+
+const ONE_HOUR_MS = 3_600_000;
+
+const createDefaultTimeRange = (dateTimestamp: number) => {
+  const { year, month, day } = getUtcDateKeyParts(dateTimestamp);
+  const start = new Date(year, month, day, 9, 0, 0, 0);
+
+  return {
+    startTime: start.getTime(),
+    endTime: start.getTime() + ONE_HOUR_MS,
+  };
+};
+
+const shiftTimestampToDate = (timestamp: number, targetDateKey: string): number => {
+  return mergeDateKeyWithLocalTime(targetDateKey, timestamp);
+};
+
+const isValidHttpUrl = (value: string): boolean => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
 
 const EventForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
   const [availableDates, setAvailableDates] = useState<number[]>([]);
   const [availableLocations, setAvailableLocations] = useState<Location[]>([]);
   const [event, setEvent] = useState<Event>({
     id: 0,
     title: '',
     time: {
-      startTime: availableDates[0] || Date.now(),
-      endTime: (availableDates[0] || Date.now()) + 3600000 // 1 hour later
+      startTime: Date.now(),
+      endTime: Date.now() + ONE_HOUR_MS,
     },
     locationInfo: '',
     description: '',
     agenda: [],
     additionalLinks: [],
-    dateKey: availableDates[0]?.toString() || '',
+    dateKey: '',
     images: [],
-    tag: EventTag.NORMAL
+    tag: EventTag.NORMAL,
   });
-  const [loading, setLoading] = useState(false);
+
+  const [loadingEvent, setLoadingEvent] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
 
   useEffect(() => {
-    if (id) {
-      loadEvent();
-    }
-    loadAvailableDates();
-    loadAvailableLocations();
+    const loadAvailableDates = async () => {
+      try {
+        const dates = await dateService.getAvailableDates();
+        setAvailableDates(dates);
+
+        if (dates.length > 0 && !id) {
+          setEvent((prev) => {
+            if (prev.dateKey) {
+              return prev;
+            }
+
+            return {
+              ...prev,
+              dateKey: dates[0].toString(),
+              time: createDefaultTimeRange(dates[0]),
+            };
+          });
+        }
+      } catch (loadError) {
+        console.error('Error loading available dates:', loadError);
+        setError('Failed to load available dates. Please try again.');
+      }
+    };
+
+    const loadAvailableLocations = async () => {
+      try {
+        const locations = await locationService.getAllLocations();
+        setAvailableLocations(locations);
+      } catch (loadError) {
+        console.error('Error loading available locations:', loadError);
+        setError('Failed to load locations. Please try again.');
+      }
+    };
+
+    const loadEvent = async () => {
+      if (!id) {
+        return;
+      }
+
+      try {
+        setLoadingEvent(true);
+        setError(null);
+        const data = await eventService.getEvent(Number(id));
+        setEvent(data);
+      } catch (loadError) {
+        setError('Failed to load event. Please try again.');
+        console.error('Error loading event:', loadError);
+      } finally {
+        setLoadingEvent(false);
+      }
+    };
+
+    void loadAvailableDates();
+    void loadAvailableLocations();
+    void loadEvent();
   }, [id]);
 
-  useEffect(() => {
-    if (event.dateKey) {
-      const selectedDate = parseInt(event.dateKey);
-      setEvent(prev => ({
-        ...prev,
-        time: {
-          startTime: selectedDate,
-          endTime: selectedDate + 3600000 // 1 hour later
-        }
-      }));
-    }
-  }, [event.dateKey]);
-
-  const loadAvailableDates = async () => {
-    try {
-      const dates = await dateService.getAvailableDates();
-      setAvailableDates(dates);
-      if (dates.length > 0 && !id) {
-        setEvent(prev => ({
-          ...prev,
-          time: {
-            startTime: dates[0],
-            endTime: dates[0] + 3600000 // 1 hour later
-          },
-          dateKey: dates[0].toString()
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading available dates:', error);
-    }
-  };
-
-  const loadAvailableLocations = async () => {
-    try {
-      const locations = await locationService.getAllLocations();
-      setAvailableLocations(locations);
-    } catch (error) {
-      console.error('Error loading available locations:', error);
-    }
-  };
-
-  const loadEvent = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await eventService.getEvent(parseInt(id!));
-      setEvent(data);
-    } catch (error) {
-      setError('Failed to load event. Please try again.');
-      console.error('Error loading event:', error);
-    } finally {
-      setLoading(false);
-    }
+  const clearFeedback = () => {
+    setSuccess(null);
+    setError(null);
+    setValidationError(null);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    clearFeedback();
     setEvent((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleDateChange = (newDateKey: string) => {
+    clearFeedback();
+
+    setEvent((prev) => {
+      if (!newDateKey || prev.dateKey === newDateKey) {
+        return { ...prev, dateKey: newDateKey };
+      }
+
+      return {
+        ...prev,
+        dateKey: newDateKey,
+        time: {
+          startTime: shiftTimestampToDate(prev.time.startTime, newDateKey),
+          endTime: shiftTimestampToDate(prev.time.endTime, newDateKey),
+        },
+        agenda: prev.agenda.map((item) => ({
+          ...item,
+          time: {
+            startTime: shiftTimestampToDate(item.time.startTime, newDateKey),
+            endTime: shiftTimestampToDate(item.time.endTime, newDateKey),
+          },
+        })),
+      };
+    });
+  };
+
   const handleTimeChange = (field: 'startTime' | 'endTime', value: Date | null) => {
-    if (!value) return;
-    setEvent(prev => ({
+    if (!value) {
+      return;
+    }
+
+    clearFeedback();
+
+    setEvent((prev) => ({
       ...prev,
       time: {
         ...prev.time,
-        [field]: value.getTime()
-      }
+        [field]: value.getTime(),
+      },
     }));
   };
 
   const handleAgendaItemChange = (index: number, field: keyof AgendaItem, value: string) => {
-    setEvent(prev => {
-      const newAgenda = [...prev.agenda];
-      newAgenda[index] = { ...newAgenda[index], [field]: value };
-      return { ...prev, agenda: newAgenda };
+    clearFeedback();
+
+    setEvent((prev) => {
+      const nextAgenda = [...prev.agenda];
+      nextAgenda[index] = { ...nextAgenda[index], [field]: value };
+      return { ...prev, agenda: nextAgenda };
     });
   };
 
   const handleAgendaTimeChange = (index: number, field: 'startTime' | 'endTime', value: Date | null) => {
-    if (!value) return;
-    setEvent(prev => {
-      const newAgenda = [...prev.agenda];
-      newAgenda[index] = {
-        ...newAgenda[index],
+    if (!value) {
+      return;
+    }
+
+    clearFeedback();
+
+    setEvent((prev) => {
+      const nextAgenda = [...prev.agenda];
+      nextAgenda[index] = {
+        ...nextAgenda[index],
         time: {
-          ...newAgenda[index].time,
-          [field]: value.getTime()
-        }
+          ...nextAgenda[index].time,
+          [field]: value.getTime(),
+        },
       };
-      return { ...prev, agenda: newAgenda };
+
+      return { ...prev, agenda: nextAgenda };
     });
   };
 
   const addAgendaItem = () => {
-    const selectedDate = new Date(parseInt(event.dateKey));
-    
-    const startTime = new Date(selectedDate);
-    startTime.setHours(12, 0, 0, 0);
-    
-    const endTime = new Date(selectedDate);
-    endTime.setHours(13, 0, 0, 0);
+    clearFeedback();
 
-    setEvent(prev => ({
+    const { year, month, day } = getUtcDateKeyParts(event.dateKey || Date.now());
+    const startTime = new Date(year, month, day, 12, 0, 0, 0);
+
+    setEvent((prev) => ({
       ...prev,
-      agenda: [...prev.agenda, {
-        title: '',
-        description: '',
-        time: { 
-          startTime: startTime.getTime(),
-          endTime: endTime.getTime()
+      agenda: [
+        ...prev.agenda,
+        {
+          title: '',
+          description: '',
+          time: {
+            startTime: startTime.getTime(),
+            endTime: startTime.getTime() + ONE_HOUR_MS,
+          },
+          locationInfo: '',
         },
-        locationInfo: ''
-      }]
+      ],
     }));
   };
 
   const removeAgendaItem = (index: number) => {
-    setEvent(prev => ({
+    clearFeedback();
+
+    setEvent((prev) => ({
       ...prev,
-      agenda: prev.agenda.filter((_, i) => i !== index)
+      agenda: prev.agenda.filter((_, i) => i !== index),
     }));
   };
 
   const moveAgendaItem = (fromIndex: number, toIndex: number) => {
-    setEvent(prev => {
-      const newAgenda = [...prev.agenda];
-      const [movedItem] = newAgenda.splice(fromIndex, 1);
-      newAgenda.splice(toIndex, 0, movedItem);
-      return { ...prev, agenda: newAgenda };
+    clearFeedback();
+
+    setEvent((prev) => {
+      const nextAgenda = [...prev.agenda];
+      const [movedItem] = nextAgenda.splice(fromIndex, 1);
+      nextAgenda.splice(toIndex, 0, movedItem);
+      return { ...prev, agenda: nextAgenda };
     });
   };
 
   const handleLinkChange = (index: number, field: keyof ExternalLink, value: string) => {
-    setEvent(prev => {
-      const newLinks = [...prev.additionalLinks];
-      newLinks[index] = { ...newLinks[index], [field]: value };
-      return { ...prev, additionalLinks: newLinks };
+    clearFeedback();
+
+    setEvent((prev) => {
+      const nextLinks = [...prev.additionalLinks];
+      nextLinks[index] = { ...nextLinks[index], [field]: value };
+      return { ...prev, additionalLinks: nextLinks };
     });
   };
 
   const addLink = () => {
-    setEvent(prev => ({
+    clearFeedback();
+
+    setEvent((prev) => ({
       ...prev,
-      additionalLinks: [...prev.additionalLinks, { displayName: '', url: '' }]
+      additionalLinks: [...prev.additionalLinks, { displayName: '', url: '' }],
     }));
   };
 
   const removeLink = (index: number) => {
-    setEvent(prev => ({
+    clearFeedback();
+
+    setEvent((prev) => ({
       ...prev,
-      additionalLinks: prev.additionalLinks.filter((_, i) => i !== index)
+      additionalLinks: prev.additionalLinks.filter((_, i) => i !== index),
     }));
   };
 
   const moveLinkItem = (fromIndex: number, toIndex: number) => {
-    setEvent(prev => {
-      const newLinks = [...prev.additionalLinks];
-      const [movedItem] = newLinks.splice(fromIndex, 1);
-      newLinks.splice(toIndex, 0, movedItem);
-      return { ...prev, additionalLinks: newLinks };
+    clearFeedback();
+
+    setEvent((prev) => {
+      const nextLinks = [...prev.additionalLinks];
+      const [movedItem] = nextLinks.splice(fromIndex, 1);
+      nextLinks.splice(toIndex, 0, movedItem);
+      return { ...prev, additionalLinks: nextLinks };
+    });
+  };
+
+  const moveImage = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= event.images.length) {
+      return;
+    }
+
+    clearFeedback();
+
+    setEvent((prev) => {
+      const nextImages = [...prev.images];
+      const [movedImage] = nextImages.splice(fromIndex, 1);
+      nextImages.splice(toIndex, 0, movedImage);
+      return { ...prev, images: nextImages };
     });
   };
 
   const handleAddImage = () => {
-    if (imageUrl.trim()) {
-      setEvent(prev => ({
-        ...prev,
-        images: [...prev.images, imageUrl.trim()]
-      }));
-      setImageUrl('');
+    if (!imageUrl.trim()) {
+      return;
     }
+
+    clearFeedback();
+
+    setEvent((prev) => ({
+      ...prev,
+      images: [...prev.images, imageUrl.trim()],
+    }));
+    setImageUrl('');
   };
 
   const handleRemoveImage = (index: number) => {
-    setEvent(prev => ({
+    clearFeedback();
+
+    setEvent((prev) => ({
       ...prev,
-      images: prev.images.filter((_, i) => i !== index)
+      images: prev.images.filter((_, i) => i !== index),
     }));
   };
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (!event.images) return;
-    
-    if (e.key === 'ArrowLeft' && index > 0) {
+  const handleImageKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      const newImages = [...event.images];
-      [newImages[index], newImages[index - 1]] = [newImages[index - 1], newImages[index]];
-      setEvent(prev => ({ ...prev, images: newImages }));
-    } else if (e.key === 'ArrowRight' && index < event.images.length - 1) {
+      moveImage(index, index - 1);
+    }
+
+    if (e.key === 'ArrowRight') {
       e.preventDefault();
-      const newImages = [...event.images];
-      [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
-      setEvent(prev => ({ ...prev, images: newImages }));
+      moveImage(index, index + 1);
     }
   };
 
+  const validateEvent = (): string | null => {
+    if (!event.dateKey) {
+      return 'Select a date before saving.';
+    }
+
+    if (!event.title.trim()) {
+      return 'Event title is required.';
+    }
+
+    if (!event.locationInfo.trim()) {
+      return 'Select a location for this event.';
+    }
+
+    if (event.time.endTime <= event.time.startTime) {
+      return 'Event end time must be after the start time.';
+    }
+
+    const invalidAgendaTimeIndex = event.agenda.findIndex((item) => item.time.endTime <= item.time.startTime);
+    if (invalidAgendaTimeIndex >= 0) {
+      return `Agenda item ${invalidAgendaTimeIndex + 1} has an end time before the start time.`;
+    }
+
+    const incompleteLinkIndex = event.additionalLinks.findIndex((link) => {
+      const hasLabel = Boolean(link.displayName.trim());
+      const hasUrl = Boolean(link.url.trim());
+      return hasLabel !== hasUrl;
+    });
+
+    if (incompleteLinkIndex >= 0) {
+      return `Additional link ${incompleteLinkIndex + 1} must include both display name and URL.`;
+    }
+
+    const invalidLinkIndex = event.additionalLinks.findIndex(
+      (link) => link.url.trim() && !isValidHttpUrl(link.url.trim()),
+    );
+
+    if (invalidLinkIndex >= 0) {
+      return `Additional link ${invalidLinkIndex + 1} needs a valid http(s) URL.`;
+    }
+
+    return null;
+  };
+
+  const timeRangeInvalid = event.time.endTime <= event.time.startTime;
+
+  const invalidLinksCount = useMemo(() => {
+    return event.additionalLinks.filter((link) => link.url.trim() && !isValidHttpUrl(link.url.trim())).length;
+  }, [event.additionalLinks]);
+  const hasSelectedDate = availableDates.some((timestamp) => timestamp.toString() === event.dateKey);
+  const hasSelectedLocation = availableLocations.some(
+    (location) => location.locationName === event.locationInfo,
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitAttempted(true);
+    setSaving(true);
     setError(null);
     setSuccess(null);
+
+    const validationIssue = validateEvent();
+    if (validationIssue) {
+      setValidationError(validationIssue);
+      setSaving(false);
+      return;
+    }
+
+    setValidationError(null);
 
     try {
       const eventToSave: Event = {
         ...event,
-        title: event.title || '',
-        time: event.time || { startTime: Date.now(), endTime: Date.now() + 3600000 },
-        locationInfo: event.locationInfo || '',
-        description: event.description || '',
-        agenda: event.agenda || [],
-        additionalLinks: event.additionalLinks || [],
-        dateKey: event.dateKey || '',
-        images: event.images || [],
-        tag: event.tag || EventTag.NORMAL
+        title: event.title.trim(),
+        locationInfo: event.locationInfo,
+        description: event.description.trim(),
+        agenda: event.agenda,
+        additionalLinks: event.additionalLinks,
+        dateKey: event.dateKey,
+        images: event.images,
+        tag: event.tag || EventTag.NORMAL,
       };
 
-      // Ensure locationInfo is set from the selected location
-      if (event.locationInfo) {
-        const selectedLocation = availableLocations.find(loc => loc.locationName === event.locationInfo);
-        if (selectedLocation) {
-          eventToSave.locationInfo = selectedLocation.locationName;
-        }
-      }
-
       if (id) {
-        await eventService.updateEvent(parseInt(id), { ...eventToSave, id: parseInt(id) });
-        setSuccess('Event updated successfully!');
+        await eventService.updateEvent(Number(id), { ...eventToSave, id: Number(id) });
+        setSuccess('Event updated successfully.');
       } else {
-        await eventService.createEvent(eventToSave);
-        setSuccess('Event created successfully!');
+        const created = await eventService.createEvent(eventToSave);
+        setEvent(created);
+        setSuccess('Event created successfully.');
+        navigate(`/events/${created.id}/edit`, { replace: true });
       }
-    } catch (error) {
+    } catch (saveError) {
       setError('Failed to save event. Please try again.');
-      console.error('Error saving event:', error);
+      console.error('Error saving event:', saveError);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  if (loading && !event.id) {
+  if (loadingEvent) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
         <CircularProgress />
@@ -316,262 +474,382 @@ const EventForm: React.FC = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5">
-            {id ? 'Edit Event' : 'Create Event'}
-          </Typography>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/')}
-            variant="outlined"
-          >
+      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          spacing={2}
+          sx={{ mb: 3 }}
+        >
+          <Box>
+            <Typography variant="h5">{id ? 'Edit Event' : 'Create Event'}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              Keep event details accurate for attendees and app users.
+            </Typography>
+          </Box>
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/')} variant="outlined">
             Back to List
           </Button>
-        </Box>
+        </Stack>
+
+        <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 3 }}>
+          <Chip size="small" color="primary" label={`${event.agenda.length} agenda item${event.agenda.length === 1 ? '' : 's'}`} />
+          <Chip size="small" variant="outlined" label={`${event.additionalLinks.length} link${event.additionalLinks.length === 1 ? '' : 's'}`} />
+          <Chip size="small" variant="outlined" label={`${event.images.length} image${event.images.length === 1 ? '' : 's'}`} />
+        </Stack>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        
-        <form onSubmit={handleSubmit}>
-          <Stack spacing={2}>
-            <FormControl fullWidth required>
-              <InputLabel>Date</InputLabel>
-              <Select
-                value={event.dateKey}
-                label="Date"
-                onChange={(e) => setEvent({ ...event, dateKey: e.target.value })}
-                sx={{ textAlign: 'left' }}
-              >
-                {availableDates.map((timestamp) => (
-                  <MenuItem key={timestamp} value={timestamp.toString()} sx={{ textAlign: 'left' }}>
-                    {new Date(timestamp).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              label="Title"
-              name="title"
-              value={event.title}
-              onChange={handleChange}
-              required
-              fullWidth
-            />
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <DateTimePicker
-                label="Start Time"
-                value={new Date(event.time.startTime)}
-                onChange={(value) => handleTimeChange('startTime', value)}
-                sx={{ flex: 1 }}
-              />
-              <DateTimePicker
-                label="End Time"
-                value={new Date(event.time.endTime)}
-                onChange={(value) => handleTimeChange('endTime', value)}
-                sx={{ flex: 1 }}
-              />
-            </Box>
-            <FormControl fullWidth required>
-              <InputLabel>Location</InputLabel>
-              <Select
-                value={event.locationInfo}
-                label="Location"
-                onChange={(e) => setEvent({ ...event, locationInfo: e.target.value })}
-                sx={{ textAlign: 'left' }}
-              >
-                {availableLocations.map((location) => (
-                  <MenuItem key={location.id} value={location.locationName} sx={{ textAlign: 'left' }}>
-                    {location.locationName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              label="Description"
-              name="description"
-              value={event.description}
-              onChange={handleChange}
-              multiline
-              rows={4}
-              fullWidth
-            />
-            <FormControl fullWidth>
-              <InputLabel>Event Tag</InputLabel>
-              <Select
-                value={event.tag}
-                label="Event Tag"
-                onChange={(e) => setEvent({ ...event, tag: e.target.value as EventTag })}
-                sx={{ textAlign: 'left' }}
-              >
-                <MenuItem value={EventTag.NORMAL} sx={{ textAlign: 'left' }}>Normal</MenuItem>
-                <MenuItem value={EventTag.HIGHLIGHTED} sx={{ textAlign: 'left' }}>Highlighted</MenuItem>
-                <MenuItem value={EventTag.BREAK} sx={{ textAlign: 'left' }}>Break</MenuItem>
-              </Select>
-            </FormControl>
+        {validationError && <Alert severity="warning" sx={{ mb: 2 }}>{validationError}</Alert>}
+        {!availableDates.length && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            No event dates are available yet. Add a date in Date Manager before creating events.
+          </Alert>
+        )}
+        {!availableLocations.length && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            No locations are available yet. Add a location in Locations Manager before creating events.
+          </Alert>
+        )}
 
-            <Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <form onSubmit={handleSubmit}>
+          <Stack spacing={2.5}>
+            <Paper variant="outlined" sx={{ p: 2.5 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Event Basics
+              </Typography>
+
+              <Stack spacing={2}>
+                <FormControl fullWidth required error={submitAttempted && !event.dateKey}>
+                  <InputLabel>Date</InputLabel>
+                  <Select
+                    value={hasSelectedDate ? event.dateKey : ''}
+                    label="Date"
+                    onChange={(e) => handleDateChange(e.target.value)}
+                    sx={{ textAlign: 'left' }}
+                  >
+                    {!hasSelectedDate && event.dateKey && (
+                      <MenuItem value={event.dateKey} disabled sx={{ textAlign: 'left' }}>
+                        Date no longer available
+                      </MenuItem>
+                    )}
+                    {availableDates.map((timestamp) => (
+                      <MenuItem key={timestamp} value={timestamp.toString()} sx={{ textAlign: 'left' }}>
+                        {formatDateKey(timestamp, {
+                          weekday: 'long',
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {submitAttempted && !event.dateKey && <FormHelperText>Select a date.</FormHelperText>}
+                </FormControl>
+
+                <TextField
+                  label="Title"
+                  name="title"
+                  value={event.title}
+                  onChange={handleChange}
+                  required
+                  fullWidth
+                  error={submitAttempted && !event.title.trim()}
+                  helperText={submitAttempted && !event.title.trim() ? 'Enter an event title.' : ' '}
+                />
+
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                  <DateTimePicker
+                    label="Start Time"
+                    value={new Date(event.time.startTime)}
+                    onChange={(value) => handleTimeChange('startTime', value)}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                      },
+                    }}
+                  />
+                  <DateTimePicker
+                    label="End Time"
+                    value={new Date(event.time.endTime)}
+                    onChange={(value) => handleTimeChange('endTime', value)}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: submitAttempted && timeRangeInvalid,
+                        helperText: submitAttempted && timeRangeInvalid ? 'End time must be after start time.' : ' ',
+                      },
+                    }}
+                  />
+                </Stack>
+
+                <FormControl fullWidth required error={submitAttempted && !event.locationInfo}>
+                  <InputLabel>Location</InputLabel>
+                  <Select
+                    value={hasSelectedLocation ? event.locationInfo : ''}
+                    label="Location"
+                    onChange={(e) => {
+                      clearFeedback();
+                      setEvent((prev) => ({ ...prev, locationInfo: e.target.value }));
+                    }}
+                    sx={{ textAlign: 'left' }}
+                  >
+                    {!hasSelectedLocation && event.locationInfo && (
+                      <MenuItem value={event.locationInfo} disabled sx={{ textAlign: 'left' }}>
+                        {event.locationInfo} (not in locations list)
+                      </MenuItem>
+                    )}
+                    {availableLocations.map((location) => (
+                      <MenuItem key={location.id} value={location.locationName} sx={{ textAlign: 'left' }}>
+                        {location.locationName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {submitAttempted && !event.locationInfo && <FormHelperText>Select a location.</FormHelperText>}
+                </FormControl>
+
+                <TextField
+                  label="Description"
+                  name="description"
+                  value={event.description}
+                  onChange={handleChange}
+                  multiline
+                  rows={4}
+                  fullWidth
+                  helperText="Optional but recommended."
+                />
+
+                <FormControl fullWidth>
+                  <InputLabel>Event Tag</InputLabel>
+                  <Select
+                    value={event.tag}
+                    label="Event Tag"
+                    onChange={(e) => {
+                      clearFeedback();
+                      setEvent((prev) => ({ ...prev, tag: e.target.value as EventTag }));
+                    }}
+                    sx={{ textAlign: 'left' }}
+                  >
+                    <MenuItem value={EventTag.NORMAL} sx={{ textAlign: 'left' }}>
+                      Normal
+                    </MenuItem>
+                    <MenuItem value={EventTag.HIGHLIGHTED} sx={{ textAlign: 'left' }}>
+                      Highlighted
+                    </MenuItem>
+                    <MenuItem value={EventTag.BREAK} sx={{ textAlign: 'left' }}>
+                      Break
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+              </Stack>
+            </Paper>
+
+            <Paper variant="outlined" sx={{ p: 2.5 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
                 <Typography variant="h6">Agenda Items</Typography>
-                <Button
-                  startIcon={<AddIcon />}
-                  onClick={addAgendaItem}
-                  variant="outlined"
-                >
+                <Button startIcon={<AddIcon />} onClick={addAgendaItem} variant="outlined">
                   Add Agenda Item
                 </Button>
-              </Box>
-              {event.agenda.map((item, index) => (
-                <Paper key={index} sx={{ p: 2, mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                    <IconButton 
-                      onClick={() => moveAgendaItem(index, index - 1)}
-                      disabled={index === 0}
-                      size="small"
-                    >
-                      <ArrowUpwardIcon />
-                    </IconButton>
-                    <IconButton 
-                      onClick={() => moveAgendaItem(index, index + 1)}
-                      disabled={index === event.agenda.length - 1}
-                      size="small"
-                    >
-                      <ArrowDownwardIcon />
-                    </IconButton>
-                    <IconButton onClick={() => removeAgendaItem(index)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                  <Stack spacing={2}>
-                    <TextField
-                      label="Title"
-                      value={item.title}
-                      onChange={(e) => handleAgendaItemChange(index, 'title', e.target.value)}
-                      fullWidth
-                    />
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                      <DateTimePicker
-                        label="Start Time"
-                        value={new Date(item.time.startTime)}
-                        onChange={(value) => handleAgendaTimeChange(index, 'startTime', value)}
-                        sx={{ flex: 1 }}
-                      />
-                      <DateTimePicker
-                        label="End Time"
-                        value={new Date(item.time.endTime)}
-                        onChange={(value) => handleAgendaTimeChange(index, 'endTime', value)}
-                        sx={{ flex: 1 }}
-                      />
-                    </Box>
-                    <TextField
-                      label="Location"
-                      value={item.locationInfo}
-                      onChange={(e) => handleAgendaItemChange(index, 'locationInfo', e.target.value)}
-                      fullWidth
-                    />
-                    <TextField
-                      label="Description"
-                      value={item.description}
-                      onChange={(e) => handleAgendaItemChange(index, 'description', e.target.value)}
-                      multiline
-                      rows={2}
-                      fullWidth
-                    />
-                  </Stack>
-                </Paper>
-              ))}
-            </Box>
+              </Stack>
 
-            <Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              {!event.agenda.length ? (
+                <Typography variant="body2" color="text.secondary">
+                  No agenda items yet.
+                </Typography>
+              ) : (
+                event.agenda.map((item, index) => {
+                  const agendaTimeInvalid = item.time.endTime <= item.time.startTime;
+
+                  return (
+                    <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
+                      <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        justifyContent="space-between"
+                        alignItems={{ xs: 'flex-start', sm: 'center' }}
+                        sx={{ mb: 1.5 }}
+                      >
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Item {index + 1}
+                        </Typography>
+                        <Box>
+                          <IconButton
+                            onClick={() => moveAgendaItem(index, index - 1)}
+                            disabled={index === 0}
+                            size="small"
+                            aria-label="Move agenda item up"
+                          >
+                            <ArrowUpwardIcon />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => moveAgendaItem(index, index + 1)}
+                            disabled={index === event.agenda.length - 1}
+                            size="small"
+                            aria-label="Move agenda item down"
+                          >
+                            <ArrowDownwardIcon />
+                          </IconButton>
+                          <IconButton onClick={() => removeAgendaItem(index)} aria-label="Delete agenda item">
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+                      </Stack>
+
+                      <Stack spacing={2}>
+                        <TextField
+                          label="Title"
+                          value={item.title}
+                          onChange={(e) => handleAgendaItemChange(index, 'title', e.target.value)}
+                          fullWidth
+                        />
+
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                          <DateTimePicker
+                            label="Start Time"
+                            value={new Date(item.time.startTime)}
+                            onChange={(value) => handleAgendaTimeChange(index, 'startTime', value)}
+                            slotProps={{ textField: { fullWidth: true } }}
+                          />
+                          <DateTimePicker
+                            label="End Time"
+                            value={new Date(item.time.endTime)}
+                            onChange={(value) => handleAgendaTimeChange(index, 'endTime', value)}
+                            slotProps={{
+                              textField: {
+                                fullWidth: true,
+                                error: submitAttempted && agendaTimeInvalid,
+                                helperText: submitAttempted && agendaTimeInvalid ? 'End time must be after start time.' : ' ',
+                              },
+                            }}
+                          />
+                        </Stack>
+
+                        <TextField
+                          label="Location"
+                          value={item.locationInfo}
+                          onChange={(e) => handleAgendaItemChange(index, 'locationInfo', e.target.value)}
+                          fullWidth
+                        />
+
+                        <TextField
+                          label="Description"
+                          value={item.description}
+                          onChange={(e) => handleAgendaItemChange(index, 'description', e.target.value)}
+                          multiline
+                          rows={2}
+                          fullWidth
+                        />
+                      </Stack>
+                    </Paper>
+                  );
+                })
+              )}
+            </Paper>
+
+            <Paper variant="outlined" sx={{ p: 2.5 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
                 <Typography variant="h6">Additional Links</Typography>
-                <Button
-                  startIcon={<LinkIcon />}
-                  onClick={addLink}
-                  variant="outlined"
-                >
+                <Button startIcon={<LinkIcon />} onClick={addLink} variant="outlined">
                   Add Link
                 </Button>
-              </Box>
-              {event.additionalLinks.map((link, index) => (
-                <Paper key={index} sx={{ p: 2, mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                    <IconButton 
-                      onClick={() => moveLinkItem(index, index - 1)}
-                      disabled={index === 0}
-                      size="small"
-                    >
-                      <ArrowUpwardIcon />
-                    </IconButton>
-                    <IconButton 
-                      onClick={() => moveLinkItem(index, index + 1)}
-                      disabled={index === event.additionalLinks.length - 1}
-                      size="small"
-                    >
-                      <ArrowDownwardIcon />
-                    </IconButton>
-                    <IconButton onClick={() => removeLink(index)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                  <Stack spacing={2}>
-                    <TextField
-                      label="Display Name"
-                      value={link.displayName}
-                      onChange={(e) => handleLinkChange(index, 'displayName', e.target.value)}
-                      fullWidth
-                    />
-                    <TextField
-                      label="URL"
-                      value={link.url}
-                      onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
-                      fullWidth
-                    />
-                  </Stack>
-                </Paper>
-              ))}
-            </Box>
+              </Stack>
 
-            <Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              {!!invalidLinksCount && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  {invalidLinksCount} link{invalidLinksCount > 1 ? 's have' : ' has'} an invalid URL format.
+                </Alert>
+              )}
+
+              {!event.additionalLinks.length ? (
+                <Typography variant="body2" color="text.secondary">
+                  No additional links yet.
+                </Typography>
+              ) : (
+                event.additionalLinks.map((link, index) => (
+                  <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
+                    <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                      <IconButton
+                        onClick={() => moveLinkItem(index, index - 1)}
+                        disabled={index === 0}
+                        size="small"
+                        aria-label="Move link up"
+                      >
+                        <ArrowUpwardIcon />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => moveLinkItem(index, index + 1)}
+                        disabled={index === event.additionalLinks.length - 1}
+                        size="small"
+                        aria-label="Move link down"
+                      >
+                        <ArrowDownwardIcon />
+                      </IconButton>
+                      <IconButton onClick={() => removeLink(index)} aria-label="Delete link">
+                        <DeleteIcon />
+                      </IconButton>
+                    </Stack>
+
+                    <Stack spacing={2}>
+                      <TextField
+                        label="Display Name"
+                        value={link.displayName}
+                        onChange={(e) => handleLinkChange(index, 'displayName', e.target.value)}
+                        fullWidth
+                      />
+                      <TextField
+                        label="URL"
+                        type="url"
+                        value={link.url}
+                        onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
+                        fullWidth
+                        placeholder="https://example.com"
+                      />
+                    </Stack>
+                  </Paper>
+                ))
+              )}
+            </Paper>
+
+            <Paper variant="outlined" sx={{ p: 2.5 }}>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                justifyContent="space-between"
+                alignItems={{ xs: 'stretch', sm: 'center' }}
+                spacing={1}
+                sx={{ mb: 2 }}
+              >
                 <Typography variant="h6">Images</Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                   <TextField
                     size="small"
                     placeholder="Image URL"
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
-                    sx={{ width: 300 }}
+                    sx={{ width: { xs: '100%', sm: 320 } }}
                   />
-                  <Button
-                    startIcon={<AddIcon />}
-                    onClick={handleAddImage}
-                    variant="outlined"
-                    disabled={!imageUrl.trim()}
-                  >
+                  <Button startIcon={<AddIcon />} onClick={handleAddImage} variant="outlined" disabled={!imageUrl.trim()}>
                     Add Image
                   </Button>
-                </Box>
-              </Box>
-              
+                </Stack>
+              </Stack>
+
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Tip: Use arrow controls or keyboard arrows to reorder images.
+              </Typography>
+
               <Box
                 sx={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
                   gap: 2,
                   width: '100%',
-                  minHeight: '200px'
+                  minHeight: '120px',
                 }}
               >
                 {event.images.map((image, index) => (
                   <Paper
                     key={index}
                     tabIndex={0}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    onKeyDown={(e) => handleImageKeyDown(index, e)}
                     sx={{
                       p: 1,
                       display: 'flex',
@@ -581,58 +859,47 @@ const EventForm: React.FC = () => {
                       transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                       '&:focus': {
                         outline: 'none',
-                        transform: 'scale(1.02)',
-                        boxShadow: (theme) => theme.shadows[4]
-                      }
+                        transform: 'scale(1.01)',
+                        boxShadow: (theme) => theme.shadows[4],
+                      },
                     }}
                   >
-                    <Box sx={{ 
-                      display: 'flex', 
-                      gap: 0.5,
-                      position: 'absolute',
-                      top: 8,
-                      left: 8,
-                      zIndex: 1
-                    }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: 0.5,
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        zIndex: 1,
+                      }}
+                    >
                       <IconButton
                         size="small"
                         disabled={index === 0}
-                        onClick={() => handleKeyDown(index, { key: 'ArrowLeft', preventDefault: () => {} } as React.KeyboardEvent)}
-                        sx={{ 
+                        onClick={() => moveImage(index, index - 1)}
+                        sx={{
                           backgroundColor: 'rgba(255, 255, 255, 0.9)',
                           border: '1px solid rgba(0, 0, 0, 0.2)',
-                          '&:hover': {
-                            backgroundColor: 'rgba(255, 255, 255, 1)',
-                            border: '1px solid rgba(0, 0, 0, 0.4)'
-                          },
-                          '&.Mui-disabled': {
-                            backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                            border: '1px solid rgba(0, 0, 0, 0.1)'
-                          }
                         }}
+                        aria-label="Move image left"
                       >
                         <ArrowBackIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         size="small"
                         disabled={index === event.images.length - 1}
-                        onClick={() => handleKeyDown(index, { key: 'ArrowRight', preventDefault: () => {} } as React.KeyboardEvent)}
-                        sx={{ 
+                        onClick={() => moveImage(index, index + 1)}
+                        sx={{
                           backgroundColor: 'rgba(255, 255, 255, 0.9)',
                           border: '1px solid rgba(0, 0, 0, 0.2)',
-                          '&:hover': {
-                            backgroundColor: 'rgba(255, 255, 255, 1)',
-                            border: '1px solid rgba(0, 0, 0, 0.4)'
-                          },
-                          '&.Mui-disabled': {
-                            backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                            border: '1px solid rgba(0, 0, 0, 0.1)'
-                          }
                         }}
+                        aria-label="Move image right"
                       >
                         <ArrowForwardIcon fontSize="small" />
                       </IconButton>
                     </Box>
+
                     <Box
                       component="img"
                       src={image}
@@ -641,13 +908,13 @@ const EventForm: React.FC = () => {
                         width: '100%',
                         height: 150,
                         objectFit: 'cover',
-                        borderRadius: 1
+                        borderRadius: 1,
                       }}
                       onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'https://via.placeholder.com/150?text=Image+Not+Found';
+                        handleImageLoadError(e.currentTarget);
                       }}
                     />
+
                     <Typography
                       variant="caption"
                       sx={{
@@ -656,11 +923,11 @@ const EventForm: React.FC = () => {
                         color: 'text.secondary',
                         width: '100%',
                         whiteSpace: 'pre-wrap',
-                        overflow: 'visible'
                       }}
                     >
                       {image}
                     </Typography>
+
                     <IconButton
                       size="small"
                       onClick={() => handleRemoveImage(index)}
@@ -670,41 +937,65 @@ const EventForm: React.FC = () => {
                         right: 8,
                         backgroundColor: 'rgba(255, 255, 255, 0.9)',
                         border: '1px solid rgba(0, 0, 0, 0.2)',
-                        '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 1)',
-                          border: '1px solid rgba(0, 0, 0, 0.4)'
-                        }
                       }}
+                      aria-label="Delete image"
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Paper>
                 ))}
               </Box>
-            </Box>
+            </Paper>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
-              {success && (
-                <Alert 
-                  severity="success" 
-                  sx={{ flex: 1 }}
-                  action={
-                    <Button 
-                      color="inherit" 
-                      size="small"
-                      onClick={() => navigate('/')}
-                    >
-                      Back to List
-                    </Button>
-                  }
-                >
-                  {success}
-                </Alert>
-              )}
-              <Button type="submit" variant="contained" color="primary" disabled={loading}>
-                {loading ? <CircularProgress size={24} /> : 'Save Changes'}
-              </Button>
-            </Box>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                position: 'sticky',
+                bottom: 0,
+                zIndex: 1,
+                backgroundColor: 'background.paper',
+              }}
+            >
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                justifyContent="space-between"
+                alignItems={{ xs: 'stretch', sm: 'center' }}
+                spacing={1.5}
+              >
+                {success ? (
+                  <Alert
+                    severity="success"
+                    sx={{ flex: 1 }}
+                    action={
+                      <Button color="inherit" size="small" onClick={() => navigate('/')}>
+                        Back to List
+                      </Button>
+                    }
+                  >
+                    {success}
+                  </Alert>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    Review fields, then save your changes.
+                  </Typography>
+                )}
+
+                <Stack direction="row" spacing={1} justifyContent="flex-end">
+                  <Button variant="text" onClick={() => navigate('/')} disabled={saving}>
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    disabled={saving || !availableDates.length || !availableLocations.length}
+                  >
+                    {saving ? <CircularProgress size={24} color="inherit" /> : id ? 'Save Event' : 'Create Event'}
+                  </Button>
+                </Stack>
+              </Stack>
+            </Paper>
           </Stack>
         </form>
       </Paper>
@@ -712,4 +1003,4 @@ const EventForm: React.FC = () => {
   );
 };
 
-export default EventForm; 
+export default EventForm;

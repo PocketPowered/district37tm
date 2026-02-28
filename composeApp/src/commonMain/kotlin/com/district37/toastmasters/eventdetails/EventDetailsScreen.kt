@@ -1,6 +1,8 @@
 package com.district37.toastmasters.eventdetails
 
+import EventIcon
 import Linkout
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -24,6 +26,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.components.ImageCarousel
@@ -36,6 +39,7 @@ import org.koin.core.annotation.KoinExperimentalAPI
 @Composable
 fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
     val viewModel = koinViewModel<EventDetailsViewModel>()
+    val uriHandler = LocalUriHandler.current
     LaunchedEffect(eventId) {
         viewModel.screenStateSlice.initialize(eventId)
     }
@@ -77,7 +81,7 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
                                 modifier = Modifier.padding(vertical = 4.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.LocationOn,
+                                    imageVector = EventIcon,
                                     contentDescription = "Date",
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -210,7 +214,12 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
                             it.event.additionalLinks.forEach { link ->
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(vertical = 4.dp)
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            uriHandler.openUri(link.url)
+                                        }
+                                        .padding(vertical = 4.dp)
                                 ) {
                                     Icon(
                                         imageVector = Linkout,
@@ -220,7 +229,8 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = link.displayName,
-                                        style = MaterialTheme.typography.body1
+                                        style = MaterialTheme.typography.body1,
+                                        color = MaterialTheme.colors.primary
                                     )
                                 }
                             }

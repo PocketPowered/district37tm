@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
-import com.district37.toastmasters.navigation.NavigationItemKey
 import com.skydoves.landscapist.ImageOptions
 import com.skydoves.landscapist.coil3.CoilImage
 import com.wongislandd.nexus.navigation.LocalNavHostController
@@ -33,12 +32,13 @@ fun SplashScreen(modifier: Modifier = Modifier) {
     val viewModel: SplashViewModel = koinViewModel()
     val isLoading by viewModel.isLoading.collectAsState()
     val splashImageUrl by viewModel.splashImageUrl.collectAsState()
+    val launchDestination by viewModel.launchDestination.collectAsState()
 
     LaunchedEffect(isLoading) {
         if (!isLoading) {
             appViewModel.navigate(
                 navController,
-                NavigationItemKey.EVENT_LIST,
+                launchDestination,
                 removeSelfFromStack = true
             )
         }

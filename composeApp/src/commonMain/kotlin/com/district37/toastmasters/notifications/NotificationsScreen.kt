@@ -29,7 +29,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
 import com.district37.toastmasters.navigation.StatefulScaffold
-import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,19 +36,20 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
+private fun formatHourMinute(hour: Int, minute: Int): String {
+    val period = if (hour < 12) "AM" else "PM"
+    val formattedHour = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+    return "${formattedHour}:${minute.toString().padStart(2, '0')} $period"
+}
+
 fun Instant.toHumanReadableString(): String {
     val localDateTime = this.toLocalDateTime(TimeZone.currentSystemDefault())
-    
+
     val month = localDateTime.month.name.lowercase().replaceFirstChar { it.uppercase() }
     val day = localDateTime.dayOfMonth
     val year = localDateTime.year
-    val hour = localDateTime.hour
-    val minute = localDateTime.minute
-    
-    val period = if (hour < 12) "AM" else "PM"
-    val formattedHour = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
-    
-    return "$month $day, $year at ${formattedHour}:${minute.toString().padStart(2, '0')}$period"
+
+    return "$month $day, $year at ${formatHourMinute(localDateTime.hour, localDateTime.minute)}"
 }
 
 @Composable
@@ -60,7 +60,6 @@ fun NotificationsScreen() {
     val showPermissionPrompt = remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
-    // Show permission prompt if needed
     if (showPermissionPrompt.value) {
         NotificationPermissionPrompt(
             onDismiss = { showPermissionPrompt.value = false }
@@ -71,59 +70,84 @@ fun NotificationsScreen() {
         title = "Notifications",
         resource = Resource.Success(notifications),
         actions = {
-            IconButton(onClick = {
-                coroutineScope.launch(Dispatchers.Main) {
-                    appViewModel.notificationsSlice.clearAllNotifications()
+            if (notifications.isNotEmpty()) {
+                IconButton(onClick = {
+                    coroutineScope.launch(Dispatchers.Main) {
+                        appViewModel.notificationsSlice.clearAllNotifications()
+                    }
+                }) {
+                    Icon(Icons.Default.Delete, contentDescription = "Clear all notifications")
                 }
-            }) {
-                Icon(Icons.Default.Delete, contentDescription = "Clear all notifications")
             }
         },
         forceHamburgerMenu = true
     ) { notifs ->
-        if (permissionState == NotificationPermissionState.Denied) {
-            EnableNotificationsBanner(
-                onEnableNotifsClicked = {
-                    showPermissionPrompt.value = true
-                }
-            )
-        }
         if (notifs.isEmpty()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Top
             ) {
+                if (permissionState == NotificationPermissionState.Denied) {
+                    EnableNotificationsBanner(
+                        onEnableNotifsClicked = {
+                            showPermissionPrompt.value = true
+                        },
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    "No notifications available at this time!",
+                    text = if (permissionState == NotificationPermissionState.Denied) {
+                        "No notifications yet. Enable notifications so schedule changes appear here."
+                    } else {
+                        "No notifications available at this time!"
+                    },
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
+                Spacer(modifier = Modifier.weight(1f))
             }
-        }
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(notifs.size, key = { notifs[it].id }) { idx ->
-                val notification = notifs[idx]
-                NotificationItem(
-                    modifier = Modifier.animateItem(fadeInSpec = null, fadeOutSpec = null)
-                        .onGloballyPositioned {
-                            coroutineScope.launch(Dispatchers.Main) {
-                                appViewModel.notificationsSlice.markNotificationAsSeen(notification.id)
-                            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                if (permissionState == NotificationPermissionState.Denied) {
+                    EnableNotificationsBanner(
+                        onEnableNotifsClicked = {
+                            showPermissionPrompt.value = true
                         },
-                    notification = notification,
-                    onDelete = { id ->
-                        coroutineScope.launch(Dispatchers.Main) {
-                            appViewModel.notificationsSlice.deleteNotification(id)
-                        }
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(notifs.size, key = { notifs[it].id }) { idx ->
+                        val notification = notifs[idx]
+                        NotificationItem(
+                            modifier = Modifier
+                                .animateItem(fadeInSpec = null, fadeOutSpec = null)
+                                .onGloballyPositioned {
+                                    coroutineScope.launch(Dispatchers.Main) {
+                                        appViewModel.notificationsSlice.markNotificationAsSeen(notification.id)
+                                    }
+                                },
+                            notification = notification,
+                            onDelete = { id ->
+                                coroutineScope.launch(Dispatchers.Main) {
+                                    appViewModel.notificationsSlice.deleteNotification(id)
+                                }
+                            }
+                        )
                     }
-                )
+                }
             }
         }
     }
