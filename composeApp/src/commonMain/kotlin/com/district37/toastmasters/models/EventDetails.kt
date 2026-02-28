@@ -10,6 +10,5 @@ data class EventDetails(
     val description: String,
     val time: TimeRange,
     val locationInfo: String,
-    val agenda: List<AgendaItem>,
     val additionalLinks: List<ExternalLink>,
 )

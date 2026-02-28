@@ -3,15 +3,6 @@ export interface TimeRange {
   endTime: number;
 }
 
-export interface AgendaItem {
-  title: string;
-  description: string;
-  time: TimeRange;
-  locationInfo: string;
-  notifyBefore: boolean;
-  notificationLeadMinutes: number;
-}
-
 export interface ExternalLink {
   displayName: string;
   url: string;
@@ -30,7 +21,8 @@ export interface Event {
   images: string[];
   time: TimeRange;
   locationInfo: string;
-  agenda: AgendaItem[];
+  notifyBefore: boolean;
+  notificationLeadMinutes: number;
   additionalLinks: ExternalLink[];
   dateKey: string;
   tag: EventTag;

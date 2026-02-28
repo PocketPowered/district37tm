@@ -1,6 +1,37 @@
 import { supabase } from '../lib/supabase';
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from '../config/supabase';
 
+type EdgeFunctionResult = {
+  response: Response;
+  payload: unknown;
+  functionName: string;
+};
+
+const callNotificationFunction = async (
+  functionName: string,
+  accessToken: string,
+  payload: { title: string; body: string; topic: string }
+): Promise<EdgeFunctionResult> => {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  let parsedPayload: unknown = null;
+  try {
+    parsedPayload = await response.json();
+  } catch {
+    parsedPayload = null;
+  }
+
+  return { response, payload: parsedPayload, functionName };
+};
+
 export const notificationService = {
   sendNotification: async (title: string, body: string, topic: string) => {
     const {
@@ -14,35 +45,35 @@ export const notificationService = {
       throw new Error('Your admin session expired. Please sign in again.');
     }
 
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/send-notification-v2`, {
-      method: 'POST',
-      headers: {
-        apikey: SUPABASE_PUBLISHABLE_KEY,
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        title,
-        body,
-        topic: topic || 'GENERAL',
-      }),
-    });
+    const requestPayload = {
+      title,
+      body,
+      topic: topic || 'GENERAL',
+    };
 
-    let payload: unknown = null;
-    try {
-      payload = await response.json();
-    } catch {
-      payload = null;
+    const candidates = ['send-notification-v2', 'send-notification'];
+    let result: EdgeFunctionResult | null = null;
+
+    for (const functionName of candidates) {
+      const attempted = await callNotificationFunction(functionName, session.access_token, requestPayload);
+      if (attempted.response.status !== 404) {
+        result = attempted;
+        break;
+      }
     }
 
-    if (!response.ok) {
+    if (!result) {
+      throw new Error('Notification function is not deployed (tried send-notification-v2 and send-notification).');
+    }
+
+    if (!result.response.ok) {
       const backendMessage =
-        payload && typeof payload === 'object' && 'error' in payload
-          ? String((payload as { error: unknown }).error)
-          : `Edge Function returned ${response.status}`;
+        result.payload && typeof result.payload === 'object' && 'error' in result.payload
+          ? String((result.payload as { error: unknown }).error)
+          : `Edge Function ${result.functionName} returned ${result.response.status}`;
       throw new Error(backendMessage);
     }
 
-    return payload;
+    return result.payload;
   },
 };

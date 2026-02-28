@@ -24,7 +24,8 @@ import kotlinx.coroutines.launch
 data class EventListScreenState(
     val events: List<EventPreview> = emptyList(),
     val agendaOption: AgendaOption = AgendaOption.FULL_AGENDA,
-    val availableTabs: List<DateTabInfo>
+    val availableTabs: List<DateTabInfo>,
+    val isScheduleLoading: Boolean = false
 )
 
 object RefreshTriggered : UiEvent
@@ -53,54 +54,57 @@ class EventListScreenStateSlice(
         MutableStateFlow(AgendaOption.FULL_AGENDA)
     private val _availableTabs: MutableStateFlow<Resource<List<DateTabInfo>>> =
         MutableStateFlow(Resource.Loading)
-    private val _eventsList: MutableStateFlow<Resource<List<EventPreview>>> =
-        MutableStateFlow(Resource.NotLoading)
+    private val _eventsByDateKey: MutableStateFlow<Map<Long, List<EventPreview>>> =
+        MutableStateFlow(emptyMap())
+    private val _loadingDateKeys: MutableStateFlow<Set<Long>> =
+        MutableStateFlow(emptySet())
 
     private val _screenState: StateFlow<Resource<EventListScreenState>> = combine(
-        _availableTabs, _eventsList, favoritesRepository.getAllFavorites(), _agendaSelection
-    ) { availableTabs, eventList, favoritedEventIds, agendaOption ->
-        if (availableTabs is Resource.Loading || eventList is Resource.Loading) {
-            return@combine Resource.Loading
-        }
-        if (availableTabs is Resource.Error || eventList is Resource.Error) {
-            return@combine Resource.Error(ErrorType.CLIENT_ERROR)
-        }
-        if (availableTabs is Resource.Success && eventList is Resource.NotLoading) {
-            val selectedTab = availableTabs.data.findSelectedTabOrNull()
-            if (selectedTab == null) {
-                return@combine Resource.Success(
-                    EventListScreenState(
-                        events = emptyList(),
-                        availableTabs = availableTabs.data,
-                        agendaOption = agendaOption
+        _availableTabs,
+        _eventsByDateKey,
+        _loadingDateKeys,
+        favoritesRepository.getAllFavorites(),
+        _agendaSelection
+    ) { availableTabs, eventsByDateKey, loadingDateKeys, favoritedEventIds, agendaOption ->
+        when (availableTabs) {
+            is Resource.Loading -> Resource.Loading
+            is Resource.Error -> Resource.Error(ErrorType.CLIENT_ERROR)
+            is Resource.Success -> {
+                val selectedTab = availableTabs.data.findSelectedTabOrNull()
+                if (selectedTab == null) {
+                    Resource.Success(
+                        EventListScreenState(
+                            events = emptyList(),
+                            availableTabs = availableTabs.data,
+                            agendaOption = agendaOption,
+                            isScheduleLoading = false
+                        )
                     )
-                )
-            }
-            val selectedTabKey = selectedTab.dateKey
-            fetchEventsByDate(selectedTabKey)
-            return@combine Resource.Loading
-        }
-        if (availableTabs is Resource.Success && eventList is Resource.Success) {
-            val favoritedTaggedEvents =
-                eventList.data.map { eventPreview ->
-                    eventPreview.copy(
-                        isFavorited = favoritedEventIds.contains(
-                            eventPreview.id.toLong()
+                } else {
+                    val selectedEvents = eventsByDateKey[selectedTab.dateKey].orEmpty()
+                    val withFavoriteState = selectedEvents.map { eventPreview ->
+                        eventPreview.copy(
+                            isFavorited = favoritedEventIds.contains(eventPreview.id.toLong())
+                        )
+                    }
+                    val visibleEvents = if (agendaOption == AgendaOption.FULL_AGENDA) {
+                        withFavoriteState
+                    } else {
+                        withFavoriteState.filter { it.isFavorited }
+                    }
+
+                    Resource.Success(
+                        EventListScreenState(
+                            events = visibleEvents,
+                            availableTabs = availableTabs.data,
+                            agendaOption = agendaOption,
+                            isScheduleLoading = loadingDateKeys.contains(selectedTab.dateKey)
                         )
                     )
                 }
-            val filteredByFavorites = favoritedTaggedEvents.filter {
-                it.isFavorited
             }
-            return@combine Resource.Success(
-                EventListScreenState(
-                    events = if (agendaOption == AgendaOption.FULL_AGENDA) favoritedTaggedEvents else filteredByFavorites,
-                    availableTabs = availableTabs.data,
-                    agendaOption = agendaOption
-                )
-            )
+            else -> Resource.Error(ErrorType.CLIENT_ERROR)
         }
-        Resource.Error(ErrorType.CLIENT_ERROR)
     }.stateIn(CoroutineScope(Dispatchers.IO), SharingStarted.Lazily, Resource.Loading)
 
 
@@ -119,7 +123,10 @@ class EventListScreenStateSlice(
                     onSuccess = { currentValue ->
                         val selectedTab = currentValue.availableTabs.findSelectedTabOrNull()
                         if (selectedTab != null) {
-                            fetchEventsByDate(selectedTab.dateKey)
+                            preloadSelectedAndAdjacentDates(
+                                availableTabs = currentValue.availableTabs,
+                                forceReload = true
+                            )
                         } else {
                             fetchAvailableTabs()
                         }
@@ -138,7 +145,11 @@ class EventListScreenStateSlice(
                         }
                     }
                 }
-                fetchEventsByDate(event.selectedDateTab.dateKey)
+                val tabs = (_availableTabs.value as? Resource.Success)?.data.orEmpty()
+                preloadSelectedAndAdjacentDates(
+                    availableTabs = tabs,
+                    forceReload = false
+                )
             }
 
             is AgendaChanged -> {
@@ -148,23 +159,33 @@ class EventListScreenStateSlice(
     }
 
 
-    private fun fetchEventsByDate(key: Long) {
+    private fun fetchEventsByDate(key: Long, forceReload: Boolean) {
+        if (!forceReload && _eventsByDateKey.value.containsKey(key)) {
+            return
+        }
+        if (_loadingDateKeys.value.contains(key)) {
+            return
+        }
+
+        _loadingDateKeys.update { currentlyLoading -> currentlyLoading + key }
         sliceScope.launch(Dispatchers.IO) {
-            _eventsList.update {
-                Resource.Loading
-            }
             eventRepository.getEventsByKey(key).map { events ->
                 events.mapNotNull {
                     eventPreviewTransformer.transform(it)
                 }
             }.handle(
                 onSuccess = { availableEvents ->
-                    _eventsList.update {
-                        Resource.Success(availableEvents)
+                    _eventsByDateKey.update { current ->
+                        current + (key to availableEvents)
+                    }
+                    _loadingDateKeys.update { currentlyLoading ->
+                        currentlyLoading - key
                     }
                 },
-                onError = { error, _ ->
-                    _eventsList.update { Resource.Error(error) }
+                onError = { _, _ ->
+                    _loadingDateKeys.update { currentlyLoading ->
+                        currentlyLoading - key
+                    }
                 }
             )
         }
@@ -179,11 +200,42 @@ class EventListScreenStateSlice(
                         _availableTabs.update {
                             Resource.Success(availableTabs)
                         }
+                        preloadSelectedAndAdjacentDates(
+                            availableTabs = availableTabs,
+                            forceReload = false
+                        )
                     },
                     onError = { error, _ ->
                         _availableTabs.update { Resource.Error(error) }
                     }
                 )
+        }
+    }
+
+    private fun preloadSelectedAndAdjacentDates(
+        availableTabs: List<DateTabInfo>,
+        forceReload: Boolean
+    ) {
+        if (availableTabs.isEmpty()) {
+            return
+        }
+
+        val selectedIndex = availableTabs.indexOfFirst { it.isSelected }.let { idx ->
+            if (idx >= 0) idx else 0
+        }
+
+        val dateKeysToLoad = buildList {
+            add(availableTabs[selectedIndex].dateKey)
+            if (selectedIndex > 0) {
+                add(availableTabs[selectedIndex - 1].dateKey)
+            }
+            if (selectedIndex < availableTabs.lastIndex) {
+                add(availableTabs[selectedIndex + 1].dateKey)
+            }
+        }.distinct()
+
+        dateKeysToLoad.forEach { dateKey ->
+            fetchEventsByDate(dateKey, forceReload = forceReload)
         }
     }
 }

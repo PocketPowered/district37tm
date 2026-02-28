@@ -5,12 +5,14 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import co.touchlab.kermit.Logger
 import com.district37.toastmasters.database.NotificationRepository
 import com.district37.toastmasters.fcm.FCMRepository
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CoroutineScope
@@ -31,10 +33,14 @@ class FirebaseService : FirebaseMessagingService() {
             try {
                 val deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
                     ?: "unknown-device"
+                val versionName = getVersionName(this@FirebaseService)
+                val buildType = if (isDebugBuild(this@FirebaseService)) "debug" else "prod"
                 fcmRepository.registerToken(
                     userId = deviceId,
                     token = token,
-                    deviceInfo = "${Build.MANUFACTURER} ${Build.MODEL}"
+                    deviceInfo = "${Build.MANUFACTURER} ${Build.MODEL}; " +
+                        "appVersion=$versionName; " +
+                        "buildType=$buildType"
                 )
             } catch (e: Exception) {
                 Logger.e("[FCM] Failed to register token with Supabase: ${e.message}")
@@ -45,14 +51,7 @@ class FirebaseService : FirebaseMessagingService() {
     }
 
     private fun subscribeToTopics() {
-        try {
-            val topic = NotifcationTopics.GENERAL.name
-            com.google.firebase.messaging.FirebaseMessaging.getInstance()
-                .subscribeToTopic(topic)
-            Logger.d("[FCM] Successfully subscribed to topics: $topic")
-        } catch (e: Exception) {
-            Logger.e("[FCM] Failed to subscribe to topics: ${e.message}")
-        }
+        subscribeToTopicsForContext(this)
     }
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -112,4 +111,45 @@ class FirebaseService : FirebaseMessagingService() {
 
         notificationManager.notify(0, notification)
     }
+}
+
+internal fun subscribeToTopicsForContext(context: Context) {
+    val topics = buildTargetTopics(context)
+    topics.forEach { topic ->
+        FirebaseMessaging.getInstance()
+            .subscribeToTopic(topic)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Logger.d("[FCM] Successfully subscribed to topic: $topic")
+                } else {
+                    Logger.e("[FCM] Failed to subscribe to topic $topic: ${task.exception?.message}")
+                }
+            }
+    }
+}
+
+private fun buildTargetTopics(context: Context): List<String> {
+    val envTopic = if (isDebugBuild(context)) "APP_ENV_DEBUG" else "APP_ENV_PROD"
+    val versionTopic = "APP_VERSION_${normalizeTopicSegment(getVersionName(context))}"
+    return listOf("GENERAL", envTopic, versionTopic).distinct()
+}
+
+private fun isDebugBuild(context: Context): Boolean =
+    (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
+
+private fun getVersionName(context: Context): String =
+    try {
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
+    } catch (_: Exception) {
+        "unknown"
+    }
+
+private fun normalizeTopicSegment(raw: String): String {
+    val trimmed = raw.trim()
+    if (trimmed.isEmpty()) {
+        return "unknown"
+    }
+    return trimmed
+        .replace(".", "_")
+        .replace(Regex("[^A-Za-z0-9_-]"), "_")
 }

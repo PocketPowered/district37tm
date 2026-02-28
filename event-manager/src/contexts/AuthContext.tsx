@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { isSupabaseLockStealAbortError } from '../lib/authErrors';
@@ -13,7 +13,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
-const AUTH_CHECK_TIMEOUT_MS = 8000;
+const AUTH_INIT_FAIL_SAFE_MS = 15000;
 const AUTH_REDIRECT_URL_OVERRIDE = process.env.REACT_APP_AUTH_REDIRECT_URL?.trim();
 
 const ensureTrailingSlash = (value: string) => (value.endsWith('/') ? value : `${value}/`);
@@ -48,20 +48,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const authorizationCheckRef = useRef<{ email: string; promise: Promise<boolean> } | null>(null);
 
-  const checkAuthorization = async (user: User | null) => {
-    if (user?.email) {
-      const authorized = await Promise.race<boolean>([
-        isUserAuthorized(user.email),
-        new Promise<boolean>((resolve) => {
-          window.setTimeout(() => resolve(false), AUTH_CHECK_TIMEOUT_MS);
-        }),
-      ]);
-      setIsAuthorized(authorized);
-    } else {
-      setIsAuthorized(false);
+  const runAuthorizationCheck = useCallback((email: string): Promise<boolean> => {
+    if (authorizationCheckRef.current?.email === email) {
+      return authorizationCheckRef.current.promise;
     }
-  };
+
+    const promise = (async () => {
+      try {
+        return await isUserAuthorized(email);
+      } catch (error) {
+        console.error('Error checking user authorization:', error);
+        return false;
+      }
+    })();
+
+    authorizationCheckRef.current = { email, promise };
+    promise.finally(() => {
+      if (authorizationCheckRef.current?.promise === promise) {
+        authorizationCheckRef.current = null;
+      }
+    });
+
+    return promise;
+  }, []);
+
+  const checkAuthorization = useCallback(async (user: User | null) => {
+    if (!user?.email) {
+      setIsAuthorized(false);
+      return;
+    }
+
+    const authorized = await runAuthorizationCheck(user.email);
+    setIsAuthorized(authorized);
+  }, [runAuthorizationCheck]);
 
   const signInWithGoogle = async () => {
     try {
@@ -97,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (mounted) {
         setLoading(false);
       }
-    }, AUTH_CHECK_TIMEOUT_MS * 2);
+    }, AUTH_INIT_FAIL_SAFE_MS);
 
     const initializeAuth = async () => {
       try {
@@ -106,16 +127,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!mounted) return;
         const user = data.session?.user || null;
         setCurrentUser(user);
-        await checkAuthorization(user);
+        if (!user) {
+          setIsAuthorized(false);
+          setLoading(false);
+        }
       } catch (error) {
         console.error('Error initializing auth:', error);
         if (!mounted) return;
         setCurrentUser(null);
         setIsAuthorized(false);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
@@ -123,15 +144,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const user = session?.user || null;
+      const shouldCheckAuthorization =
+        event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED';
+
       try {
-        const user = session?.user || null;
         setCurrentUser(user);
+        if (!user) {
+          setIsAuthorized(false);
+          setLoading(false);
+          return;
+        }
+
+        if (!shouldCheckAuthorization) {
+          return;
+        }
+
+        setLoading(true);
         await checkAuthorization(user);
       } catch (error) {
         console.error('Error handling auth state change:', error);
         setCurrentUser(null);
         setIsAuthorized(false);
+        setLoading(false);
+      } finally {
+        if (mounted && user && shouldCheckAuthorization) {
+          setLoading(false);
+        }
       }
     });
 
@@ -140,7 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.clearTimeout(loadingFailSafe);
       subscription.unsubscribe();
     };
-  }, []);
+  }, [checkAuthorization]);
 
   const value = {
     currentUser,

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Card
-import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -136,58 +135,6 @@ fun EventDetailsScreen(eventId: Int, modifier: Modifier = Modifier) {
                                 text = it.event.description,
                                 style = MaterialTheme.typography.body1
                             )
-                        }
-                    }
-                }
-            }
-
-            // Agenda
-            if (it.event.agenda.isNotEmpty()) {
-                item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        elevation = 4.dp
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Text(
-                                text = "Agenda",
-                                style = MaterialTheme.typography.h6,
-                                fontWeight = FontWeight.Bold
-                            )
-                            
-                            it.event.agenda.forEachIndexed { index, agendaItem ->
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text(
-                                        text = agendaItem.title,
-                                        style = MaterialTheme.typography.subtitle1,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        text = agendaItem.time.toHumanReadableString(showDate = false),
-                                        style = MaterialTheme.typography.caption
-                                    )
-                                    if (agendaItem.description.isNotEmpty()) {
-                                        Text(
-                                            text = agendaItem.description,
-                                            style = MaterialTheme.typography.body2
-                                        )
-                                    }
-                                    if (agendaItem.locationInfo.isNotEmpty()) {
-                                        Text(
-                                            text = agendaItem.locationInfo,
-                                            style = MaterialTheme.typography.caption
-                                        )
-                                    }
-                                    if (index < it.event.agenda.size - 1) {
-                                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-                                    }
-                                }
-                            }
                         }
                     }
                 }

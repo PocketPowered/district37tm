@@ -11,11 +11,11 @@ import {
   DialogContentText,
   DialogTitle,
   Link,
+  MenuItem,
   Paper,
   Stack,
   Tab,
   Tabs,
-  MenuItem,
   TextField,
   Typography,
 } from '@mui/material';
@@ -23,7 +23,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { BackendExternalLink } from '../types/BackendExternalLink';
-import { resourceService } from '../services/resourceService';
+import { resourceService, normalizeResourceCategoryKey } from '../services/resourceService';
 
 const SYSTEM_RESOURCE_TYPES = ['splash'];
 const PRIORITY_RESOURCE_TYPES = ['general', 'first_timer'];
@@ -47,7 +47,7 @@ const initialFormData: ResourceFormData = {
   displayName: '',
   url: '',
   description: '',
-  resourceType: 'general',
+  resourceType: '',
 };
 
 const formatCategoryLabel = (resourceType: string): string => {
@@ -58,19 +58,20 @@ const formatCategoryLabel = (resourceType: string): string => {
     .join(' ');
 };
 
-const normalizeCategory = (resourceType: string): string => {
-  return resourceType
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .replace(/_+/g, '_');
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim().length > 0) {
+      return message;
+    }
+  }
+  return fallback;
 };
 
-const sortCategories = (resourceTypes: string[]): string[] => {
+const sortCategoryKeys = (keys: string[], labels: Record<string, string>): string[] => {
   const priorityOrder = new Map(PRIORITY_RESOURCE_TYPES.map((type, index) => [type, index]));
 
-  return [...resourceTypes].sort((left, right) => {
+  return [...keys].sort((left, right) => {
     const leftPriority = priorityOrder.get(left);
     const rightPriority = priorityOrder.get(right);
 
@@ -81,7 +82,9 @@ const sortCategories = (resourceTypes: string[]): string[] => {
     if (leftPriority !== undefined) return -1;
     if (rightPriority !== undefined) return 1;
 
-    return formatCategoryLabel(left).localeCompare(formatCategoryLabel(right));
+    const leftLabel = labels[left] || formatCategoryLabel(left);
+    const rightLabel = labels[right] || formatCategoryLabel(right);
+    return leftLabel.localeCompare(rightLabel);
   });
 };
 
@@ -103,23 +106,38 @@ function TabPanel(props: TabPanelProps) {
 
 const ResourcesManager: React.FC = () => {
   const [categories, setCategories] = useState<string[]>([]);
+  const [categoryLabels, setCategoryLabels] = useState<Record<string, string>>({});
   const [resourcesByCategory, setResourcesByCategory] = useState<Record<string, BackendExternalLink[]>>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [openDialog, setOpenDialog] = useState(false);
+
+  const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
   const [resourceToDelete, setResourceToDelete] = useState<BackendExternalLink | null>(null);
   const [editingResource, setEditingResource] = useState<BackendExternalLink | null>(null);
+
   const [formData, setFormData] = useState<ResourceFormData>(initialFormData);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [categoryError, setCategoryError] = useState<string | null>(null);
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryError, setNewCategoryError] = useState<string | null>(null);
 
   const currentTab = useMemo(
     () => categories.findIndex((category) => category === selectedCategory),
     [categories, selectedCategory]
   );
+
+  const categoryOptions = useMemo(() => {
+    const options = new Set<string>(categories);
+    if (formData.resourceType) {
+      options.add(formData.resourceType);
+    }
+    return Array.from(options);
+  }, [categories, formData.resourceType]);
 
   const validateUrl = (url: string): boolean => {
     return url.startsWith('https://');
@@ -133,28 +151,8 @@ const ResourcesManager: React.FC = () => {
     return `https://${url}`;
   };
 
-  const openAddResourceDialogForCategory = (resourceType: string) => {
-    setEditingResource(null);
-    setIsCreatingCategory(false);
-    setFormData({
-      ...initialFormData,
-      resourceType,
-    });
-    setUrlError(null);
-    setCategoryError(null);
-    setOpenDialog(true);
-  };
-
-  const openAddResourceDialogForNewCategory = () => {
-    setEditingResource(null);
-    setIsCreatingCategory(true);
-    setFormData({
-      ...initialFormData,
-      resourceType: '',
-    });
-    setUrlError(null);
-    setCategoryError(null);
-    setOpenDialog(true);
+  const getCategoryLabel = (key: string): string => {
+    return categoryLabels[key] || formatCategoryLabel(key);
   };
 
   const fetchResources = async (preferredCategory?: string) => {
@@ -164,15 +162,18 @@ const ResourcesManager: React.FC = () => {
         resourceService.getResourceCategories(SYSTEM_RESOURCE_TYPES),
       ]);
 
-      const mergedCategories = sortCategories(Array.from(new Set(fetchedCategories)));
+      const nextCategoryLabels: Record<string, string> = {};
+      const mergedCategoryKeys: string[] = [];
 
-      const nextGroupedResources = mergedCategories.reduce<Record<string, BackendExternalLink[]>>(
-        (accumulator, category) => {
-          accumulator[category] = [];
-          return accumulator;
-        },
-        {}
-      );
+      fetchedCategories.forEach((category) => {
+        nextCategoryLabels[category.key] = category.displayName;
+        mergedCategoryKeys.push(category.key);
+      });
+
+      const nextGroupedResources: Record<string, BackendExternalLink[]> = {};
+      mergedCategoryKeys.forEach((key) => {
+        nextGroupedResources[key] = [];
+      });
 
       resources.forEach((resource) => {
         const resourceType = resource.resourceType;
@@ -180,23 +181,31 @@ const ResourcesManager: React.FC = () => {
 
         if (!nextGroupedResources[resourceType]) {
           nextGroupedResources[resourceType] = [];
-          mergedCategories.push(resourceType);
+          mergedCategoryKeys.push(resourceType);
         }
+
+        if (!nextCategoryLabels[resourceType]) {
+          nextCategoryLabels[resourceType] = formatCategoryLabel(resourceType);
+        }
+
         nextGroupedResources[resourceType].push(resource);
       });
 
-      const sortedMergedCategories = sortCategories(Array.from(new Set(mergedCategories)));
+      const sortedCategories = sortCategoryKeys(Array.from(new Set(mergedCategoryKeys)), nextCategoryLabels);
 
-      setCategories(sortedMergedCategories);
+      setCategories(sortedCategories);
+      setCategoryLabels(nextCategoryLabels);
       setResourcesByCategory(nextGroupedResources);
       setSelectedCategory((previousCategory) => {
-        if (preferredCategory && sortedMergedCategories.includes(preferredCategory)) {
+        if (preferredCategory && sortedCategories.includes(preferredCategory)) {
           return preferredCategory;
         }
-        if (previousCategory && sortedMergedCategories.includes(previousCategory)) {
+
+        if (previousCategory && sortedCategories.includes(previousCategory)) {
           return previousCategory;
         }
-        return sortedMergedCategories[0] || '';
+
+        return sortedCategories[0] || '';
       });
       setError(null);
     } catch (err) {
@@ -211,6 +220,44 @@ const ResourcesManager: React.FC = () => {
     fetchResources();
   }, []);
 
+  const openAddResourceDialogForCategory = (categoryKey: string) => {
+    setEditingResource(null);
+    setFormData({
+      ...initialFormData,
+      resourceType: categoryKey,
+    });
+    setUrlError(null);
+    setCategoryError(null);
+    setResourceDialogOpen(true);
+  };
+
+  const openNewCategoryDialog = () => {
+    setNewCategoryName('');
+    setNewCategoryError(null);
+    setCategoryDialogOpen(true);
+  };
+
+  const handleCreateCategory = async () => {
+    const trimmedName = newCategoryName.trim();
+    const normalizedKey = normalizeResourceCategoryKey(trimmedName);
+
+    if (!trimmedName || !normalizedKey) {
+      setNewCategoryError('Category name must include letters or numbers');
+      return;
+    }
+
+    try {
+      const createdCategory = await resourceService.createResourceCategory(trimmedName);
+      await fetchResources(createdCategory.key);
+      setCategoryDialogOpen(false);
+      setNewCategoryName('');
+      setNewCategoryError(null);
+    } catch (err) {
+      setNewCategoryError(getErrorMessage(err, 'Failed to create category'));
+      console.error(err);
+    }
+  };
+
   const handleUrlChange = (url: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -224,43 +271,14 @@ const ResourcesManager: React.FC = () => {
     }
   };
 
-  const handleResourceTypeInput = (resourceType: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      resourceType,
-    }));
-
-    if (resourceType.trim().length === 0) {
-      setCategoryError('Category is required');
-    } else {
-      setCategoryError(null);
-    }
-  };
-
-  const handleExistingCategorySelect = (resourceType: string) => {
-    if (resourceType === '__create_new__') {
-      setIsCreatingCategory(true);
-      setFormData((prev) => ({
-        ...prev,
-        resourceType: '',
-      }));
+  const handleAddResource = async () => {
+    if (!formData.resourceType) {
       setCategoryError('Category is required');
       return;
     }
 
-    setIsCreatingCategory(false);
-    handleResourceTypeInput(resourceType);
-  };
-
-  const handleAddResource = async () => {
     if (!validateUrl(formData.url)) {
       setUrlError('URL must start with https://');
-      return;
-    }
-
-    const normalizedResourceType = normalizeCategory(formData.resourceType);
-    if (!normalizedResourceType) {
-      setCategoryError('Category name must include letters or numbers');
       return;
     }
 
@@ -273,15 +291,15 @@ const ResourcesManager: React.FC = () => {
           url: formattedUrl,
           description: formData.description || null,
         },
-        normalizedResourceType
+        formData.resourceType
       );
 
-      await fetchResources(normalizedResourceType);
+      await fetchResources(formData.resourceType);
       setFormData({
         ...initialFormData,
-        resourceType: normalizedResourceType,
+        resourceType: formData.resourceType,
       });
-      setOpenDialog(false);
+      setResourceDialogOpen(false);
       setUrlError(null);
       setCategoryError(null);
     } catch (err) {
@@ -292,14 +310,14 @@ const ResourcesManager: React.FC = () => {
 
   const handleUpdateResource = async () => {
     if (!editingResource?.id) return;
-    if (!validateUrl(formData.url)) {
-      setUrlError('URL must start with https://');
+
+    if (!formData.resourceType) {
+      setCategoryError('Category is required');
       return;
     }
 
-    const normalizedResourceType = normalizeCategory(formData.resourceType);
-    if (!normalizedResourceType) {
-      setCategoryError('Category name must include letters or numbers');
+    if (!validateUrl(formData.url)) {
+      setUrlError('URL must start with https://');
       return;
     }
 
@@ -313,16 +331,16 @@ const ResourcesManager: React.FC = () => {
           url: formattedUrl,
           description: formData.description || null,
         },
-        normalizedResourceType
+        formData.resourceType
       );
 
-      await fetchResources(normalizedResourceType);
+      await fetchResources(formData.resourceType);
       setFormData({
         ...initialFormData,
-        resourceType: normalizedResourceType,
+        resourceType: formData.resourceType,
       });
       setEditingResource(null);
-      setOpenDialog(false);
+      setResourceDialogOpen(false);
       setUrlError(null);
       setCategoryError(null);
     } catch (err) {
@@ -338,6 +356,7 @@ const ResourcesManager: React.FC = () => {
 
   const handleRemoveConfirm = async () => {
     if (!resourceToDelete?.id) return;
+
     try {
       await resourceService.deleteResource(resourceToDelete.id);
       await fetchResources(selectedCategory);
@@ -349,15 +368,10 @@ const ResourcesManager: React.FC = () => {
     }
   };
 
-  const handleRemoveCancel = () => {
-    setDeleteDialogOpen(false);
-    setResourceToDelete(null);
-  };
-
   const handleEditClick = (resource: BackendExternalLink) => {
-    const existingType = resource.resourceType || selectedCategory || categories[0] || initialFormData.resourceType;
+    const existingType = resource.resourceType || selectedCategory || categories[0] || '';
+
     setEditingResource(resource);
-    setIsCreatingCategory(!categories.includes(existingType));
     setFormData({
       id: resource.id,
       displayName: resource.displayName || '',
@@ -367,14 +381,19 @@ const ResourcesManager: React.FC = () => {
     });
     setUrlError(null);
     setCategoryError(null);
-    setOpenDialog(true);
+    setResourceDialogOpen(true);
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  const handleFormChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+
     if (name === 'url') {
       handleUrlChange(value);
       return;
+    }
+
+    if (name === 'resourceType') {
+      setCategoryError(value ? null : 'Category is required');
     }
 
     setFormData((prev) => ({
@@ -395,10 +414,10 @@ const ResourcesManager: React.FC = () => {
       return (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="h6" gutterBottom>
-            No {formatCategoryLabel(category)} Resources Found
+            No {getCategoryLabel(category)} Resources Found
           </Typography>
           <Typography color="text.secondary" paragraph>
-            There are no resources in this category yet. Click the button above to add one.
+            There are no resources in this category yet. Click Add Resource above to add one.
           </Typography>
         </Box>
       );
@@ -467,28 +486,14 @@ const ResourcesManager: React.FC = () => {
     );
   }
 
-  const availableCategoryOptions = Array.from(
-    new Set(
-      [formData.resourceType, ...categories]
-        .map((category) => category?.trim())
-        .filter((category): category is string => Boolean(category))
-    )
-  );
-  const normalizedCategoryPreview = normalizeCategory(formData.resourceType);
+  const normalizedCategoryPreview = normalizeResourceCategoryKey(newCategoryName);
 
   return (
     <Container maxWidth="md">
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h5">Resources Manager</Typography>
-          <Button
-            startIcon={<AddIcon />}
-            onClick={() => {
-              openAddResourceDialogForNewCategory();
-            }}
-            variant="contained"
-            color="primary"
-          >
+          <Button startIcon={<AddIcon />} onClick={openNewCategoryDialog} variant="contained" color="primary">
             New Category
           </Button>
         </Box>
@@ -505,24 +510,15 @@ const ResourcesManager: React.FC = () => {
               No Resource Categories Found
             </Typography>
             <Typography color="text.secondary" paragraph>
-              Add your first resource and category to get started.
+              Create a category first, then add resources to it.
             </Typography>
           </Box>
         ) : (
           <>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs
-                value={currentTab < 0 ? 0 : currentTab}
-                onChange={handleTabChange}
-                variant="scrollable"
-                scrollButtons="auto"
-              >
+              <Tabs value={currentTab < 0 ? 0 : currentTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
                 {categories.map((category) => (
-                  <Tab
-                    key={category}
-                    id={`resource-tab-${category}`}
-                    label={formatCategoryLabel(category)}
-                  />
+                  <Tab key={category} id={`resource-tab-${category}`} label={getCategoryLabel(category)} />
                 ))}
               </Tabs>
             </Box>
@@ -530,12 +526,8 @@ const ResourcesManager: React.FC = () => {
             {categories.map((category, index) => (
               <TabPanel key={category} value={currentTab < 0 ? 0 : currentTab} index={index}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6">{formatCategoryLabel(category)}</Typography>
-                  <Button
-                    startIcon={<AddIcon />}
-                    variant="outlined"
-                    onClick={() => openAddResourceDialogForCategory(category)}
-                  >
+                  <Typography variant="h6">{getCategoryLabel(category)}</Typography>
+                  <Button startIcon={<AddIcon />} variant="outlined" onClick={() => openAddResourceDialogForCategory(category)}>
                     Add Resource
                   </Button>
                 </Box>
@@ -545,56 +537,56 @@ const ResourcesManager: React.FC = () => {
           </>
         )}
 
-        <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
+        <Dialog open={categoryDialogOpen} onClose={() => setCategoryDialogOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Create Category</DialogTitle>
+          <DialogContent>
+            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                label="Category Name"
+                value={newCategoryName}
+                onChange={(event) => {
+                  setNewCategoryName(event.target.value);
+                  if (event.target.value.trim()) {
+                    setNewCategoryError(null);
+                  }
+                }}
+                required
+                error={!!newCategoryError}
+                helperText={newCategoryError || `Stable key: ${normalizedCategoryPreview || '(enter a category name)'}`}
+                placeholder="First Timer Resources"
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setCategoryDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateCategory} variant="contained" disabled={!newCategoryName.trim()}>
+              Create
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={resourceDialogOpen} onClose={() => setResourceDialogOpen(false)} maxWidth="md" fullWidth>
           <DialogTitle>{editingResource ? 'Edit Resource' : 'Add New Resource'}</DialogTitle>
           <DialogContent>
             <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {isCreatingCategory ? (
-                <>
-                  <TextField
-                    label="New Category Name"
-                    value={formData.resourceType}
-                    onChange={(event) => handleResourceTypeInput(event.target.value)}
-                    required
-                    error={!!categoryError}
-                    helperText={
-                      categoryError ||
-                      `Stable key: ${normalizedCategoryPreview || '(enter a category name)'}`
-                    }
-                    placeholder="First Timer Resources"
-                    fullWidth
-                  />
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-                    <Button
-                      size="small"
-                      onClick={() => {
-                        setIsCreatingCategory(false);
-                        handleResourceTypeInput(selectedCategory || categories[0] || initialFormData.resourceType);
-                      }}
-                    >
-                      Choose Existing Category
-                    </Button>
-                  </Box>
-                </>
-              ) : (
-                <TextField
-                  select
-                  label="Category"
-                  value={formData.resourceType}
-                  onChange={(event) => handleExistingCategorySelect(event.target.value)}
-                  required
-                  error={!!categoryError}
-                  helperText={categoryError || 'Select an existing category or create a new one'}
-                  fullWidth
-                >
-                  {availableCategoryOptions.map((category) => (
-                    <MenuItem key={category} value={category}>
-                      {formatCategoryLabel(category)}
-                    </MenuItem>
-                  ))}
-                  <MenuItem value="__create_new__">+ Create New Category</MenuItem>
-                </TextField>
-              )}
+              <TextField
+                select
+                label="Category"
+                name="resourceType"
+                value={formData.resourceType}
+                onChange={handleFormChange}
+                required
+                error={!!categoryError}
+                helperText={categoryError || 'Select the category for this resource'}
+                fullWidth
+              >
+                {categoryOptions.map((category) => (
+                  <MenuItem key={category} value={category}>
+                    {getCategoryLabel(category)}
+                  </MenuItem>
+                ))}
+              </TextField>
 
               <TextField
                 label="Display Name"
@@ -628,7 +620,7 @@ const ResourcesManager: React.FC = () => {
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+            <Button onClick={() => setResourceDialogOpen(false)}>Cancel</Button>
             <Button
               onClick={editingResource ? handleUpdateResource : handleAddResource}
               disabled={!formData.displayName || !formData.url || !formData.resourceType || !!urlError || !!categoryError}
@@ -641,7 +633,7 @@ const ResourcesManager: React.FC = () => {
 
         <Dialog
           open={deleteDialogOpen}
-          onClose={handleRemoveCancel}
+          onClose={() => setDeleteDialogOpen(false)}
           aria-labelledby="remove-dialog-title"
           aria-describedby="remove-dialog-description"
         >
@@ -652,7 +644,7 @@ const ResourcesManager: React.FC = () => {
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleRemoveCancel}>Cancel</Button>
+            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleRemoveConfirm} color="error" autoFocus>
               Remove
             </Button>

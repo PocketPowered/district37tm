@@ -1,4 +1,4 @@
-import { AgendaItem, Event, EventTag, ExternalLink } from '../types/Event';
+import { Event, EventTag, ExternalLink } from '../types/Event';
 import { BackendExternalLink } from '../types/BackendExternalLink';
 import { Location } from '../types/Location';
 
@@ -10,13 +10,15 @@ type EventRow = {
   start_time: number | null;
   end_time: number | null;
   location_info: string | null;
-  agenda: AgendaItem[] | null;
+  notify_before: boolean | null;
+  notification_lead_minutes: number | null;
   additional_links: ExternalLink[] | null;
   date_key: number | null;
   tag: EventTag | null;
 };
 
 const DEFAULT_NOTIFICATION_LEAD_MINUTES = 15;
+const MAX_NOTIFICATION_LEAD_MINUTES = 24 * 60;
 
 const toPositiveInteger = (value: unknown, fallback: number): number => {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
@@ -33,48 +35,12 @@ const toPositiveInteger = (value: unknown, fallback: number): number => {
   return fallback;
 };
 
-const normalizeAgendaItem = (item: unknown): AgendaItem | null => {
-  if (!item || typeof item !== 'object') {
-    return null;
+const normalizeNotificationLeadMinutes = (value: unknown): number => {
+  const parsed = toPositiveInteger(value, DEFAULT_NOTIFICATION_LEAD_MINUTES);
+  if (parsed > MAX_NOTIFICATION_LEAD_MINUTES) {
+    return DEFAULT_NOTIFICATION_LEAD_MINUTES;
   }
-
-  const row = item as Partial<AgendaItem> & {
-    time?: { startTime?: unknown; endTime?: unknown };
-    notifyBefore?: unknown;
-    notificationLeadMinutes?: unknown;
-  };
-
-  const startTime =
-    typeof row.time?.startTime === 'number' && Number.isFinite(row.time.startTime)
-      ? row.time.startTime
-      : Date.now();
-  const endTime =
-    typeof row.time?.endTime === 'number' && Number.isFinite(row.time.endTime)
-      ? row.time.endTime
-      : startTime;
-
-  return {
-    title: row.title || '',
-    description: row.description || '',
-    locationInfo: row.locationInfo || '',
-    time: {
-      startTime,
-      endTime,
-    },
-    notifyBefore: row.notifyBefore === true,
-    notificationLeadMinutes: toPositiveInteger(
-      row.notificationLeadMinutes,
-      DEFAULT_NOTIFICATION_LEAD_MINUTES,
-    ),
-  };
-};
-
-const normalizeAgenda = (agenda: AgendaItem[] | null | undefined): AgendaItem[] => {
-  if (!Array.isArray(agenda)) {
-    return [];
-  }
-
-  return agenda.map(normalizeAgendaItem).filter((item): item is AgendaItem => Boolean(item));
+  return parsed;
 };
 
 type ResourceRow = {
@@ -101,7 +67,8 @@ export const toEvent = (row: EventRow): Event => ({
     endTime: row.end_time || Date.now(),
   },
   locationInfo: row.location_info || '',
-  agenda: normalizeAgenda(row.agenda),
+  notifyBefore: row.notify_before === true,
+  notificationLeadMinutes: normalizeNotificationLeadMinutes(row.notification_lead_minutes),
   additionalLinks: row.additional_links || [],
   dateKey: (row.date_key || 0).toString(),
   tag: row.tag || EventTag.NORMAL,
@@ -115,7 +82,8 @@ export const toEventInsert = (event: Event) => ({
   start_time: event.time?.startTime || null,
   end_time: event.time?.endTime || null,
   location_info: event.locationInfo,
-  agenda: normalizeAgenda(event.agenda),
+  notify_before: event.notifyBefore === true,
+  notification_lead_minutes: normalizeNotificationLeadMinutes(event.notificationLeadMinutes),
   additional_links: event.additionalLinks || [],
   date_key: event.dateKey ? Number(event.dateKey) : null,
   tag: event.tag || EventTag.NORMAL,

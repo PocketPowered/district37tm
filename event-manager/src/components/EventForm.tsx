@@ -19,7 +19,7 @@ import {
   FormControlLabel,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Event, AgendaItem, ExternalLink, EventTag } from '../types/Event';
+import { Event, ExternalLink, EventTag } from '../types/Event';
 import { Location } from '../types/Location';
 import { eventService } from '../services/eventService';
 import { dateService } from '../services/dateService';
@@ -38,8 +38,8 @@ import { formatDateKey, getUtcDateKeyParts, mergeDateKeyWithLocalTime } from '..
 import { handleImageLoadError } from '../utils/imageFallback';
 
 const ONE_HOUR_MS = 3_600_000;
-const DEFAULT_AGENDA_NOTIFICATION_LEAD_MINUTES = 15;
-const MAX_AGENDA_NOTIFICATION_LEAD_MINUTES = 24 * 60;
+const DEFAULT_EVENT_NOTIFICATION_LEAD_MINUTES = 15;
+const MAX_EVENT_NOTIFICATION_LEAD_MINUTES = 24 * 60;
 
 const createDefaultTimeRange = (dateTimestamp: number) => {
   const { year, month, day } = getUtcDateKeyParts(dateTimestamp);
@@ -64,35 +64,23 @@ const isValidHttpUrl = (value: string): boolean => {
   }
 };
 
-const sanitizeAgendaNotificationLeadMinutes = (value: unknown): number => {
+const sanitizeEventNotificationLeadMinutes = (value: unknown): number => {
   if (typeof value === 'number' && Number.isFinite(value)) {
     const parsed = Math.floor(value);
-    if (parsed > 0 && parsed <= MAX_AGENDA_NOTIFICATION_LEAD_MINUTES) {
+    if (parsed > 0 && parsed <= MAX_EVENT_NOTIFICATION_LEAD_MINUTES) {
       return parsed;
     }
   }
 
   if (typeof value === 'string') {
     const parsed = Number.parseInt(value, 10);
-    if (Number.isFinite(parsed) && parsed > 0 && parsed <= MAX_AGENDA_NOTIFICATION_LEAD_MINUTES) {
+    if (Number.isFinite(parsed) && parsed > 0 && parsed <= MAX_EVENT_NOTIFICATION_LEAD_MINUTES) {
       return parsed;
     }
   }
 
-  return DEFAULT_AGENDA_NOTIFICATION_LEAD_MINUTES;
+  return DEFAULT_EVENT_NOTIFICATION_LEAD_MINUTES;
 };
-
-const createAgendaItem = (startTime: number): AgendaItem => ({
-  title: '',
-  description: '',
-  time: {
-    startTime,
-    endTime: startTime + ONE_HOUR_MS,
-  },
-  locationInfo: '',
-  notifyBefore: false,
-  notificationLeadMinutes: DEFAULT_AGENDA_NOTIFICATION_LEAD_MINUTES,
-});
 
 const EventForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -109,7 +97,8 @@ const EventForm: React.FC = () => {
     },
     locationInfo: '',
     description: '',
-    agenda: [],
+    notifyBefore: false,
+    notificationLeadMinutes: DEFAULT_EVENT_NOTIFICATION_LEAD_MINUTES,
     additionalLinks: [],
     dateKey: '',
     images: [],
@@ -209,13 +198,6 @@ const EventForm: React.FC = () => {
           startTime: shiftTimestampToDate(prev.time.startTime, newDateKey),
           endTime: shiftTimestampToDate(prev.time.endTime, newDateKey),
         },
-        agenda: prev.agenda.map((item) => ({
-          ...item,
-          time: {
-            startTime: shiftTimestampToDate(item.time.startTime, newDateKey),
-            endTime: shiftTimestampToDate(item.time.endTime, newDateKey),
-          },
-        })),
       };
     });
   };
@@ -234,72 +216,6 @@ const EventForm: React.FC = () => {
         [field]: value.getTime(),
       },
     }));
-  };
-
-  const handleAgendaItemChange = <K extends keyof AgendaItem>(index: number, field: K, value: AgendaItem[K]) => {
-    clearFeedback();
-
-    setEvent((prev) => {
-      const nextAgenda = [...prev.agenda];
-      nextAgenda[index] = { ...nextAgenda[index], [field]: value };
-      return { ...prev, agenda: nextAgenda };
-    });
-  };
-
-  const handleAgendaTimeChange = (index: number, field: 'startTime' | 'endTime', value: Date | null) => {
-    if (!value) {
-      return;
-    }
-
-    clearFeedback();
-
-    setEvent((prev) => {
-      const nextAgenda = [...prev.agenda];
-      nextAgenda[index] = {
-        ...nextAgenda[index],
-        time: {
-          ...nextAgenda[index].time,
-          [field]: value.getTime(),
-        },
-      };
-
-      return { ...prev, agenda: nextAgenda };
-    });
-  };
-
-  const addAgendaItem = () => {
-    clearFeedback();
-
-    const { year, month, day } = getUtcDateKeyParts(event.dateKey || Date.now());
-    const startTime = new Date(year, month, day, 12, 0, 0, 0);
-
-    setEvent((prev) => ({
-      ...prev,
-      agenda: [
-        ...prev.agenda,
-        createAgendaItem(startTime.getTime()),
-      ],
-    }));
-  };
-
-  const removeAgendaItem = (index: number) => {
-    clearFeedback();
-
-    setEvent((prev) => ({
-      ...prev,
-      agenda: prev.agenda.filter((_, i) => i !== index),
-    }));
-  };
-
-  const moveAgendaItem = (fromIndex: number, toIndex: number) => {
-    clearFeedback();
-
-    setEvent((prev) => {
-      const nextAgenda = [...prev.agenda];
-      const [movedItem] = nextAgenda.splice(fromIndex, 1);
-      nextAgenda.splice(toIndex, 0, movedItem);
-      return { ...prev, agenda: nextAgenda };
-    });
   };
 
   const handleLinkChange = (index: number, field: keyof ExternalLink, value: string) => {
@@ -408,20 +324,11 @@ const EventForm: React.FC = () => {
       return 'Event end time must be after the start time.';
     }
 
-    const invalidAgendaTimeIndex = event.agenda.findIndex((item) => item.time.endTime <= item.time.startTime);
-    if (invalidAgendaTimeIndex >= 0) {
-      return `Agenda item ${invalidAgendaTimeIndex + 1} has an end time before the start time.`;
-    }
-
-    const invalidAgendaReminderIndex = event.agenda.findIndex(
-      (item) =>
-        item.notifyBefore &&
-        (item.notificationLeadMinutes < 1 || item.notificationLeadMinutes > MAX_AGENDA_NOTIFICATION_LEAD_MINUTES),
-    );
-    if (invalidAgendaReminderIndex >= 0) {
-      return `Agenda item ${
-        invalidAgendaReminderIndex + 1
-      } has an invalid reminder lead time. Use 1-${MAX_AGENDA_NOTIFICATION_LEAD_MINUTES} minutes.`;
+    if (
+      event.notifyBefore &&
+      (event.notificationLeadMinutes < 1 || event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
+    ) {
+      return `Reminder lead time is invalid. Use 1-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES} minutes.`;
     }
 
     const incompleteLinkIndex = event.additionalLinks.findIndex((link) => {
@@ -477,11 +384,8 @@ const EventForm: React.FC = () => {
         title: event.title.trim(),
         locationInfo: event.locationInfo,
         description: event.description.trim(),
-        agenda: event.agenda.map((item) => ({
-          ...item,
-          notifyBefore: item.notifyBefore === true,
-          notificationLeadMinutes: sanitizeAgendaNotificationLeadMinutes(item.notificationLeadMinutes),
-        })),
+        notifyBefore: event.notifyBefore === true,
+        notificationLeadMinutes: sanitizeEventNotificationLeadMinutes(event.notificationLeadMinutes),
         additionalLinks: event.additionalLinks,
         dateKey: event.dateKey,
         images: event.images,
@@ -535,7 +439,11 @@ const EventForm: React.FC = () => {
         </Stack>
 
         <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 3 }}>
-          <Chip size="small" color="primary" label={`${event.agenda.length} agenda item${event.agenda.length === 1 ? '' : 's'}`} />
+          <Chip
+            size="small"
+            color={event.notifyBefore ? 'primary' : 'default'}
+            label={event.notifyBefore ? `Reminder ${event.notificationLeadMinutes} min before` : 'Reminder disabled'}
+          />
           <Chip size="small" variant="outlined" label={`${event.additionalLinks.length} link${event.additionalLinks.length === 1 ? '' : 's'}`} />
           <Chip size="small" variant="outlined" label={`${event.images.length} image${event.images.length === 1 ? '' : 's'}`} />
         </Stack>
@@ -682,145 +590,51 @@ const EventForm: React.FC = () => {
                     </MenuItem>
                   </Select>
                 </FormControl>
+
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={event.notifyBefore}
+                        onChange={(e) => {
+                          clearFeedback();
+                          setEvent((prev) => ({ ...prev, notifyBefore: e.target.checked }));
+                        }}
+                      />
+                    }
+                    label="Send reminder before this event"
+                  />
+                  <TextField
+                    type="number"
+                    label="Minutes Before Start"
+                    value={event.notificationLeadMinutes}
+                    onChange={(e) => {
+                      clearFeedback();
+                      setEvent((prev) => ({
+                        ...prev,
+                        notificationLeadMinutes: sanitizeEventNotificationLeadMinutes(e.target.value),
+                      }));
+                    }}
+                    disabled={!event.notifyBefore}
+                    sx={{ minWidth: { xs: '100%', sm: 220 } }}
+                    inputProps={{ min: 1, max: MAX_EVENT_NOTIFICATION_LEAD_MINUTES, step: 1 }}
+                    error={
+                      submitAttempted &&
+                      event.notifyBefore &&
+                      (event.notificationLeadMinutes < 1 ||
+                        event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
+                    }
+                    helperText={
+                      submitAttempted &&
+                      event.notifyBefore &&
+                      (event.notificationLeadMinutes < 1 ||
+                        event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
+                        ? `Use 1-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES}.`
+                        : ' '
+                    }
+                  />
+                </Stack>
               </Stack>
-            </Paper>
-
-            <Paper variant="outlined" sx={{ p: 2.5 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                <Typography variant="h6">Agenda Items</Typography>
-                <Button startIcon={<AddIcon />} onClick={addAgendaItem} variant="outlined">
-                  Add Agenda Item
-                </Button>
-              </Stack>
-
-              {!event.agenda.length ? (
-                <Typography variant="body2" color="text.secondary">
-                  No agenda items yet.
-                </Typography>
-              ) : (
-                event.agenda.map((item, index) => {
-                  const agendaTimeInvalid = item.time.endTime <= item.time.startTime;
-                  const agendaReminderInvalid =
-                    item.notifyBefore &&
-                    (item.notificationLeadMinutes < 1 ||
-                      item.notificationLeadMinutes > MAX_AGENDA_NOTIFICATION_LEAD_MINUTES);
-
-                  return (
-                    <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
-                      <Stack
-                        direction={{ xs: 'column', sm: 'row' }}
-                        justifyContent="space-between"
-                        alignItems={{ xs: 'flex-start', sm: 'center' }}
-                        sx={{ mb: 1.5 }}
-                      >
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Item {index + 1}
-                        </Typography>
-                        <Box>
-                          <IconButton
-                            onClick={() => moveAgendaItem(index, index - 1)}
-                            disabled={index === 0}
-                            size="small"
-                            aria-label="Move agenda item up"
-                          >
-                            <ArrowUpwardIcon />
-                          </IconButton>
-                          <IconButton
-                            onClick={() => moveAgendaItem(index, index + 1)}
-                            disabled={index === event.agenda.length - 1}
-                            size="small"
-                            aria-label="Move agenda item down"
-                          >
-                            <ArrowDownwardIcon />
-                          </IconButton>
-                          <IconButton onClick={() => removeAgendaItem(index)} aria-label="Delete agenda item">
-                            <DeleteIcon />
-                          </IconButton>
-                        </Box>
-                      </Stack>
-
-                      <Stack spacing={2}>
-                        <TextField
-                          label="Title"
-                          value={item.title}
-                          onChange={(e) => handleAgendaItemChange(index, 'title', e.target.value)}
-                          fullWidth
-                        />
-
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                          <DateTimePicker
-                            label="Start Time"
-                            value={new Date(item.time.startTime)}
-                            onChange={(value) => handleAgendaTimeChange(index, 'startTime', value)}
-                            slotProps={{ textField: { fullWidth: true } }}
-                          />
-                          <DateTimePicker
-                            label="End Time"
-                            value={new Date(item.time.endTime)}
-                            onChange={(value) => handleAgendaTimeChange(index, 'endTime', value)}
-                            slotProps={{
-                              textField: {
-                                fullWidth: true,
-                                error: submitAttempted && agendaTimeInvalid,
-                                helperText: submitAttempted && agendaTimeInvalid ? 'End time must be after start time.' : ' ',
-                              },
-                            }}
-                          />
-                        </Stack>
-
-                        <TextField
-                          label="Location"
-                          value={item.locationInfo}
-                          onChange={(e) => handleAgendaItemChange(index, 'locationInfo', e.target.value)}
-                          fullWidth
-                        />
-
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
-                          <FormControlLabel
-                            control={
-                              <Switch
-                                checked={item.notifyBefore}
-                                onChange={(e) => handleAgendaItemChange(index, 'notifyBefore', e.target.checked)}
-                              />
-                            }
-                            label="Send reminder before this item"
-                          />
-                          <TextField
-                            type="number"
-                            label="Minutes Before Start"
-                            value={item.notificationLeadMinutes}
-                            onChange={(e) =>
-                              handleAgendaItemChange(
-                                index,
-                                'notificationLeadMinutes',
-                                sanitizeAgendaNotificationLeadMinutes(e.target.value),
-                              )
-                            }
-                            disabled={!item.notifyBefore}
-                            sx={{ minWidth: { xs: '100%', sm: 220 } }}
-                            inputProps={{ min: 1, max: MAX_AGENDA_NOTIFICATION_LEAD_MINUTES, step: 1 }}
-                            error={submitAttempted && agendaReminderInvalid}
-                            helperText={
-                              submitAttempted && agendaReminderInvalid
-                                ? `Use 1-${MAX_AGENDA_NOTIFICATION_LEAD_MINUTES}.`
-                                : ' '
-                            }
-                          />
-                        </Stack>
-
-                        <TextField
-                          label="Description"
-                          value={item.description}
-                          onChange={(e) => handleAgendaItemChange(index, 'description', e.target.value)}
-                          multiline
-                          rows={2}
-                          fullWidth
-                        />
-                      </Stack>
-                    </Paper>
-                  );
-                })
-              )}
             </Paper>
 
             <Paper variant="outlined" sx={{ p: 2.5 }}>

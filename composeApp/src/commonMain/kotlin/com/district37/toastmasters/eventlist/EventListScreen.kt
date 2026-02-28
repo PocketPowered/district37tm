@@ -1,40 +1,42 @@
 package com.district37.toastmasters.eventlist
 
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.ScrollableTabRow
 import androidx.compose.material.Tab
 import androidx.compose.material.Text
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.district37.toastmasters.LocalAppViewModel
+import com.district37.toastmasters.favorites.FavoriteEventToggle
+import com.district37.toastmasters.navigation.EVENT_ID_ARG
+import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.models.DateTabInfo
 import com.district37.toastmasters.navigation.StatefulScaffold
 import com.district37.toastmasters.notifications.NotificationsEntry
+import com.wongislandd.nexus.navigation.LocalNavHostController
 import com.wongislandd.nexus.util.Resource
-import com.wongislandd.nexus.util.conditionallyChain
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 
@@ -42,6 +44,8 @@ import org.koin.core.annotation.KoinExperimentalAPI
 @Composable
 fun EventListScreen() {
     val viewModel = koinViewModel<EventListViewModel>()
+    val appViewModel = LocalAppViewModel.current
+    val navController = LocalNavHostController.current
     val coroutineScope = rememberCoroutineScope()
     val screenState by viewModel.eventListScreenStateSlice.screenState.collectAsState()
     val isRefreshing = screenState is Resource.Loading
@@ -64,165 +68,141 @@ fun EventListScreen() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Agenda",
+                text = "Schedule",
                 style = MaterialTheme.typography.h5,
                 color = MaterialTheme.colors.secondary,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
-            DateSelector(data.availableTabs, onTabClick = { tab ->
-                viewModel.uiEventBus.sendEvent(
-                    coroutineScope,
-                    DateChanged(tab)
-                )
-            })
-            AgendaSelector(
+            DateSelector(
+                availableTabs = data.availableTabs,
                 agendaSelection = data.agendaOption,
-                onFullAgendaClicked = {
+                onTabClick = { tab ->
                     viewModel.uiEventBus.sendEvent(
                         coroutineScope,
-                        AgendaChanged(AgendaOption.FULL_AGENDA)
+                        DateChanged(tab)
                     )
                 },
-                onMyAgendaClicked = {
-                    viewModel.uiEventBus.sendEvent(
-                        coroutineScope,
-                        AgendaChanged(AgendaOption.FAVORITES_AGENDA)
-                    )
+                onFavoritesToggle = {
+                    val nextAgenda = if (data.agendaOption == AgendaOption.FAVORITES_AGENDA) {
+                        AgendaOption.FULL_AGENDA
+                    } else {
+                        AgendaOption.FAVORITES_AGENDA
+                    }
+                    viewModel.uiEventBus.sendEvent(coroutineScope, AgendaChanged(nextAgenda))
                 }
             )
             if (data.events.isEmpty()) {
-                Text(
-                    text = if (data.agendaOption == AgendaOption.FAVORITES_AGENDA) "No favorites found" else "No events found",
-                    style = MaterialTheme.typography.body1,
-                    color = MaterialTheme.colors.secondary,
-                    modifier = Modifier.padding(top = 16.dp)
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (data.isScheduleLoading) {
+                        CircularProgressIndicator()
+                    } else {
+                        Text(
+                            text = if (data.agendaOption == AgendaOption.FAVORITES_AGENDA) "No favorites found" else "No events found",
+                            style = MaterialTheme.typography.body1,
+                            color = MaterialTheme.colors.secondary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(vertical = 8.dp).fillMaxSize()
-            ) {
-                items(data.events) { event ->
-                    EventCard(event)
+            if (data.events.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 8.dp)
+                ) {
+                    CalendarAgendaView(
+                        events = data.events,
+                        onEventClick = { event ->
+                            appViewModel.navigate(
+                                navController,
+                                NavigationItemKey.EVENT_DETAILS,
+                                mapOf(EVENT_ID_ARG to event.id)
+                            )
+                        },
+                        onFavoriteToggle = { event ->
+                            appViewModel.uiEventBus.sendEvent(
+                                coroutineScope,
+                                FavoriteEventToggle(event.id, !event.isFavorited)
+                            )
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    if (data.isScheduleLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(top = 12.dp)
+                        )
+                    }
                 }
             }
         }
 
-    }
-}
-
-
-@Composable
-fun AgendaSelector(
-    agendaSelection: AgendaOption,
-    onFullAgendaClicked: () -> Unit,
-    onMyAgendaClicked: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val indicatorOffset by animateDpAsState(
-        targetValue = if (agendaSelection == AgendaOption.FULL_AGENDA) 0.dp else 180.dp,
-        label = "IndicatorOffsetAnimation"
-    )
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colors.onSurface.copy(alpha = 0.05f))
-            .padding(4.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(0.5f)
-                    .offset(x = indicatorOffset)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colors.secondary)
-            )
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(40.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable { onFullAgendaClicked() },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Agenda",
-                    color = if (agendaSelection == AgendaOption.FULL_AGENDA) MaterialTheme.colors.onSecondary else MaterialTheme.colors.secondary,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable { onMyAgendaClicked() },
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Favorites",
-                    color = if (agendaSelection == AgendaOption.FAVORITES_AGENDA) MaterialTheme.colors.onSecondary else MaterialTheme.colors.secondary,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
     }
 }
 
 @Composable
 private fun DateSelector(
     availableTabs: List<DateTabInfo>,
+    agendaSelection: AgendaOption,
     onTabClick: (DateTabInfo) -> Unit,
+    onFavoritesToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyRow(
-        modifier = modifier.fillMaxWidth().padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+    val selectedTabIndex = availableTabs.indexOfFirst { it.isSelected }.let { idx ->
+        if (idx >= 0) idx else 0
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        availableTabs.forEach { tab ->
-            item {
-                CustomTab(tab, onTabClick = onTabClick, modifier = Modifier)
+        ScrollableTabRow(
+            selectedTabIndex = selectedTabIndex,
+            modifier = Modifier.weight(1f),
+            edgePadding = 16.dp,
+            backgroundColor = MaterialTheme.colors.surface,
+            contentColor = MaterialTheme.colors.secondary,
+            divider = {}
+        ) {
+            availableTabs.forEach { tab ->
+                Tab(
+                    selected = tab.isSelected,
+                    onClick = { onTabClick(tab) },
+                    text = {
+                        Text(
+                            tab.displayName,
+                            fontWeight = if (tab.isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                )
             }
         }
-    }
-}
-
-
-@Composable
-private fun CustomTab(
-    tab: DateTabInfo,
-    onTabClick: (DateTabInfo) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Tab(
-        text = {
-            Text(
-                tab.displayName,
-                color = if (tab.isSelected) MaterialTheme.colors.onSecondary else MaterialTheme.colors.secondary,
-                fontWeight = FontWeight.Bold
+        IconButton(onClick = onFavoritesToggle) {
+            Icon(
+                imageVector = if (agendaSelection == AgendaOption.FAVORITES_AGENDA) {
+                    Icons.Filled.Favorite
+                } else {
+                    Icons.Outlined.FavoriteBorder
+                },
+                contentDescription = if (agendaSelection == AgendaOption.FAVORITES_AGENDA) {
+                    "Show full schedule"
+                } else {
+                    "Show favorites"
+                },
+                tint = if (agendaSelection == AgendaOption.FAVORITES_AGENDA) {
+                    Color.Red
+                } else {
+                    MaterialTheme.colors.onSurface.copy(alpha = 0.75f)
+                }
             )
-        },
-        selected = tab.isSelected,
-        onClick = { onTabClick(tab) },
-        modifier = modifier.clip(
-            CircleShape
-        ).conditionallyChain(
-            tab.isSelected, Modifier.background(MaterialTheme.colors.secondary)
-        )
-    )
+        }
+    }
 }

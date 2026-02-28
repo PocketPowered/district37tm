@@ -9,7 +9,6 @@ query EventDetails($id: BigInt!) {
         start_time
         end_time
         location_info
-        agenda
         additional_links
         date_key
         tag
@@ -17,4 +16,3 @@ query EventDetails($id: BigInt!) {
     }
   }
 }
-

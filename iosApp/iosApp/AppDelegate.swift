@@ -10,7 +10,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
     private var storedFCMToken: String?
     private var hasAPNSToken = false
-    private var hasSubscribedToGeneralTopic = false
+    private var subscribedTopics = Set<String>()
 
     private let backgroundQueue = DispatchQueue(
         label: "com.district37.toastmasters.background",
@@ -72,7 +72,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             Messaging.messaging().apnsToken = deviceToken
             self.hasAPNSToken = true
             if let token = self.storedFCMToken {
-                self.subscribeToGeneralTopic(fcmToken: token)
+                self.subscribeToTargetTopics(fcmToken: token)
             }
         }
     }
@@ -89,25 +89,64 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         guard let token = fcmToken else { return }
         storedFCMToken = token
         if hasAPNSToken {
-            subscribeToGeneralTopic(fcmToken: token)
+            subscribeToTargetTopics(fcmToken: token)
         }
     }
 
-    private func subscribeToGeneralTopic(fcmToken: String) {
-        guard !hasSubscribedToGeneralTopic else {
+    private func subscribeToTargetTopics(fcmToken: String) {
+        let topics = buildTargetTopics()
+        if topics.isEmpty {
+            print("ℹ️ No FCM topics available for subscription")
             return
         }
-        print("📡 Subscribing iOS to GENERAL topic with FCM token: \(fcmToken)")
+
+        print("📡 Subscribing iOS to topics \(topics) with FCM token: \(fcmToken)")
         backgroundQueue.async { [weak self] in
-            Messaging.messaging().subscribe(toTopic: "GENERAL") { error in
-                if let error = error {
-                    print("❌ Failed to subscribe to GENERAL topic: \(error.localizedDescription)")
-                } else {
-                    print("✅ iOS subscribed to GENERAL topic")
-                    self?.hasSubscribedToGeneralTopic = true
+            topics.forEach { topic in
+                guard self?.subscribedTopics.contains(topic) == false else {
+                    return
+                }
+
+                Messaging.messaging().subscribe(toTopic: topic) { error in
+                    if let error = error {
+                        print("❌ Failed to subscribe to topic \(topic): \(error.localizedDescription)")
+                    } else {
+                        print("✅ iOS subscribed to topic \(topic)")
+                        self?.subscribedTopics.insert(topic)
+                    }
                 }
             }
         }
+    }
+
+    private func buildTargetTopics() -> [String] {
+        let envTopic = isDebugBuild ? "APP_ENV_DEBUG" : "APP_ENV_PROD"
+        let versionValue = (
+            Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        ) ?? (
+            Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+        ) ?? "unknown"
+        let versionTopic = "APP_VERSION_\(normalizeTopicSegment(versionValue))"
+
+        return Array(Set(["GENERAL", envTopic, versionTopic])).sorted()
+    }
+
+    private var isDebugBuild: Bool {
+        #if DEBUG
+            return true
+        #else
+            return false
+        #endif
+    }
+
+    private func normalizeTopicSegment(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return "unknown"
+        }
+        return trimmed
+            .replacingOccurrences(of: ".", with: "_")
+            .replacingOccurrences(of: "[^A-Za-z0-9_-]", with: "_", options: .regularExpression)
     }
 
     func userNotificationCenter(

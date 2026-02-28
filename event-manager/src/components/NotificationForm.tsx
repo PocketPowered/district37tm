@@ -5,7 +5,13 @@ import {
     TextField, 
     Typography, 
     Paper, 
-    Alert
+    Alert,
+    FormControl,
+    FormHelperText,
+    InputLabel,
+    MenuItem,
+    Select,
+    SelectChangeEvent,
 } from '@mui/material';
 import { notificationService } from '../services/notificationService';
 
@@ -13,12 +19,38 @@ interface NotificationFormProps {
     onSuccess?: () => void;
 }
 
+type NotificationTarget = 'GENERAL' | 'APP_ENV_DEBUG' | 'APP_ENV_PROD' | 'APP_VERSION' | 'CUSTOM';
+
 const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
     const [title, setTitle] = useState('');
     const [body, setBody] = useState('');
+    const [target, setTarget] = useState<NotificationTarget>('GENERAL');
+    const [version, setVersion] = useState('');
+    const [customTopic, setCustomTopic] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+
+    const normalizeTopicSegment = (raw: string) => {
+        const trimmed = raw.trim();
+        if (!trimmed) {
+            return '';
+        }
+        return trimmed
+            .replace(/\./g, '_')
+            .replace(/[^A-Za-z0-9_-]/g, '_');
+    };
+
+    const resolveTopic = () => {
+        if (target === 'APP_VERSION') {
+            const normalized = normalizeTopicSegment(version);
+            return normalized ? `APP_VERSION_${normalized}` : '';
+        }
+        if (target === 'CUSTOM') {
+            return customTopic.trim().toUpperCase();
+        }
+        return target;
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,13 +59,22 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
         setSuccess(null);
 
         try {
+            const topic = resolveTopic();
+            if (!topic) {
+                throw new Error(
+                    target === 'APP_VERSION'
+                        ? 'Enter a version to target (for example: 8.0).'
+                        : 'Enter a custom topic.'
+                );
+            }
+
             await notificationService.sendNotification(
                 title,
                 body,
-                'GENERAL' // Global topic for all users
+                topic
             );
 
-            setSuccess('Notification sent successfully to all users!');
+            setSuccess(`Notification sent successfully to topic "${topic}".`);
             setTitle('');
             setBody('');
             if (onSuccess) onSuccess();
@@ -48,7 +89,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
     return (
         <Paper elevation={3} sx={{ p: 3, maxWidth: 600, mx: 'auto', mt: 4 }}>
             <Typography variant="h5" gutterBottom>
-                Send Notification to All Users
+                Send Push Notification
             </Typography>
             
             {error && (
@@ -83,6 +124,53 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
                         required
                     />
 
+                    <FormControl fullWidth>
+                        <InputLabel id="notification-target-label">Target</InputLabel>
+                        <Select
+                            labelId="notification-target-label"
+                            label="Target"
+                            value={target}
+                            onChange={(e: SelectChangeEvent<NotificationTarget>) =>
+                                setTarget(e.target.value as NotificationTarget)
+                            }
+                        >
+                            <MenuItem value="GENERAL">All users (GENERAL)</MenuItem>
+                            <MenuItem value="APP_ENV_DEBUG">Debug builds (APP_ENV_DEBUG)</MenuItem>
+                            <MenuItem value="APP_ENV_PROD">Production builds (APP_ENV_PROD)</MenuItem>
+                            <MenuItem value="APP_VERSION">Specific app version</MenuItem>
+                            <MenuItem value="CUSTOM">Custom topic</MenuItem>
+                        </Select>
+                        <FormHelperText>
+                            Clients subscribe to GENERAL + environment + version topics.
+                        </FormHelperText>
+                    </FormControl>
+
+                    {target === 'APP_VERSION' && (
+                        <TextField
+                            fullWidth
+                            label="App Version"
+                            value={version}
+                            onChange={(e) => setVersion(e.target.value)}
+                            placeholder="8.0"
+                            required
+                            helperText={`Will send to topic: ${
+                                resolveTopic() || 'APP_VERSION_<version>'
+                            }`}
+                        />
+                    )}
+
+                    {target === 'CUSTOM' && (
+                        <TextField
+                            fullWidth
+                            label="Custom Topic"
+                            value={customTopic}
+                            onChange={(e) => setCustomTopic(e.target.value)}
+                            placeholder="APP_VERSION_8_0"
+                            required
+                            helperText="Use this for advanced targeting."
+                        />
+                    )}
+
                     <Button
                         type="submit"
                         variant="contained"
@@ -90,7 +178,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
                         fullWidth
                         disabled={loading}
                     >
-                        {loading ? 'Sending...' : 'Send to All Users'}
+                        {loading ? 'Sending...' : 'Send Notification'}
                     </Button>
                 </Box>
             </form>

@@ -1,9 +1,17 @@
 import { GoogleAuth } from "npm:google-auth-library@9.15.1";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-type AgendaReminderRequest = { topic?: string };
-type EventRow = { id: number; title: string | null; agenda: unknown };
-type ParsedAgendaItem = { title: string; locationInfo: string; startTime: number; leadMinutes: number };
+type EventReminderRequest = { topic?: string };
+type EventRow = {
+  id: number;
+  title: string | null;
+  location_info: string | null;
+  start_time: number | null;
+  end_time: number | null;
+  notify_before: unknown;
+  notification_lead_minutes: unknown;
+};
+type ParsedEventReminder = { title: string; locationInfo: string; startTime: number; leadMinutes: number };
 
 type SupabaseClient = ReturnType<typeof createClient>;
 
@@ -12,11 +20,13 @@ const MAX_LEAD_MINUTES = 24 * 60;
 const SCAN_WINDOW_PAST_MS = 90_000;
 const SCAN_WINDOW_FUTURE_MS = 30_000;
 const EVENT_LOOKAHEAD_MS = 36 * 60 * 60 * 1000;
-const CRON_SECRET_SETTING_KEY = "agenda_reminder_cron_secret";
+
+const CRON_SECRET_SETTING_KEY = "event_reminder_cron_secret";
+const SECRET_HEADER_NAME = "x-event-reminder-secret";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-agenda-reminder-secret",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-event-reminder-secret",
 };
 
 const json = (status: number, payload: unknown) =>
@@ -37,30 +47,17 @@ const parsePositiveInt = (value: unknown, fallback: number) => {
   return fallback;
 };
 
-const parseAgendaItem = (raw: unknown): ParsedAgendaItem | null => {
-  if (!raw || typeof raw !== "object") return null;
+const parseEventReminder = (raw: EventRow): ParsedEventReminder | null => {
+  if (!(raw.notify_before === true || raw.notify_before === "true")) return null;
 
-  const item = raw as {
-    title?: unknown;
-    locationInfo?: unknown;
-    notifyBefore?: unknown;
-    notificationLeadMinutes?: unknown;
-    time?: { startTime?: unknown };
-  };
-
-  if (!(item.notifyBefore === true || item.notifyBefore === "true")) return null;
-
-  const startTime =
-    typeof item.time?.startTime === "number" && Number.isFinite(item.time.startTime)
-      ? item.time.startTime
-      : NaN;
+  const startTime = typeof raw.start_time === "number" && Number.isFinite(raw.start_time) ? raw.start_time : NaN;
   if (!Number.isFinite(startTime) || startTime <= 0) return null;
 
   return {
-    title: typeof item.title === "string" && item.title.trim() ? item.title : "Agenda item",
-    locationInfo: typeof item.locationInfo === "string" ? item.locationInfo : "",
+    title: typeof raw.title === "string" && raw.title.trim() ? raw.title : "Upcoming event",
+    locationInfo: typeof raw.location_info === "string" ? raw.location_info : "",
     startTime,
-    leadMinutes: parsePositiveInt(item.notificationLeadMinutes, DEFAULT_LEAD_MINUTES),
+    leadMinutes: parsePositiveInt(raw.notification_lead_minutes, DEFAULT_LEAD_MINUTES),
   };
 };
 
@@ -68,7 +65,7 @@ const isUniqueViolation = (error: unknown): boolean =>
   Boolean(error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "23505");
 
 const getExpectedCronSecret = async (adminClient: SupabaseClient): Promise<string | null> => {
-  const envSecret = Deno.env.get("AGENDA_REMINDER_CRON_SECRET")?.trim();
+  const envSecret = Deno.env.get("EVENT_REMINDER_CRON_SECRET")?.trim();
   if (envSecret) return envSecret;
 
   const { data } = await adminClient
@@ -76,9 +73,10 @@ const getExpectedCronSecret = async (adminClient: SupabaseClient): Promise<strin
     .select("value")
     .eq("key", CRON_SECRET_SETTING_KEY)
     .maybeSingle();
-
   const dbSecret = typeof data?.value === "string" ? data.value.trim() : "";
-  return dbSecret || null;
+  if (dbSecret) return dbSecret;
+
+  return null;
 };
 
 const sendFcmMessage = async (
@@ -126,17 +124,22 @@ Deno.serve(async (req) => {
     }
 
     const authHeader = req.headers.get("Authorization");
-    const requestSecret = req.headers.get("x-agenda-reminder-secret");
+    const requestSecret = req.headers.get(SECRET_HEADER_NAME);
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
-    let callerEmail = "system:agenda-reminder";
+    let callerEmail = "system:event-reminder";
 
     const expectedCronSecret = await getExpectedCronSecret(adminClient);
-    const isServiceRoleBearer = Boolean(authHeader?.startsWith("Bearer ")) && authHeader?.slice(7).trim() === serviceRoleKey;
+    const isServiceRoleBearer =
+      Boolean(authHeader?.startsWith("Bearer ")) && authHeader?.slice(7).trim() === serviceRoleKey;
     const hasValidCronSecret = Boolean(expectedCronSecret) && requestSecret === expectedCronSecret;
 
     if (!isServiceRoleBearer && !hasValidCronSecret) {
-      if (!authHeader) return json(401, { error: "Missing Authorization header or x-agenda-reminder-secret" });
+      if (!authHeader) {
+        return json(401, {
+          error: "Missing Authorization header or x-event-reminder-secret",
+        });
+      }
 
       const callerClient = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: authHeader } },
@@ -157,36 +160,31 @@ Deno.serve(async (req) => {
       callerEmail = user.email.toLowerCase();
     }
 
-    const requestBody = (await req.json().catch(() => ({}))) as AgendaReminderRequest;
+    const requestBody = (await req.json().catch(() => ({}))) as EventReminderRequest;
     const topic = requestBody.topic?.trim() || "GENERAL";
 
     const nowMs = Date.now();
     const { data: events, error: eventsError } = await adminClient
       .from("events")
-      .select("id, title, agenda")
+      .select("id, title, location_info, start_time, end_time, notify_before, notification_lead_minutes")
       .gte("end_time", nowMs - 5 * 60_000)
       .lte("start_time", nowMs + EVENT_LOOKAHEAD_MS)
       .order("start_time", { ascending: true });
     if (eventsError) return json(500, { error: "Failed to load events", details: eventsError.message });
 
-    const dueReminders: Array<{ eventId: number; eventTitle: string; agendaItemIndex: number; agendaItem: ParsedAgendaItem }> = [];
+    const dueReminders: Array<{ eventId: number; reminder: ParsedEventReminder }> = [];
     for (const event of (events || []) as EventRow[]) {
-      const agenda = Array.isArray(event.agenda) ? event.agenda : [];
-      const eventTitle = event.title?.trim() || "Upcoming event";
+      const reminder = parseEventReminder(event);
+      if (!reminder || reminder.startTime <= nowMs) continue;
 
-      agenda.forEach((rawItem, agendaItemIndex) => {
-        const agendaItem = parseAgendaItem(rawItem);
-        if (!agendaItem || agendaItem.startTime <= nowMs) return;
+      const triggerAt = reminder.startTime - reminder.leadMinutes * 60_000;
+      if (triggerAt < nowMs - SCAN_WINDOW_PAST_MS || triggerAt > nowMs + SCAN_WINDOW_FUTURE_MS) continue;
 
-        const triggerAt = agendaItem.startTime - agendaItem.leadMinutes * 60_000;
-        if (triggerAt < nowMs - SCAN_WINDOW_PAST_MS || triggerAt > nowMs + SCAN_WINDOW_FUTURE_MS) return;
-
-        dueReminders.push({ eventId: event.id, eventTitle, agendaItemIndex, agendaItem });
-      });
+      dueReminders.push({ eventId: event.id, reminder });
     }
 
     if (dueReminders.length === 0) {
-      return json(200, { ok: true, message: "No due agenda reminders", scannedEvents: events?.length || 0 });
+      return json(200, { ok: true, message: "No due event reminders", scannedEvents: events?.length || 0 });
     }
 
     const auth = new GoogleAuth({
@@ -203,13 +201,12 @@ Deno.serve(async (req) => {
 
     for (const due of dueReminders) {
       const { data: reminderDelivery, error: reminderInsertError } = await adminClient
-        .from("agenda_item_reminder_deliveries")
+        .from("event_reminder_deliveries")
         .insert({
           event_id: due.eventId,
-          agenda_item_index: due.agendaItemIndex,
-          agenda_item_start_time: due.agendaItem.startTime,
-          lead_minutes: due.agendaItem.leadMinutes,
-          agenda_item_title: due.agendaItem.title,
+          event_start_time: due.reminder.startTime,
+          lead_minutes: due.reminder.leadMinutes,
+          event_title: due.reminder.title,
           status: "queued",
         })
         .select("id")
@@ -224,11 +221,11 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const minuteLabel = due.agendaItem.leadMinutes === 1 ? "minute" : "minutes";
-      const title = `${due.agendaItem.title} starts in ${due.agendaItem.leadMinutes} ${minuteLabel}`;
-      const body = due.agendaItem.locationInfo.trim()
-        ? `${due.eventTitle}: ${due.agendaItem.title} is about to begin at ${due.agendaItem.locationInfo}.`
-        : `${due.eventTitle}: ${due.agendaItem.title} is about to begin.`;
+      const minuteLabel = due.reminder.leadMinutes === 1 ? "minute" : "minutes";
+      const title = `${due.reminder.title} starts in ${due.reminder.leadMinutes} ${minuteLabel}`;
+      const body = due.reminder.locationInfo.trim()
+        ? `${due.reminder.title} is about to begin at ${due.reminder.locationInfo}.`
+        : `${due.reminder.title} is about to begin.`;
 
       const { data: notificationRecord, error: notificationInsertError } = await adminClient
         .from("notifications")
@@ -239,7 +236,7 @@ Deno.serve(async (req) => {
       if (notificationInsertError || !notificationRecord) {
         failedCount += 1;
         await adminClient
-          .from("agenda_item_reminder_deliveries")
+          .from("event_reminder_deliveries")
           .update({
             status: "failed",
             response: { error: notificationInsertError?.message || "Failed to create notification record" },
@@ -266,7 +263,7 @@ Deno.serve(async (req) => {
       });
       await adminClient.from("notifications").update({ status: fcmResponse.ok ? "sent" : "failed" }).eq("id", notificationRecord.id);
       await adminClient
-        .from("agenda_item_reminder_deliveries")
+        .from("event_reminder_deliveries")
         .update({ status: fcmResponse.ok ? "sent" : "failed", notification_id: notificationRecord.id, response: parsedResponse })
         .eq("id", reminderDelivery.id);
 

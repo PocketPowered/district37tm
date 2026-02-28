@@ -15,32 +15,35 @@ A conference management platform with:
 
 ### iOS host app (`iosApp`)
 - Native iOS shell for the shared KMP UI
-- Handles APNS/FCM registration and subscribes users to the `GENERAL` topic
+- Handles APNS/FCM registration and subscribes users to targeting topics
 
 ### Admin portal (`event-manager`)
 - React + MUI + Supabase JS
 - Supabase Google OAuth + `authorized_users` allowlist
 - CRUD for conference dates, events, locations, and resources
 - Sends broadcast notifications through Supabase Edge Function
-- Supports per-agenda-item reminder toggles with configurable lead minutes
+- Supports sending to environment/version/custom topics
+- Supports event-level reminder toggles with configurable lead minutes
 
 ### Supabase backend (`supabase`)
 - Postgres tables for conference/domain data and notification logs
 - Edge Function: `send-notification`
-- Edge Function: `send-agenda-item-reminders` (automatic agenda reminder dispatch)
+- Edge Function: `send-event-reminders` (automatic event reminder dispatch)
 - Edge Function forwards notification payloads to FCM HTTP v1
 
 ## Push Notification Flow
-1. Android clients subscribe to topic `GENERAL`.
+1. Clients subscribe to topic `GENERAL`, plus:
+   - environment topic: `APP_ENV_DEBUG` or `APP_ENV_PROD`
+   - version topic: `APP_VERSION_<normalized-version>` (example: `APP_VERSION_8_0`)
 2. Admin creates a notification in the portal.
-3. Admin invokes Supabase Edge Function `send-notification`.
-4. Edge Function sends data message to FCM topic `GENERAL`.
+3. Admin invokes Supabase Edge Function (`send-notification-v2` with fallback to `send-notification`).
+4. Edge Function sends data message to the selected FCM topic.
 5. Android app receives and persists/displays the notification.
 
-## Agenda Reminder Flow
-1. Admin enables `Send reminder before this item` on an agenda item and sets lead minutes.
-2. Scheduled job invokes Supabase Edge Function `send-agenda-item-reminders` every minute.
-3. Edge Function finds due agenda reminders, deduplicates per item/start-time, and sends to topic `GENERAL`.
+## Event Reminder Flow
+1. Admin enables `Send reminder before this event` and sets lead minutes.
+2. Scheduled job invokes Supabase Edge Function `send-event-reminders` every minute.
+3. Edge Function finds due event reminders, deduplicates per event/start-time, and sends to topic `GENERAL`.
 4. Delivery and reminder-attempt records are stored in Supabase.
 
 ## Project Structure
