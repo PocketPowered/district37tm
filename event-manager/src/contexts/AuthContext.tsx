@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { isSupabaseLockStealAbortError } from '../lib/authErrors';
 import { isUserAuthorized } from '../services/authService';
 
 interface AuthContextType {
@@ -71,6 +72,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       if (error) throw error;
     } catch (error) {
+      if (isSupabaseLockStealAbortError(error)) {
+        return;
+      }
       console.error('Error signing in with Google:', error);
       throw error;
     }

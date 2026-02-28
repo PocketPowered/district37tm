@@ -22,10 +22,12 @@ A conference management platform with:
 - Supabase Google OAuth + `authorized_users` allowlist
 - CRUD for conference dates, events, locations, and resources
 - Sends broadcast notifications through Supabase Edge Function
+- Supports per-agenda-item reminder toggles with configurable lead minutes
 
 ### Supabase backend (`supabase`)
 - Postgres tables for conference/domain data and notification logs
 - Edge Function: `send-notification`
+- Edge Function: `send-agenda-item-reminders` (automatic agenda reminder dispatch)
 - Edge Function forwards notification payloads to FCM HTTP v1
 
 ## Push Notification Flow
@@ -34,6 +36,12 @@ A conference management platform with:
 3. Admin invokes Supabase Edge Function `send-notification`.
 4. Edge Function sends data message to FCM topic `GENERAL`.
 5. Android app receives and persists/displays the notification.
+
+## Agenda Reminder Flow
+1. Admin enables `Send reminder before this item` on an agenda item and sets lead minutes.
+2. Scheduled job invokes Supabase Edge Function `send-agenda-item-reminders` every minute.
+3. Edge Function finds due agenda reminders, deduplicates per item/start-time, and sends to topic `GENERAL`.
+4. Delivery and reminder-attempt records are stored in Supabase.
 
 ## Project Structure
 

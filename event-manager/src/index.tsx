@@ -2,7 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+import { isSupabaseLockStealAbortError } from './lib/authErrors';
 import reportWebVitals from './reportWebVitals';
+
+window.addEventListener('unhandledrejection', (event) => {
+  if (isSupabaseLockStealAbortError(event.reason)) {
+    event.preventDefault();
+  }
+});
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

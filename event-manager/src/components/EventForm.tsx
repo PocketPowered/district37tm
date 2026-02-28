@@ -15,6 +15,8 @@ import {
   InputLabel,
   FormHelperText,
   Chip,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Event, AgendaItem, ExternalLink, EventTag } from '../types/Event';
@@ -36,6 +38,8 @@ import { formatDateKey, getUtcDateKeyParts, mergeDateKeyWithLocalTime } from '..
 import { handleImageLoadError } from '../utils/imageFallback';
 
 const ONE_HOUR_MS = 3_600_000;
+const DEFAULT_AGENDA_NOTIFICATION_LEAD_MINUTES = 15;
+const MAX_AGENDA_NOTIFICATION_LEAD_MINUTES = 24 * 60;
 
 const createDefaultTimeRange = (dateTimestamp: number) => {
   const { year, month, day } = getUtcDateKeyParts(dateTimestamp);
@@ -59,6 +63,36 @@ const isValidHttpUrl = (value: string): boolean => {
     return false;
   }
 };
+
+const sanitizeAgendaNotificationLeadMinutes = (value: unknown): number => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const parsed = Math.floor(value);
+    if (parsed > 0 && parsed <= MAX_AGENDA_NOTIFICATION_LEAD_MINUTES) {
+      return parsed;
+    }
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed) && parsed > 0 && parsed <= MAX_AGENDA_NOTIFICATION_LEAD_MINUTES) {
+      return parsed;
+    }
+  }
+
+  return DEFAULT_AGENDA_NOTIFICATION_LEAD_MINUTES;
+};
+
+const createAgendaItem = (startTime: number): AgendaItem => ({
+  title: '',
+  description: '',
+  time: {
+    startTime,
+    endTime: startTime + ONE_HOUR_MS,
+  },
+  locationInfo: '',
+  notifyBefore: false,
+  notificationLeadMinutes: DEFAULT_AGENDA_NOTIFICATION_LEAD_MINUTES,
+});
 
 const EventForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -202,7 +236,7 @@ const EventForm: React.FC = () => {
     }));
   };
 
-  const handleAgendaItemChange = (index: number, field: keyof AgendaItem, value: string) => {
+  const handleAgendaItemChange = <K extends keyof AgendaItem>(index: number, field: K, value: AgendaItem[K]) => {
     clearFeedback();
 
     setEvent((prev) => {
@@ -243,15 +277,7 @@ const EventForm: React.FC = () => {
       ...prev,
       agenda: [
         ...prev.agenda,
-        {
-          title: '',
-          description: '',
-          time: {
-            startTime: startTime.getTime(),
-            endTime: startTime.getTime() + ONE_HOUR_MS,
-          },
-          locationInfo: '',
-        },
+        createAgendaItem(startTime.getTime()),
       ],
     }));
   };
@@ -387,6 +413,17 @@ const EventForm: React.FC = () => {
       return `Agenda item ${invalidAgendaTimeIndex + 1} has an end time before the start time.`;
     }
 
+    const invalidAgendaReminderIndex = event.agenda.findIndex(
+      (item) =>
+        item.notifyBefore &&
+        (item.notificationLeadMinutes < 1 || item.notificationLeadMinutes > MAX_AGENDA_NOTIFICATION_LEAD_MINUTES),
+    );
+    if (invalidAgendaReminderIndex >= 0) {
+      return `Agenda item ${
+        invalidAgendaReminderIndex + 1
+      } has an invalid reminder lead time. Use 1-${MAX_AGENDA_NOTIFICATION_LEAD_MINUTES} minutes.`;
+    }
+
     const incompleteLinkIndex = event.additionalLinks.findIndex((link) => {
       const hasLabel = Boolean(link.displayName.trim());
       const hasUrl = Boolean(link.url.trim());
@@ -440,7 +477,11 @@ const EventForm: React.FC = () => {
         title: event.title.trim(),
         locationInfo: event.locationInfo,
         description: event.description.trim(),
-        agenda: event.agenda,
+        agenda: event.agenda.map((item) => ({
+          ...item,
+          notifyBefore: item.notifyBefore === true,
+          notificationLeadMinutes: sanitizeAgendaNotificationLeadMinutes(item.notificationLeadMinutes),
+        })),
         additionalLinks: event.additionalLinks,
         dateKey: event.dateKey,
         images: event.images,
@@ -659,6 +700,10 @@ const EventForm: React.FC = () => {
               ) : (
                 event.agenda.map((item, index) => {
                   const agendaTimeInvalid = item.time.endTime <= item.time.startTime;
+                  const agendaReminderInvalid =
+                    item.notifyBefore &&
+                    (item.notificationLeadMinutes < 1 ||
+                      item.notificationLeadMinutes > MAX_AGENDA_NOTIFICATION_LEAD_MINUTES);
 
                   return (
                     <Paper key={index} variant="outlined" sx={{ p: 2, mb: 2 }}>
@@ -729,6 +774,39 @@ const EventForm: React.FC = () => {
                           onChange={(e) => handleAgendaItemChange(index, 'locationInfo', e.target.value)}
                           fullWidth
                         />
+
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={item.notifyBefore}
+                                onChange={(e) => handleAgendaItemChange(index, 'notifyBefore', e.target.checked)}
+                              />
+                            }
+                            label="Send reminder before this item"
+                          />
+                          <TextField
+                            type="number"
+                            label="Minutes Before Start"
+                            value={item.notificationLeadMinutes}
+                            onChange={(e) =>
+                              handleAgendaItemChange(
+                                index,
+                                'notificationLeadMinutes',
+                                sanitizeAgendaNotificationLeadMinutes(e.target.value),
+                              )
+                            }
+                            disabled={!item.notifyBefore}
+                            sx={{ minWidth: { xs: '100%', sm: 220 } }}
+                            inputProps={{ min: 1, max: MAX_AGENDA_NOTIFICATION_LEAD_MINUTES, step: 1 }}
+                            error={submitAttempted && agendaReminderInvalid}
+                            helperText={
+                              submitAttempted && agendaReminderInvalid
+                                ? `Use 1-${MAX_AGENDA_NOTIFICATION_LEAD_MINUTES}.`
+                                : ' '
+                            }
+                          />
+                        </Stack>
 
                         <TextField
                           label="Description"

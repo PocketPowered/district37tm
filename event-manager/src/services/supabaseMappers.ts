@@ -16,6 +16,67 @@ type EventRow = {
   tag: EventTag | null;
 };
 
+const DEFAULT_NOTIFICATION_LEAD_MINUTES = 15;
+
+const toPositiveInteger = (value: unknown, fallback: number): number => {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return Math.floor(value);
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  return fallback;
+};
+
+const normalizeAgendaItem = (item: unknown): AgendaItem | null => {
+  if (!item || typeof item !== 'object') {
+    return null;
+  }
+
+  const row = item as Partial<AgendaItem> & {
+    time?: { startTime?: unknown; endTime?: unknown };
+    notifyBefore?: unknown;
+    notificationLeadMinutes?: unknown;
+  };
+
+  const startTime =
+    typeof row.time?.startTime === 'number' && Number.isFinite(row.time.startTime)
+      ? row.time.startTime
+      : Date.now();
+  const endTime =
+    typeof row.time?.endTime === 'number' && Number.isFinite(row.time.endTime)
+      ? row.time.endTime
+      : startTime;
+
+  return {
+    title: row.title || '',
+    description: row.description || '',
+    locationInfo: row.locationInfo || '',
+    time: {
+      startTime,
+      endTime,
+    },
+    notifyBefore: row.notifyBefore === true,
+    notificationLeadMinutes: toPositiveInteger(
+      row.notificationLeadMinutes,
+      DEFAULT_NOTIFICATION_LEAD_MINUTES,
+    ),
+  };
+};
+
+const normalizeAgenda = (agenda: AgendaItem[] | null | undefined): AgendaItem[] => {
+  if (!Array.isArray(agenda)) {
+    return [];
+  }
+
+  return agenda.map(normalizeAgendaItem).filter((item): item is AgendaItem => Boolean(item));
+};
+
 type ResourceRow = {
   id: string;
   display_name: string | null;
@@ -40,7 +101,7 @@ export const toEvent = (row: EventRow): Event => ({
     endTime: row.end_time || Date.now(),
   },
   locationInfo: row.location_info || '',
-  agenda: row.agenda || [],
+  agenda: normalizeAgenda(row.agenda),
   additionalLinks: row.additional_links || [],
   dateKey: (row.date_key || 0).toString(),
   tag: row.tag || EventTag.NORMAL,
@@ -54,7 +115,7 @@ export const toEventInsert = (event: Event) => ({
   start_time: event.time?.startTime || null,
   end_time: event.time?.endTime || null,
   location_info: event.locationInfo,
-  agenda: event.agenda || [],
+  agenda: normalizeAgenda(event.agenda),
   additional_links: event.additionalLinks || [],
   date_key: event.dateKey ? Number(event.dateKey) : null,
   tag: event.tag || EventTag.NORMAL,

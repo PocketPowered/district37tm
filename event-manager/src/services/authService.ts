@@ -2,6 +2,11 @@ import { supabase } from '../lib/supabase';
 
 export const isUserAuthorized = async (email: string): Promise<boolean> => {
   try {
+    const { data: isAuthorizedAdmin, error: rpcError } = await supabase.rpc('is_authorized_admin');
+    if (!rpcError && typeof isAuthorizedAdmin === 'boolean') {
+      return isAuthorizedAdmin;
+    }
+
     const { data, error } = await supabase
       .from('authorized_users')
       .select('email')
@@ -17,4 +22,3 @@ export const isUserAuthorized = async (email: string): Promise<boolean> => {
     return false;
   }
 };
-

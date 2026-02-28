@@ -8,6 +8,8 @@ export interface AgendaItem {
   description: string;
   time: TimeRange;
   locationInfo: string;
+  notifyBefore: boolean;
+  notificationLeadMinutes: number;
 }
 
 export interface ExternalLink {

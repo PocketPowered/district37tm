@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Autocomplete,
   Box,
   Button,
   CircularProgress,
@@ -16,6 +15,7 @@ import {
   Stack,
   Tab,
   Tabs,
+  MenuItem,
   TextField,
   Typography,
 } from '@mui/material';
@@ -67,10 +67,6 @@ const normalizeCategory = (resourceType: string): string => {
     .replace(/_+/g, '_');
 };
 
-const validateCategory = (resourceType: string): boolean => {
-  return /^[a-z0-9]+(?:_[a-z0-9]+)*$/.test(resourceType);
-};
-
 const sortCategories = (resourceTypes: string[]): string[] => {
   const priorityOrder = new Map(PRIORITY_RESOURCE_TYPES.map((type, index) => [type, index]));
 
@@ -118,6 +114,7 @@ const ResourcesManager: React.FC = () => {
   const [formData, setFormData] = useState<ResourceFormData>(initialFormData);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
   const currentTab = useMemo(
     () => categories.findIndex((category) => category === selectedCategory),
@@ -136,14 +133,28 @@ const ResourcesManager: React.FC = () => {
     return `https://${url}`;
   };
 
-  const resetDialog = () => {
+  const openAddResourceDialogForCategory = (resourceType: string) => {
     setEditingResource(null);
+    setIsCreatingCategory(false);
     setFormData({
       ...initialFormData,
-      resourceType: selectedCategory || categories[0] || initialFormData.resourceType,
+      resourceType,
     });
     setUrlError(null);
     setCategoryError(null);
+    setOpenDialog(true);
+  };
+
+  const openAddResourceDialogForNewCategory = () => {
+    setEditingResource(null);
+    setIsCreatingCategory(true);
+    setFormData({
+      ...initialFormData,
+      resourceType: '',
+    });
+    setUrlError(null);
+    setCategoryError(null);
+    setOpenDialog(true);
   };
 
   const fetchResources = async (preferredCategory?: string) => {
@@ -153,9 +164,7 @@ const ResourcesManager: React.FC = () => {
         resourceService.getResourceCategories(SYSTEM_RESOURCE_TYPES),
       ]);
 
-      const mergedCategories = sortCategories(
-        Array.from(new Set([...PRIORITY_RESOURCE_TYPES, ...fetchedCategories]))
-      );
+      const mergedCategories = sortCategories(Array.from(new Set(fetchedCategories)));
 
       const nextGroupedResources = mergedCategories.reduce<Record<string, BackendExternalLink[]>>(
         (accumulator, category) => {
@@ -228,6 +237,21 @@ const ResourcesManager: React.FC = () => {
     }
   };
 
+  const handleExistingCategorySelect = (resourceType: string) => {
+    if (resourceType === '__create_new__') {
+      setIsCreatingCategory(true);
+      setFormData((prev) => ({
+        ...prev,
+        resourceType: '',
+      }));
+      setCategoryError('Category is required');
+      return;
+    }
+
+    setIsCreatingCategory(false);
+    handleResourceTypeInput(resourceType);
+  };
+
   const handleAddResource = async () => {
     if (!validateUrl(formData.url)) {
       setUrlError('URL must start with https://');
@@ -235,8 +259,8 @@ const ResourcesManager: React.FC = () => {
     }
 
     const normalizedResourceType = normalizeCategory(formData.resourceType);
-    if (!normalizedResourceType || !validateCategory(normalizedResourceType)) {
-      setCategoryError('Category must use letters/numbers and underscores only');
+    if (!normalizedResourceType) {
+      setCategoryError('Category name must include letters or numbers');
       return;
     }
 
@@ -274,8 +298,8 @@ const ResourcesManager: React.FC = () => {
     }
 
     const normalizedResourceType = normalizeCategory(formData.resourceType);
-    if (!normalizedResourceType || !validateCategory(normalizedResourceType)) {
-      setCategoryError('Category must use letters/numbers and underscores only');
+    if (!normalizedResourceType) {
+      setCategoryError('Category name must include letters or numbers');
       return;
     }
 
@@ -331,13 +355,15 @@ const ResourcesManager: React.FC = () => {
   };
 
   const handleEditClick = (resource: BackendExternalLink) => {
+    const existingType = resource.resourceType || selectedCategory || categories[0] || initialFormData.resourceType;
     setEditingResource(resource);
+    setIsCreatingCategory(!categories.includes(existingType));
     setFormData({
       id: resource.id,
       displayName: resource.displayName || '',
       url: resource.url || '',
       description: resource.description || '',
-      resourceType: resource.resourceType || selectedCategory || categories[0] || initialFormData.resourceType,
+      resourceType: existingType,
     });
     setUrlError(null);
     setCategoryError(null);
@@ -441,6 +467,15 @@ const ResourcesManager: React.FC = () => {
     );
   }
 
+  const availableCategoryOptions = Array.from(
+    new Set(
+      [formData.resourceType, ...categories]
+        .map((category) => category?.trim())
+        .filter((category): category is string => Boolean(category))
+    )
+  );
+  const normalizedCategoryPreview = normalizeCategory(formData.resourceType);
+
   return (
     <Container maxWidth="md">
       <Paper sx={{ p: 3 }}>
@@ -449,13 +484,12 @@ const ResourcesManager: React.FC = () => {
           <Button
             startIcon={<AddIcon />}
             onClick={() => {
-              resetDialog();
-              setOpenDialog(true);
+              openAddResourceDialogForNewCategory();
             }}
             variant="contained"
             color="primary"
           >
-            Add New Resource
+            New Category
           </Button>
         </Box>
 
@@ -495,6 +529,16 @@ const ResourcesManager: React.FC = () => {
 
             {categories.map((category, index) => (
               <TabPanel key={category} value={currentTab < 0 ? 0 : currentTab} index={index}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">{formatCategoryLabel(category)}</Typography>
+                  <Button
+                    startIcon={<AddIcon />}
+                    variant="outlined"
+                    onClick={() => openAddResourceDialogForCategory(category)}
+                  >
+                    Add Resource
+                  </Button>
+                </Box>
                 {renderResourceList(resourcesByCategory[category] || [], category)}
               </TabPanel>
             ))}
@@ -505,30 +549,52 @@ const ResourcesManager: React.FC = () => {
           <DialogTitle>{editingResource ? 'Edit Resource' : 'Add New Resource'}</DialogTitle>
           <DialogContent>
             <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <Autocomplete
-                freeSolo
-                options={categories}
-                value={formData.resourceType}
-                onChange={(_event, value) => {
-                  handleResourceTypeInput(typeof value === 'string' ? value : '');
-                }}
-                onInputChange={(_event, value) => {
-                  handleResourceTypeInput(value);
-                }}
-                renderInput={(params) => (
+              {isCreatingCategory ? (
+                <>
                   <TextField
-                    {...params}
-                    label="Category"
+                    label="New Category Name"
+                    value={formData.resourceType}
+                    onChange={(event) => handleResourceTypeInput(event.target.value)}
                     required
                     error={!!categoryError}
                     helperText={
                       categoryError ||
-                      `Use snake_case. Example: ${normalizeCategory(formData.resourceType || 'first timer') || 'first_timer'}`
+                      `Stable key: ${normalizedCategoryPreview || '(enter a category name)'}`
                     }
-                    placeholder="general"
+                    placeholder="First Timer Resources"
+                    fullWidth
                   />
-                )}
-              />
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setIsCreatingCategory(false);
+                        handleResourceTypeInput(selectedCategory || categories[0] || initialFormData.resourceType);
+                      }}
+                    >
+                      Choose Existing Category
+                    </Button>
+                  </Box>
+                </>
+              ) : (
+                <TextField
+                  select
+                  label="Category"
+                  value={formData.resourceType}
+                  onChange={(event) => handleExistingCategorySelect(event.target.value)}
+                  required
+                  error={!!categoryError}
+                  helperText={categoryError || 'Select an existing category or create a new one'}
+                  fullWidth
+                >
+                  {availableCategoryOptions.map((category) => (
+                    <MenuItem key={category} value={category}>
+                      {formatCategoryLabel(category)}
+                    </MenuItem>
+                  ))}
+                  <MenuItem value="__create_new__">+ Create New Category</MenuItem>
+                </TextField>
+              )}
 
               <TextField
                 label="Display Name"

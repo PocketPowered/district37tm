@@ -6,7 +6,6 @@ import com.district37.toastmasters.models.EventDetails
 import com.district37.toastmasters.models.ExternalLink
 import com.district37.toastmasters.models.TimeRange
 import com.wongislandd.nexus.util.Transformer
-import com.wongislandd.nexus.util.safeLet
 
 class EventDetailsTransformer : Transformer<EventDetailsQuery.Node, EventDetails> {
     private fun parseAgenda(raw: Any): List<AgendaItem> {
@@ -46,22 +45,23 @@ class EventDetailsTransformer : Transformer<EventDetailsQuery.Node, EventDetails
     }
 
     override fun transform(input: EventDetailsQuery.Node): EventDetails? {
-        return safeLet(input.title, input.description, input.location_info, input.start_time, input.end_time
-        ) { title, description, locationInfo, startTime, endTime ->
-            EventDetails(
-                id = input.id.toInt(),
-                images = input.imagesFilterNotNull(),
-                title = title,
-                description = description,
-                time = TimeRange(
-                    startTime,
-                    endTime
-                ),
-                locationInfo = locationInfo,
-                agenda = parseAgenda(input.agenda),
-                additionalLinks = parseLinks(input.additional_links)
-            )
-        }
+        val title = input.title ?: return null
+        val startTime = input.start_time ?: return null
+        val endTime = input.end_time ?: return null
+
+        return EventDetails(
+            id = input.id.toInt(),
+            images = input.imagesFilterNotNull(),
+            title = title,
+            description = input.description ?: "",
+            time = TimeRange(
+                startTime,
+                endTime
+            ),
+            locationInfo = input.location_info ?: "",
+            agenda = parseAgenda(input.agenda),
+            additionalLinks = parseLinks(input.additional_links)
+        )
     }
 
 }

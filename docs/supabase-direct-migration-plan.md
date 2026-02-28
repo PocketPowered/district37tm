@@ -22,6 +22,7 @@ Remove Firebase/Firestore as the application data source and have clients commun
 4. Edge Function uses Firebase service account credentials (Supabase secrets) to call FCM.
 5. Delivery results are stored in `notification_deliveries`.
 6. Broadcast topic standard is `GENERAL`.
+7. Agenda reminders are dispatched by scheduled Edge Function `send-agenda-item-reminders`.
 
 ## Database (Final)
 - `conference_dates` (`date_key` bigint PK)
@@ -32,6 +33,7 @@ Remove Firebase/Firestore as the application data source and have clients commun
 - `push_tokens`
 - `notifications`
 - `notification_deliveries`
+- `agenda_item_reminder_deliveries`
 - RPC: `search_locations(query_text text)`
 
 ## Operational Notes

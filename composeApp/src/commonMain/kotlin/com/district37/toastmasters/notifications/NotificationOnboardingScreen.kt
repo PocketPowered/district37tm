@@ -92,7 +92,7 @@ fun NotificationOnboardingScreen(modifier: Modifier = Modifier) {
                     }
                 }
             ) {
-                Text("OK")
+                Text("Enable now")
             }
 
             TextButton(
@@ -102,7 +102,7 @@ fun NotificationOnboardingScreen(modifier: Modifier = Modifier) {
                 }
             ) {
                 Text(
-                    text = "Skip",
+                    text = "I'll do it later",
                     color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
                 )
             }
