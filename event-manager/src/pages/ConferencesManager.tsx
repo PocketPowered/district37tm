@@ -224,11 +224,15 @@ const ConferencesManager: React.FC = () => {
             {actionError}
           </Alert>
         )}
-        {activeConference && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Active conference: <strong>{activeConference.name}</strong>
-          </Alert>
-        )}
+        <Alert severity={activeConference ? 'success' : 'info'} sx={{ mb: 2 }}>
+          {activeConference ? (
+            <>
+              Active conference (appears in app): <strong>{activeConference.name}</strong>
+            </>
+          ) : (
+            'No active conference is set. Active conferences are the ones that appear in the app.'
+          )}
+        </Alert>
 
         {!hasConferences && (
           <Alert severity="info">No conferences found yet. Create your first conference.</Alert>
