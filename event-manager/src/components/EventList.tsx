@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -36,6 +36,7 @@ import { Event, formatTimeRange } from '../types/Event';
 import { eventService } from '../services/eventService';
 import { dateService } from '../services/dateService';
 import { formatDateKey } from '../utils/dateKey';
+import { useConference } from '../contexts/ConferenceContext';
 
 type SortConfig = {
   key: keyof Event;
@@ -59,6 +60,7 @@ const EventList: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { selectedConference, loading: conferenceLoading } = useConference();
 
   const [dateEvents, setDateEvents] = useState<DateEvents>({});
   const [loading, setLoading] = useState(true);
@@ -70,11 +72,17 @@ const EventList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    void loadAllData();
-  }, []);
+  const loadAllData = useCallback(async (manualRefresh = false) => {
+    if (!selectedConference) {
+      setDateEvents({});
+      setAvailableDates([]);
+      setExpandedDate(null);
+      setError(null);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
 
-  const loadAllData = async (manualRefresh = false) => {
     if (manualRefresh) {
       setRefreshing(true);
     } else {
@@ -82,7 +90,7 @@ const EventList: React.FC = () => {
     }
 
     try {
-      const dates = await dateService.getAvailableDates();
+      const dates = await dateService.getAvailableDates(selectedConference);
       setAvailableDates(dates);
       setError(null);
 
@@ -94,16 +102,19 @@ const EventList: React.FC = () => {
 
       setExpandedDate((prev) => prev ?? dates[0].toString());
 
-      const eventsByDate = await Promise.all(
-        dates.map(async (timestamp) => {
-          const events = await eventService.getEventsByDate(timestamp);
-          return { timestamp, events };
-        }),
-      );
-
       const nextDateEvents: DateEvents = {};
-      eventsByDate.forEach(({ timestamp, events }) => {
-        nextDateEvents[timestamp.toString()] = events;
+      dates.forEach((timestamp) => {
+        nextDateEvents[timestamp.toString()] = [];
+      });
+
+      const conferenceEvents = await eventService.getAllEvents(selectedConference.id);
+      conferenceEvents.forEach((event) => {
+        const timestamp = Number.parseInt(event.dateKey, 10);
+        if (!Number.isFinite(timestamp) || !nextDateEvents[timestamp.toString()]) {
+          return;
+        }
+
+        nextDateEvents[timestamp.toString()].push(event);
       });
 
       setDateEvents(nextDateEvents);
@@ -117,20 +128,14 @@ const EventList: React.FC = () => {
         setLoading(false);
       }
     }
-  };
+  }, [selectedConference]);
 
-  const loadEventsForDate = async (timestamp: number) => {
-    try {
-      const events = await eventService.getEventsByDate(timestamp);
-      setDateEvents((prev) => ({
-        ...prev,
-        [timestamp.toString()]: events,
-      }));
-    } catch (loadError) {
-      console.error(`Error loading events for date ${timestamp}:`, loadError);
-      setError(`Failed to load events for ${formatDateKey(timestamp)}. Please try again.`);
+  useEffect(() => {
+    if (conferenceLoading) {
+      return;
     }
-  };
+    void loadAllData();
+  }, [conferenceLoading, loadAllData]);
 
   const handleSort = (key: keyof Event) => {
     setSortConfig((current) => ({
@@ -144,8 +149,12 @@ const EventList: React.FC = () => {
       return;
     }
 
+    if (!selectedConference) {
+      return;
+    }
+
     try {
-      await eventService.deleteEvent(id);
+      await eventService.deleteEvent(id, selectedConference.id);
       setDateEvents((prev) => {
         const next = { ...prev };
         Object.keys(next).forEach((dateKey) => {
@@ -217,16 +226,28 @@ const EventList: React.FC = () => {
   const handleAccordionChange =
     (timestamp: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
       setExpandedDate(isExpanded ? timestamp : null);
-      if (isExpanded) {
-        void loadEventsForDate(Number(timestamp));
-      }
     };
 
-  if (loading) {
+  if (conferenceLoading || loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
         <CircularProgress />
       </Box>
+    );
+  }
+
+  if (!selectedConference) {
+    return (
+      <Stack spacing={2} sx={{ m: 2 }}>
+        <Alert severity="warning">
+          No conference selected. Choose a conference first.
+        </Alert>
+        <Box>
+          <Button variant="contained" onClick={() => navigate('/conferences')}>
+            Go to Conferences
+          </Button>
+        </Box>
+      </Stack>
     );
   }
 
@@ -243,6 +264,21 @@ const EventList: React.FC = () => {
     );
   }
 
+  if (!availableDates.length) {
+    return (
+      <Stack spacing={2} sx={{ m: 2 }}>
+        <Alert severity="warning">
+          The selected conference has no date range. Set conference start and end dates to schedule events.
+        </Alert>
+        <Box>
+          <Button variant="contained" onClick={() => navigate('/conferences')}>
+            Go to Conferences
+          </Button>
+        </Box>
+      </Stack>
+    );
+  }
+
   if (!totalEventsCount) {
     return (
       <Box sx={{ p: 2, textAlign: 'center' }}>
@@ -250,7 +286,7 @@ const EventList: React.FC = () => {
           No Events Found
         </Typography>
         <Typography variant="body1" color="text.secondary" paragraph>
-          There are no events scheduled yet. Click below to create the first event.
+          There are no events scheduled yet for {selectedConference.name}. Click below to create the first event.
         </Typography>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/events/new')} sx={{ mt: 2 }}>
           Create New Event
@@ -265,24 +301,16 @@ const EventList: React.FC = () => {
         p: { xs: 1, sm: 2 },
         width: '100%',
         maxWidth: '100%',
+        textAlign: 'left',
       }}
     >
       <Stack spacing={2.5}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
-          justifyContent="space-between"
+          justifyContent="flex-end"
           alignItems={{ xs: 'stretch', sm: 'center' }}
           spacing={1.5}
         >
-          <Box>
-            <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-              Event Manager
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Update event information quickly and keep schedules accurate.
-            </Typography>
-          </Box>
-
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
             <Button
               variant="outlined"
@@ -298,7 +326,12 @@ const EventList: React.FC = () => {
           </Stack>
         </Stack>
 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'stretch', md: 'center' }}>
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={1.5}
+          alignItems={{ xs: 'stretch', md: 'center' }}
+          sx={{ mb: 1 }}
+        >
           <TextField
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -315,11 +348,29 @@ const EventList: React.FC = () => {
           />
 
           <Stack direction="row" spacing={1}>
-            <Chip color="primary" variant="outlined" label={`${totalEventsCount} total`} />
+            <Chip
+              label={`${totalEventsCount} total`}
+              variant="outlined"
+              sx={{
+                color: 'primary.dark',
+                borderColor: 'primary.main',
+                backgroundColor: (muiTheme) => muiTheme.palette.primary.main + '14',
+                fontWeight: 600,
+              }}
+            />
             <Chip
               color={searchQuery.trim() ? 'secondary' : 'default'}
               variant="outlined"
               label={`${filteredEventsCount} shown`}
+              sx={{
+                color: searchQuery.trim() ? 'secondary.dark' : 'text.primary',
+                borderColor: searchQuery.trim() ? 'secondary.main' : 'divider',
+                backgroundColor: (muiTheme) =>
+                  searchQuery.trim()
+                    ? muiTheme.palette.secondary.main + '14'
+                    : muiTheme.palette.action.hover,
+                fontWeight: 600,
+              }}
             />
           </Stack>
         </Stack>
@@ -337,17 +388,18 @@ const EventList: React.FC = () => {
           </Alert>
         )}
 
-        {availableDates.map((timestamp) => {
-          const events = dateEvents[timestamp.toString()] || [];
-          const filteredEvents = getFilteredEvents(events);
-          const sortedEvents = getSortedEvents(filteredEvents);
+        <Box sx={{ mt: 1.5 }}>
+          {availableDates.map((timestamp) => {
+            const events = dateEvents[timestamp.toString()] || [];
+            const filteredEvents = getFilteredEvents(events);
+            const sortedEvents = getSortedEvents(filteredEvents);
 
-          return (
-            <Accordion
-              key={timestamp}
-              expanded={expandedDate === timestamp.toString()}
-              onChange={handleAccordionChange(timestamp.toString())}
-            >
+            return (
+              <Accordion
+                key={timestamp}
+                expanded={expandedDate === timestamp.toString()}
+                onChange={handleAccordionChange(timestamp.toString())}
+              >
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Stack
                   direction={{ xs: 'column', sm: 'row' }}
@@ -362,6 +414,14 @@ const EventList: React.FC = () => {
                     size="small"
                     label={`${sortedEvents.length} shown${searchQuery.trim() ? ` / ${events.length} total` : ''}`}
                     variant="outlined"
+                    sx={{
+                      color: 'common.white',
+                      borderColor: 'rgba(255,255,255,0.65)',
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      '& .MuiChip-label': {
+                        fontWeight: 600,
+                      },
+                    }}
                   />
                 </Stack>
               </AccordionSummary>
@@ -526,9 +586,10 @@ const EventList: React.FC = () => {
                   </Box>
                 )}
               </AccordionDetails>
-            </Accordion>
-          );
-        })}
+              </Accordion>
+            );
+          })}
+        </Box>
       </Stack>
 
       <Snackbar

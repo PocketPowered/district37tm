@@ -1,6 +1,5 @@
 package com.district37.toastmasters.navigation
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,8 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
-import com.district37.toastmasters.notifications.NotificationBadge
-import com.wongislandd.nexus.navigation.LocalNavHostController
 
 @Composable
 fun DrawerContent(
@@ -56,22 +53,22 @@ fun DrawerContent(
 
         // Drawer Items
         drawerItems.forEach { item ->
-            val isSelected = currentNavigationItem.navigationKey == item.key.name
-            if (item.key == NavigationItemKey.NOTIFICATIONS) {
-                NotificationEntryDrawerItem(
-                    item = item,
-                    isSelected = isSelected
-                )
-            } else {
-                DrawerItem(
-                    item = item,
-                    isSelected = isSelected,
-                    onItemClick = {
-                        onItemClick(item.key)
-                        onCloseDrawer()
-                    }
-                )
+            val isSelected = when (item.key) {
+                NavigationItemKey.EVENT_LIST -> {
+                    currentNavigationItem.navigationKey == NavigationItemKey.EVENT_LIST.name ||
+                        currentNavigationItem.navigationKey == NavigationItemKey.EVENT_DETAILS.name
+                }
+
+                else -> currentNavigationItem.navigationKey == item.key.name
             }
+            DrawerItem(
+                item = item,
+                isSelected = isSelected,
+                onItemClick = {
+                    onItemClick(item.key)
+                    onCloseDrawer()
+                }
+            )
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -113,38 +110,6 @@ private fun DrawerItemContent(
         Spacer(modifier = Modifier.width(8.dp))
         trailingIcon?.also {
             it()
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterialApi::class)
-@Composable
-fun NotificationEntryDrawerItem(
-    item: DrawerItem,
-    isSelected: Boolean
-) {
-    val appViewModel = LocalAppViewModel.current
-    val navController = LocalNavHostController.current
-
-    val backgroundColor = if (isSelected) {
-        MaterialTheme.colors.primary.copy(alpha = 0.1f)
-    } else {
-        MaterialTheme.colors.surface
-    }
-    Box {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            color = backgroundColor,
-            onClick = {
-                appViewModel.navigate(
-                    navController,
-                    NavigationItemKey.NOTIFICATIONS
-                )
-            }
-        ) {
-            DrawerItemContent(item, isSelected, trailingIcon = { NotificationBadge() })
         }
     }
 }

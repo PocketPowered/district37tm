@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.Card
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
@@ -294,8 +295,12 @@ private fun CalendarEventBlock(
             .width(columnWidth)
             .height(height)
             .clickable { onClick() },
-        shape = RoundedCornerShape(8.dp),
-        elevation = 3.dp,
+        shape = RoundedCornerShape(6.dp),
+        elevation = if (positionedEvent.totalColumns > 1) 0.dp else 1.dp,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colors.onSurface.copy(alpha = 0.10f)
+        ),
         backgroundColor = backgroundColor
     ) {
         Column(
@@ -344,7 +349,21 @@ private fun CalendarEventBlock(
                 style = MaterialTheme.typography.body2,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colors.onSurface,
-                maxLines = if (positionedEvent.totalColumns >= 3) 2 else 3,
+                maxLines = when {
+                    // Dense overlap: stay conservative, but still expand on very tall cards.
+                    positionedEvent.totalColumns >= 3 && calculatedHeight < 180f -> 2
+                    positionedEvent.totalColumns >= 3 && calculatedHeight < 260f -> 3
+                    positionedEvent.totalColumns >= 3 -> 4
+                    // Medium overlap: allow a bit more title content.
+                    positionedEvent.totalColumns == 2 && calculatedHeight < 160f -> 3
+                    positionedEvent.totalColumns == 2 && calculatedHeight < 240f -> 4
+                    positionedEvent.totalColumns == 2 -> 5
+                    // Full width cards can use height more aggressively.
+                    calculatedHeight < 140f -> 3
+                    calculatedHeight < 210f -> 4
+                    calculatedHeight < 300f -> 5
+                    else -> 6
+                },
                 overflow = TextOverflow.Ellipsis
             )
 

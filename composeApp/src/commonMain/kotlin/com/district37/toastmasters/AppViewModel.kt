@@ -4,6 +4,7 @@ import androidx.navigation.NavController
 import co.touchlab.kermit.Logger
 import com.district37.toastmasters.favorites.FavoritedEventsSlice
 import com.district37.toastmasters.navigation.NavigationItemKey
+import com.district37.toastmasters.navigation.supportedNavigationItems
 import com.district37.toastmasters.notifications.NotificationOnboardingStore
 import com.district37.toastmasters.notifications.NotificationsSlice
 import com.district37.toastmasters.splash.SplashRepository
@@ -39,14 +40,19 @@ class AppViewModel(
         navigationController: NavController,
         navigationKey: NavigationItemKey,
         args: Map<String, Any?> = emptyMap(),
-        removeSelfFromStack: Boolean = false
+        removeSelfFromStack: Boolean = false,
+        isTopLevelDestination: Boolean = false
     ) {
         Logger.withTag("Navigation").i { "Navigating to $navigationKey!" }
+        val homeRoute = supportedNavigationItems[NavigationItemKey.EVENT_LIST]?.baseRoute
+            ?: throw IllegalStateException("Home route missing")
         navigationSlice.navigationHelper.navigate(
             navigationController,
             navigationKey.name,
             args,
-            removeSelfFromStack
+            removeSelfFromStack,
+            isTopLevelDestination,
+            homeRoute
         )
     }
 

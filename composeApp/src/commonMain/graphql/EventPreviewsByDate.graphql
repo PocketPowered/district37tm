@@ -1,6 +1,6 @@
-query EventPreviewsByDate($dateKey: BigInt!) {
+query EventPreviewsByDate($conferenceId: BigInt!, $dateKey: BigInt!) {
   eventsCollection(
-    filter: { date_key: { eq: $dateKey } }
+    filter: { conference_id: { eq: $conferenceId }, date_key: { eq: $dateKey } }
     orderBy: [{ start_time: AscNullsLast }]
   ) {
     edges {
@@ -16,4 +16,3 @@ query EventPreviewsByDate($dateKey: BigInt!) {
     }
   }
 }
-

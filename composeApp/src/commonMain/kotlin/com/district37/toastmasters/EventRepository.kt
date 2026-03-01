@@ -6,12 +6,87 @@ import com.district37.toastmasters.graphql.EventDetailsQuery
 import com.district37.toastmasters.graphql.EventPreviewsByDateQuery
 import com.wongislandd.nexus.util.ErrorType
 import com.wongislandd.nexus.util.Resource
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 
 class EventRepository(private val apolloClient: ApolloClient) {
+    private data class ActiveConferenceDateRange(
+        val conferenceId: Long,
+        val startDateIso: String?,
+        val endDateIso: String?
+    )
+
+    private suspend fun getActiveConferenceDateRange(): Resource<ActiveConferenceDateRange> {
+        return try {
+            val response = apolloClient.query(AvailableDatesQuery()).execute()
+            if (response.hasErrors()) {
+                return Resource.Error(ErrorType.CLIENT_ERROR)
+            }
+
+            val activeConference = response.data?.conferencesCollection?.edges?.firstOrNull()?.node
+                ?: return Resource.Error(ErrorType.NOT_FOUND)
+
+            Resource.Success(
+                ActiveConferenceDateRange(
+                    conferenceId = activeConference.id,
+                    startDateIso = normalizeDateScalar(activeConference.start_date),
+                    endDateIso = normalizeDateScalar(activeConference.end_date)
+                )
+            )
+        } catch (e: Exception) {
+            Resource.Error(ErrorType.UNKNOWN, e)
+        }
+    }
+
+    private fun parseDateKey(dateIso: String): Long? {
+        return try {
+            LocalDate.parse(dateIso)
+                .atStartOfDayIn(TimeZone.UTC)
+                .toEpochMilliseconds()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun normalizeDateScalar(value: Any?): String? {
+        return when (value) {
+            null -> null
+            is String -> value
+            else -> value.toString().takeIf { it.isNotBlank() }
+        }
+    }
+
+    private fun generateDateKeys(startDateIso: String?, endDateIso: String?): List<Long> {
+        val startDateKey = startDateIso?.let(::parseDateKey) ?: return emptyList()
+        val endDateKey = endDateIso?.let(::parseDateKey) ?: return emptyList()
+        if (endDateKey < startDateKey) {
+            return emptyList()
+        }
+
+        val oneDayMs = 86_400_000L
+        return buildList {
+            var current = startDateKey
+            while (current <= endDateKey) {
+                add(current)
+                current += oneDayMs
+            }
+        }
+    }
 
     suspend fun getEventDetails(id: Int): Resource<EventDetailsQuery.Node> {
+        val activeConference = getActiveConferenceDateRange()
+        if (activeConference !is Resource.Success) {
+            return if (activeConference is Resource.Error) activeConference else Resource.Error(ErrorType.CLIENT_ERROR)
+        }
+
         return try {
-            val response = apolloClient.query(EventDetailsQuery(id.toLong())).execute()
+            val response = apolloClient.query(
+                EventDetailsQuery(
+                    id = id.toLong(),
+                    conferenceId = activeConference.data.conferenceId
+                )
+            ).execute()
             if (response.hasErrors()) {
                 return Resource.Error(ErrorType.CLIENT_ERROR)
             }
@@ -26,14 +101,23 @@ class EventRepository(private val apolloClient: ApolloClient) {
     }
 
     suspend fun getEventsByKey(dateKey: Long): Resource<List<EventPreviewsByDateQuery.Node>> {
+        val activeConference = getActiveConferenceDateRange()
+        if (activeConference !is Resource.Success) {
+            return if (activeConference is Resource.Error) activeConference else Resource.Error(ErrorType.CLIENT_ERROR)
+        }
+
         return try {
-            val response = apolloClient.query(EventPreviewsByDateQuery(dateKey)).execute()
+            val response = apolloClient.query(
+                EventPreviewsByDateQuery(
+                    conferenceId = activeConference.data.conferenceId,
+                    dateKey = dateKey
+                )
+            ).execute()
             if (response.hasErrors()) {
                 return Resource.Error(ErrorType.CLIENT_ERROR)
             }
 
             val previews = response.data?.eventsCollection?.edges?.map { it.node } ?: emptyList()
-
             Resource.Success(previews)
         } catch (e: Exception) {
             Resource.Error(ErrorType.UNKNOWN, e)
@@ -41,16 +125,11 @@ class EventRepository(private val apolloClient: ApolloClient) {
     }
 
     suspend fun getAvailableDates(): Resource<List<Long>> {
-        return try {
-            val response = apolloClient.query(AvailableDatesQuery()).execute()
-            if (response.hasErrors()) {
-                return Resource.Error(ErrorType.CLIENT_ERROR)
-            }
-
-            val dates = response.data?.conference_datesCollection?.edges?.map { it.node.date_key } ?: emptyList()
-            Resource.Success(dates)
-        } catch (e: Exception) {
-            Resource.Error(ErrorType.UNKNOWN, e)
+        return getActiveConferenceDateRange().map { activeConference ->
+            generateDateKeys(
+                startDateIso = activeConference.startDateIso,
+                endDateIso = activeConference.endDateIso
+            )
         }
     }
 }

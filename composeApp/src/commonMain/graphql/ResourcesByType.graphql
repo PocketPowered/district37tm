@@ -1,6 +1,6 @@
-query ResourcesByType($resourceType: String!) {
+query ResourcesByType($conferenceId: BigInt!, $resourceType: String!) {
   resourcesCollection(
-    filter: { resource_type: { eq: $resourceType } }
+    filter: { conference_id: { eq: $conferenceId }, resource_type: { eq: $resourceType } }
     orderBy: [{ created_at: DescNullsLast }]
   ) {
     edges {
@@ -13,4 +13,3 @@ query ResourcesByType($resourceType: String!) {
     }
   }
 }
-

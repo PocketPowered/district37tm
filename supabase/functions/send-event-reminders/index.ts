@@ -10,13 +10,22 @@ type EventRow = {
   end_time: number | null;
   notify_before: unknown;
   notification_lead_minutes: unknown;
+  notification_channel: unknown;
 };
-type ParsedEventReminder = { title: string; locationInfo: string; startTime: number; leadMinutes: number };
+type ParsedEventReminder = {
+  title: string;
+  locationInfo: string;
+  startTime: number;
+  leadMinutes: number;
+  notificationChannel: string | null;
+};
 
 type SupabaseClient = ReturnType<typeof createClient>;
 
 const DEFAULT_LEAD_MINUTES = 15;
 const MAX_LEAD_MINUTES = 24 * 60;
+const MAX_TOPIC_LENGTH = 900;
+const TOPIC_PATTERN = /^[A-Za-z0-9\-_.~%]+$/;
 const SCAN_WINDOW_PAST_MS = 90_000;
 const SCAN_WINDOW_FUTURE_MS = 30_000;
 const EVENT_LOOKAHEAD_MS = 36 * 60 * 60 * 1000;
@@ -47,6 +56,20 @@ const parsePositiveInt = (value: unknown, fallback: number) => {
   return fallback;
 };
 
+const normalizeTopic = (value: unknown): string | null => {
+  if (typeof value !== "string") return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const withoutPrefix = trimmed.startsWith("/topics/") ? trimmed.slice("/topics/".length) : trimmed;
+  if (!withoutPrefix) return null;
+  if (withoutPrefix.length > MAX_TOPIC_LENGTH) return null;
+  if (!TOPIC_PATTERN.test(withoutPrefix)) return null;
+
+  return withoutPrefix;
+};
+
 const parseEventReminder = (raw: EventRow): ParsedEventReminder | null => {
   if (!(raw.notify_before === true || raw.notify_before === "true")) return null;
 
@@ -58,6 +81,7 @@ const parseEventReminder = (raw: EventRow): ParsedEventReminder | null => {
     locationInfo: typeof raw.location_info === "string" ? raw.location_info : "",
     startTime,
     leadMinutes: parsePositiveInt(raw.notification_lead_minutes, DEFAULT_LEAD_MINUTES),
+    notificationChannel: normalizeTopic(raw.notification_channel),
   };
 };
 
@@ -161,12 +185,12 @@ Deno.serve(async (req) => {
     }
 
     const requestBody = (await req.json().catch(() => ({}))) as EventReminderRequest;
-    const topic = requestBody.topic?.trim() || "GENERAL";
+    const defaultTopic = normalizeTopic(requestBody.topic) || "GENERAL";
 
     const nowMs = Date.now();
     const { data: events, error: eventsError } = await adminClient
       .from("events")
-      .select("id, title, location_info, start_time, end_time, notify_before, notification_lead_minutes")
+      .select("id, title, location_info, start_time, end_time, notify_before, notification_lead_minutes, notification_channel")
       .gte("end_time", nowMs - 5 * 60_000)
       .lte("start_time", nowMs + EVENT_LOOKAHEAD_MS)
       .order("start_time", { ascending: true });
@@ -226,6 +250,7 @@ Deno.serve(async (req) => {
       const body = due.reminder.locationInfo.trim()
         ? `${due.reminder.title} is about to begin at ${due.reminder.locationInfo}.`
         : `${due.reminder.title} is about to begin.`;
+      const topic = due.reminder.notificationChannel || defaultTopic;
 
       const { data: notificationRecord, error: notificationInsertError } = await adminClient
         .from("notifications")
@@ -278,7 +303,7 @@ Deno.serve(async (req) => {
       sentCount,
       failedCount,
       duplicateCount,
-      topic,
+      defaultTopic,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

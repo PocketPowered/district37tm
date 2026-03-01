@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  Box, 
-  Button, 
-  Container, 
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  Box,
+  Button,
+  Container,
   Typography,
   Paper,
   CircularProgress,
@@ -12,16 +12,22 @@ import {
   DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogActions
+  DialogActions,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { dateService } from '../services/dateService';
 import AddIcon from '@mui/icons-material/Add';
+import { dateService } from '../services/dateService';
 import { createUtcDateKeyFromDate, formatDateKey } from '../utils/dateKey';
+import { useConference } from '../contexts/ConferenceContext';
 
 const DateManager: React.FC = () => {
+  const {
+    selectedConference,
+    loading: conferenceLoading,
+    refreshConferences,
+  } = useConference();
   const [dates, setDates] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +36,16 @@ const DateManager: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [dateToDelete, setDateToDelete] = useState<number | null>(null);
 
-  const fetchDates = async () => {
+  const fetchDates = useCallback(async () => {
+    if (!selectedConference) {
+      setDates([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const fetchedDates = await dateService.getDates();
+      const fetchedDates = await dateService.getDates(selectedConference);
       setDates(fetchedDates);
       setError(null);
     } catch (err) {
@@ -41,17 +54,23 @@ const DateManager: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedConference]);
 
   useEffect(() => {
-    fetchDates();
-  }, []);
+    setLoading(true);
+    void fetchDates();
+  }, [fetchDates]);
 
   const handleAddDate = async () => {
     if (!selectedDate) return;
-    
+    if (!selectedConference) {
+      setError('Select a conference before adding dates.');
+      return;
+    }
+
     try {
-      await dateService.addDate(createUtcDateKeyFromDate(selectedDate));
+      await dateService.addDate(createUtcDateKeyFromDate(selectedDate), selectedConference);
+      await refreshConferences();
       await fetchDates();
       setSelectedDate(null);
       setOpenDialog(false);
@@ -69,7 +88,8 @@ const DateManager: React.FC = () => {
   const handleRemoveConfirm = async () => {
     if (!dateToDelete) return;
     try {
-      await dateService.removeDate(dateToDelete);
+      await dateService.removeDate(dateToDelete, selectedConference);
+      await refreshConferences();
       await fetchDates();
       setDeleteDialogOpen(false);
       setDateToDelete(null);
@@ -84,7 +104,7 @@ const DateManager: React.FC = () => {
     setDateToDelete(null);
   };
 
-  if (loading) {
+  if (conferenceLoading || loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
         <CircularProgress />
@@ -92,14 +112,29 @@ const DateManager: React.FC = () => {
     );
   }
 
+  if (!selectedConference) {
+    return (
+      <Container maxWidth="md">
+        <Paper sx={{ p: 3 }}>
+          <Alert severity="warning">
+            No conference selected. Choose a conference before managing dates.
+          </Alert>
+        </Paper>
+      </Container>
+    );
+  }
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Container maxWidth="md">
         <Paper sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h5">
-              Date Manager
-            </Typography>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="flex-end"
+            alignItems={{ xs: 'stretch', sm: 'center' }}
+            spacing={2}
+            sx={{ mb: 3 }}
+          >
             <Button
               startIcon={<AddIcon />}
               onClick={() => setOpenDialog(true)}
@@ -108,7 +143,7 @@ const DateManager: React.FC = () => {
             >
               Add New Date
             </Button>
-          </Box>
+          </Stack>
 
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
@@ -122,7 +157,7 @@ const DateManager: React.FC = () => {
                 No Dates Found
               </Typography>
               <Typography color="text.secondary" paragraph>
-                There are no dates scheduled yet. Click the button above to add your first date.
+                There are no dates in this selected conference yet. Add one to begin scheduling events.
               </Typography>
             </Box>
           ) : (
@@ -138,10 +173,7 @@ const DateManager: React.FC = () => {
                         year: 'numeric',
                       })}
                     </Typography>
-                    <Button
-                      color="error"
-                      onClick={() => handleRemoveClick(timestamp)}
-                    >
+                    <Button color="error" onClick={() => handleRemoveClick(timestamp)}>
                       Remove
                     </Button>
                   </Box>
@@ -164,11 +196,7 @@ const DateManager: React.FC = () => {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-              <Button 
-                onClick={handleAddDate} 
-                disabled={!selectedDate}
-                variant="contained"
-              >
+              <Button onClick={handleAddDate} disabled={!selectedDate} variant="contained">
                 Add Date
               </Button>
             </DialogActions>
@@ -199,4 +227,4 @@ const DateManager: React.FC = () => {
   );
 };
 
-export default DateManager; 
+export default DateManager;

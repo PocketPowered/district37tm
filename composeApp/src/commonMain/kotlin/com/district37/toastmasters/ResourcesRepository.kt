@@ -1,6 +1,7 @@
 package com.district37.toastmasters
 
 import com.apollographql.apollo3.ApolloClient
+import com.district37.toastmasters.graphql.ActiveConferenceQuery
 import com.district37.toastmasters.graphql.AllResourcesQuery
 import com.district37.toastmasters.models.ExternalLink
 import com.district37.toastmasters.resources.ResourceLinkTransformer
@@ -16,10 +17,22 @@ class ResourcesRepository(
     private val apolloClient: ApolloClient,
     private val resourceLinkTransformer: ResourceLinkTransformer
 ) {
+    private suspend fun getActiveConferenceId(): Long? {
+        return try {
+            val response = apolloClient.query(ActiveConferenceQuery()).execute()
+            if (response.hasErrors()) {
+                return null
+            }
+            response.data?.conferencesCollection?.edges?.firstOrNull()?.node?.id
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     suspend fun getAllResources(): Resource<List<ResourceWithCategory>> {
         return try {
-            val response = apolloClient.query(AllResourcesQuery()).execute()
+            val conferenceId = getActiveConferenceId() ?: return Resource.Error(ErrorType.NOT_FOUND)
+            val response = apolloClient.query(AllResourcesQuery(conferenceId)).execute()
             if (response.hasErrors()) {
                 return Resource.Error(ErrorType.CLIENT_ERROR)
             }

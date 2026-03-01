@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.district37.toastmasters.LocalAppViewModel
 import com.wongislandd.nexus.GenericErrorScreen
 import com.wongislandd.nexus.GenericLoadingScreen
 import com.wongislandd.nexus.navigation.GlobalTopAppBar
@@ -31,6 +32,7 @@ fun <T> StatefulScaffold(
     resource: Resource<T>,
     successContent: @Composable (T) -> Unit
 ) {
+    val appViewModel = LocalAppViewModel.current
     val navController = LocalNavHostController.current
     val coroutineScope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -56,10 +58,11 @@ fun <T> StatefulScaffold(
             {
                 DrawerContent(
                     onItemClick = { key ->
-                        val navigationItem = requireNotNull(supportedNavigationItems[key]) {
-                            "Couldn't find navigation item with key $key!"
-                        }
-                        navController.navigate(navigationItem.completeRoute)
+                        appViewModel.navigate(
+                            navigationController = navController,
+                            navigationKey = key,
+                            isTopLevelDestination = true
+                        )
                     },
                     onCloseDrawer = {
                         coroutineScope.launch(Dispatchers.Main) {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { 
   Box, 
   Button, 
@@ -24,8 +24,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { handleImageLoadError } from '../utils/imageFallback';
+import { useConference } from '../contexts/ConferenceContext';
 
 const LocationsManager: React.FC = () => {
+  const { selectedConference, loading: conferenceLoading } = useConference();
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,9 +42,16 @@ const LocationsManager: React.FC = () => {
   });
   const [newImageUrl, setNewImageUrl] = useState('');
 
-  const fetchLocations = async () => {
+  const fetchLocations = useCallback(async () => {
+    if (!selectedConference) {
+      setLocations([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const locations = await locationService.getAllLocations();
+      const locations = await locationService.getAllLocations(selectedConference.id);
       setLocations(locations);
       setError(null);
     } catch (err) {
@@ -51,15 +60,17 @@ const LocationsManager: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedConference]);
 
   useEffect(() => {
-    fetchLocations();
-  }, []);
+    setLoading(true);
+    void fetchLocations();
+  }, [fetchLocations]);
 
   const handleAddLocation = async () => {
+    if (!selectedConference) return;
     try {
-      await locationService.createLocation(formData);
+      await locationService.createLocation(formData, selectedConference.id);
       await fetchLocations();
       setFormData({ id: '', locationName: '', locationImages: [] });
       setOpenDialog(false);
@@ -71,8 +82,9 @@ const LocationsManager: React.FC = () => {
 
   const handleUpdateLocation = async () => {
     if (!editingLocation?.id) return;
+    if (!selectedConference) return;
     try {
-      await locationService.updateLocation(editingLocation.id, formData);
+      await locationService.updateLocation(editingLocation.id, formData, selectedConference.id);
       await fetchLocations();
       setFormData({ id: '', locationName: '', locationImages: [] });
       setEditingLocation(null);
@@ -90,8 +102,9 @@ const LocationsManager: React.FC = () => {
 
   const handleRemoveConfirm = async () => {
     if (!locationToDelete?.id) return;
+    if (!selectedConference) return;
     try {
-      await locationService.deleteLocation(locationToDelete.id);
+      await locationService.deleteLocation(locationToDelete.id, selectedConference.id);
       await fetchLocations();
       setDeleteDialogOpen(false);
       setLocationToDelete(null);
@@ -153,7 +166,7 @@ const LocationsManager: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (conferenceLoading || loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
         <CircularProgress />
@@ -161,13 +174,20 @@ const LocationsManager: React.FC = () => {
     );
   }
 
+  if (!selectedConference) {
+    return (
+      <Container maxWidth="md">
+        <Paper sx={{ p: 3 }}>
+          <Alert severity="warning">No conference selected. Choose a conference before managing locations.</Alert>
+        </Paper>
+      </Container>
+    );
+  }
+
   return (
     <Container maxWidth="md">
       <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5">
-            Locations Manager
-          </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
           <Button
             startIcon={<AddIcon />}
             onClick={() => {

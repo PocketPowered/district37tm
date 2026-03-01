@@ -1,5 +1,5 @@
-query EventDetails($id: BigInt!) {
-  eventsCollection(first: 1, filter: { id: { eq: $id } }) {
+query EventDetails($id: BigInt!, $conferenceId: BigInt!) {
+  eventsCollection(first: 1, filter: { id: { eq: $id }, conference_id: { eq: $conferenceId } }) {
     edges {
       node {
         id
@@ -10,7 +10,6 @@ query EventDetails($id: BigInt!) {
         end_time
         location_info
         additional_links
-        date_key
         tag
       }
     }

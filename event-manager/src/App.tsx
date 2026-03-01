@@ -1,266 +1,83 @@
-import React, { useState } from 'react';
-import { HashRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
-import { 
-  ThemeProvider, 
-  CssBaseline, 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Container, 
-  Button, 
-  Box,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  ListItemIcon,
-  useTheme,
-  useMediaQuery
-} from '@mui/material';
-import { lightTheme, darkTheme } from './theme';
+import React from 'react';
+import { HashRouter as Router, Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { Box, CircularProgress, CssBaseline, ThemeProvider } from '@mui/material';
+import { lightTheme } from './theme';
 import EventList from './components/EventList';
 import EventForm from './components/EventForm';
 import NotificationForm from './components/NotificationForm';
-import DateManager from './pages/DateManager';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Admin from './pages/Admin';
-import MenuIcon from '@mui/icons-material/Menu';
-import EventIcon from '@mui/icons-material/Event';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import LinkIcon from '@mui/icons-material/Link';
-import LogoutIcon from '@mui/icons-material/Logout';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ResourcesManager from './pages/ResourcesManager';
 import LocationsManager from './pages/LocationsManager';
 import ErrorBoundary from './components/ErrorBoundary';
-import './App.css';
+import AdminShell from './components/AdminShell';
+import ConferencesManager from './pages/ConferencesManager';
+import { ConferenceProvider, useConference } from './contexts/ConferenceContext';
+
+const RequireConferenceSelection: React.FC = () => {
+  const { selectedConferenceId, loading } = useConference();
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!selectedConferenceId) {
+    return <Navigate to="/conferences" replace />;
+  }
+
+  return <Outlet />;
+};
 
 const AppContent: React.FC = () => {
-  const { currentUser, logout, isAuthorized } = useAuth();
-  const location = useLocation();
-  const isDarkMode = false;
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const handleNavigation = () => {
-    setMobileOpen(false);
-  };
-
-  const isPathActive = (path: string): boolean => {
-    if (path === '/') {
-      return location.pathname === '/' || location.pathname.startsWith('/events/');
-    }
-
-    return location.pathname.startsWith(path);
-  };
-
-  const navigationItems = isAuthorized ? [
-    { text: 'Event Manager', icon: <EventIcon />, path: '/' },
-    { text: 'Resources', icon: <LinkIcon />, path: '/resources' },
-    { text: 'Locations', icon: <LocationOnIcon />, path: '/locations' },
-    { text: 'Date Manager', icon: <CalendarMonthIcon />, path: '/dates' },
-    { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
-    { text: 'Authorized Users', icon: <AdminPanelSettingsIcon />, path: '/admin' },
-  ] : [];
-
-  const drawer = (
-    <List>
-      {navigationItems.map((item) => (
-        <ListItem key={item.text} disablePadding>
-          <ListItemButton
-            component={Link}
-            to={item.path}
-            onClick={handleNavigation}
-            selected={isPathActive(item.path)}
-          >
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItemButton>
-        </ListItem>
-      ))}
-      {currentUser && (
-        <ListItem disablePadding>
-          <ListItemButton onClick={logout}>
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText primary="Logout" />
-          </ListItemButton>
-        </ListItem>
-      )}
-    </List>
-  );
-
   return (
-    <ThemeProvider theme={isDarkMode ? darkTheme : lightTheme}>
-      <CssBaseline />
-      <div className="App">
-        <AppBar position="static">
-          <Toolbar sx={{ justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {currentUser && isAuthorized && isMobile && (
-                <IconButton
-                  color="inherit"
-                  aria-label="open drawer"
-                  edge="start"
-                  onClick={handleDrawerToggle}
-                  sx={{ mr: 2 }}
-                >
-                  <MenuIcon />
-                </IconButton>
-              )}
-              <Typography 
-                variant="h6" 
-                component="div" 
-                sx={{ 
-                  fontSize: { xs: '1rem', sm: '1.25rem' }
-                }}
-              >
-                District 37 Toastmasters Admin
-              </Typography>
-            </Box>
-            {currentUser && (
-              <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 2, ml: 'auto' }}>
-                {isAuthorized && navigationItems.map((item) => (
-                  <Button
-                    key={item.text}
-                    color="inherit"
-                    component={Link}
-                    to={item.path}
-                    sx={{
-                      borderBottom: isPathActive(item.path) ? '2px solid rgba(255, 255, 255, 0.95)' : '2px solid transparent',
-                      borderRadius: 0,
-                      opacity: isPathActive(item.path) ? 1 : 0.88,
-                    }}
-                  >
-                    {item.text}
-                  </Button>
-                ))}
-                <Button color="inherit" onClick={logout}>
-                  Logout
-                </Button>
-              </Box>
-            )}
-          </Toolbar>
-        </AppBar>
-
-        <Drawer
-          variant="temporary"
-          anchor="left"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
-          }}
-          sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { 
-              boxSizing: 'border-box', 
-              width: 240,
-              backgroundColor: theme.palette.background.paper
-            },
-          }}
-        >
-          {drawer}
-        </Drawer>
-
-        <Container maxWidth="lg" sx={{ mt: 4 }}>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <EventList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/events/new"
-              element={
-                <ProtectedRoute>
-                  <EventForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/events/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <EventForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <NotificationForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dates"
-              element={
-                <ProtectedRoute>
-                  <DateManager />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <Admin />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/resources"
-              element={
-                <ProtectedRoute>
-                  <ResourcesManager />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/locations"
-              element={
-                <ProtectedRoute>
-                  <LocationsManager />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Container>
-      </div>
-    </ThemeProvider>
+    <Routes>
+      <Route path="login" element={<Login />} />
+      <Route
+        element={
+          <ProtectedRoute>
+            <ConferenceProvider>
+              <AdminShell />
+            </ConferenceProvider>
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/conferences" replace />} />
+        <Route path="conferences" element={<ConferencesManager />} />
+        <Route path="admin" element={<Admin />} />
+        <Route element={<RequireConferenceSelection />}>
+          <Route path="events">
+            <Route index element={<EventList />} />
+            <Route path="new" element={<EventForm />} />
+            <Route path=":id/edit" element={<EventForm />} />
+          </Route>
+          <Route path="notifications" element={<NotificationForm />} />
+          <Route path="resources" element={<ResourcesManager />} />
+          <Route path="locations" element={<LocationsManager />} />
+        </Route>
+      </Route>
+      <Route path="*" element={<Navigate to="/conferences" replace />} />
+    </Routes>
   );
 };
 
 const App = () => {
   return (
-    <Router>
-      <ErrorBoundary>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </ErrorBoundary>
-    </Router>
+    <ThemeProvider theme={lightTheme}>
+      <CssBaseline />
+      <Router>
+        <ErrorBoundary>
+          <AuthProvider>
+            <AppContent />
+          </AuthProvider>
+        </ErrorBoundary>
+      </Router>
+    </ThemeProvider>
   );
 };
 

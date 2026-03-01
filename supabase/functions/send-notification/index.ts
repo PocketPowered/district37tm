@@ -30,11 +30,10 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const firebaseServiceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
     const firebaseProjectId = Deno.env.get("FIREBASE_PROJECT_ID");
 
-    if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+    if (!supabaseUrl || !serviceRoleKey) {
       return json(500, { error: "Missing Supabase secrets for edge function runtime" });
     }
     if (!firebaseServiceAccountJson || !firebaseProjectId) {
@@ -45,16 +44,17 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return json(401, { error: "Missing Authorization header" });
     }
+    const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+    if (!bearerToken) {
+      return json(401, { error: "Invalid Authorization header" });
+    }
 
-    const callerClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     const {
       data: { user },
       error: userError,
-    } = await callerClient.auth.getUser();
+    } = await adminClient.auth.getUser(bearerToken);
     if (userError || !user?.email) {
       return json(401, { error: "Unauthorized user" });
     }

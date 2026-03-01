@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -24,6 +24,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { BackendExternalLink } from '../types/BackendExternalLink';
 import { resourceService, normalizeResourceCategoryKey } from '../services/resourceService';
+import { useConference } from '../contexts/ConferenceContext';
 
 const SYSTEM_RESOURCE_TYPES = ['splash'];
 const PRIORITY_RESOURCE_TYPES = ['general', 'first_timer'];
@@ -105,6 +106,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const ResourcesManager: React.FC = () => {
+  const { selectedConference, loading: conferenceLoading } = useConference();
   const [categories, setCategories] = useState<string[]>([]);
   const [categoryLabels, setCategoryLabels] = useState<Record<string, string>>({});
   const [resourcesByCategory, setResourcesByCategory] = useState<Record<string, BackendExternalLink[]>>({});
@@ -155,11 +157,21 @@ const ResourcesManager: React.FC = () => {
     return categoryLabels[key] || formatCategoryLabel(key);
   };
 
-  const fetchResources = async (preferredCategory?: string) => {
+  const fetchResources = useCallback(async (preferredCategory?: string) => {
+    if (!selectedConference) {
+      setCategories([]);
+      setCategoryLabels({});
+      setResourcesByCategory({});
+      setSelectedCategory('');
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const [resources, fetchedCategories] = await Promise.all([
-        resourceService.getAllResources(SYSTEM_RESOURCE_TYPES),
-        resourceService.getResourceCategories(SYSTEM_RESOURCE_TYPES),
+        resourceService.getAllResources(selectedConference.id, SYSTEM_RESOURCE_TYPES),
+        resourceService.getResourceCategories(selectedConference.id, SYSTEM_RESOURCE_TYPES),
       ]);
 
       const nextCategoryLabels: Record<string, string> = {};
@@ -214,11 +226,12 @@ const ResourcesManager: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedConference]);
 
   useEffect(() => {
-    fetchResources();
-  }, []);
+    setLoading(true);
+    void fetchResources();
+  }, [fetchResources]);
 
   const openAddResourceDialogForCategory = (categoryKey: string) => {
     setEditingResource(null);
@@ -238,6 +251,8 @@ const ResourcesManager: React.FC = () => {
   };
 
   const handleCreateCategory = async () => {
+    if (!selectedConference) return;
+
     const trimmedName = newCategoryName.trim();
     const normalizedKey = normalizeResourceCategoryKey(trimmedName);
 
@@ -247,7 +262,7 @@ const ResourcesManager: React.FC = () => {
     }
 
     try {
-      const createdCategory = await resourceService.createResourceCategory(trimmedName);
+      const createdCategory = await resourceService.createResourceCategory(trimmedName, selectedConference.id);
       await fetchResources(createdCategory.key);
       setCategoryDialogOpen(false);
       setNewCategoryName('');
@@ -272,6 +287,8 @@ const ResourcesManager: React.FC = () => {
   };
 
   const handleAddResource = async () => {
+    if (!selectedConference) return;
+
     if (!formData.resourceType) {
       setCategoryError('Category is required');
       return;
@@ -291,7 +308,8 @@ const ResourcesManager: React.FC = () => {
           url: formattedUrl,
           description: formData.description || null,
         },
-        formData.resourceType
+        formData.resourceType,
+        selectedConference.id
       );
 
       await fetchResources(formData.resourceType);
@@ -310,6 +328,7 @@ const ResourcesManager: React.FC = () => {
 
   const handleUpdateResource = async () => {
     if (!editingResource?.id) return;
+    if (!selectedConference) return;
 
     if (!formData.resourceType) {
       setCategoryError('Category is required');
@@ -331,7 +350,8 @@ const ResourcesManager: React.FC = () => {
           url: formattedUrl,
           description: formData.description || null,
         },
-        formData.resourceType
+        formData.resourceType,
+        selectedConference.id
       );
 
       await fetchResources(formData.resourceType);
@@ -356,9 +376,10 @@ const ResourcesManager: React.FC = () => {
 
   const handleRemoveConfirm = async () => {
     if (!resourceToDelete?.id) return;
+    if (!selectedConference) return;
 
     try {
-      await resourceService.deleteResource(resourceToDelete.id);
+      await resourceService.deleteResource(resourceToDelete.id, selectedConference.id);
       await fetchResources(selectedCategory);
       setDeleteDialogOpen(false);
       setResourceToDelete(null);
@@ -478,11 +499,21 @@ const ResourcesManager: React.FC = () => {
     );
   };
 
-  if (loading) {
+  if (conferenceLoading || loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
         <CircularProgress />
       </Box>
+    );
+  }
+
+  if (!selectedConference) {
+    return (
+      <Container maxWidth="md">
+        <Paper sx={{ p: 3 }}>
+          <Alert severity="warning">No conference selected. Choose a conference before managing resources.</Alert>
+        </Paper>
+      </Container>
     );
   }
 
@@ -491,8 +522,7 @@ const ResourcesManager: React.FC = () => {
   return (
     <Container maxWidth="md">
       <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5">Resources Manager</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
           <Button startIcon={<AddIcon />} onClick={openNewCategoryDialog} variant="contained" color="primary">
             New Category
           </Button>
@@ -525,8 +555,7 @@ const ResourcesManager: React.FC = () => {
 
             {categories.map((category, index) => (
               <TabPanel key={category} value={currentTab < 0 ? 0 : currentTab} index={index}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6">{getCategoryLabel(category)}</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
                   <Button startIcon={<AddIcon />} variant="outlined" onClick={() => openAddResourceDialogForCategory(category)}>
                     Add Resource
                   </Button>

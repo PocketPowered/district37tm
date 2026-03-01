@@ -80,7 +80,7 @@ fun NotificationsScreen() {
                 }
             }
         },
-        forceHamburgerMenu = true
+        forceHamburgerMenu = false
     ) { notifs ->
         if (notifs.isEmpty()) {
             Column(

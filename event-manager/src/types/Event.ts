@@ -16,6 +16,7 @@ export enum EventTag {
 
 export interface Event {
   id: number;
+  conferenceId: number;
   title: string;
   description: string;
   images: string[];
@@ -23,6 +24,7 @@ export interface Event {
   locationInfo: string;
   notifyBefore: boolean;
   notificationLeadMinutes: number;
+  notificationChannel: string;
   additionalLinks: ExternalLink[];
   dateKey: string;
   tag: EventTag;

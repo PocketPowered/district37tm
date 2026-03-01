@@ -36,10 +36,13 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { formatDateKey, getUtcDateKeyParts, mergeDateKeyWithLocalTime } from '../utils/dateKey';
 import { handleImageLoadError } from '../utils/imageFallback';
+import { useConference } from '../contexts/ConferenceContext';
 
 const ONE_HOUR_MS = 3_600_000;
 const DEFAULT_EVENT_NOTIFICATION_LEAD_MINUTES = 15;
 const MAX_EVENT_NOTIFICATION_LEAD_MINUTES = 24 * 60;
+const MAX_EVENT_NOTIFICATION_CHANNEL_LENGTH = 900;
+const EVENT_NOTIFICATION_CHANNEL_PATTERN = /^[A-Za-z0-9\-_.~%]+$/;
 
 const createDefaultTimeRange = (dateTimestamp: number) => {
   const { year, month, day } = getUtcDateKeyParts(dateTimestamp);
@@ -82,14 +85,28 @@ const sanitizeEventNotificationLeadMinutes = (value: unknown): number => {
   return DEFAULT_EVENT_NOTIFICATION_LEAD_MINUTES;
 };
 
+const sanitizeNotificationChannel = (value: string): string => {
+  return value.trim();
+};
+
+const isValidNotificationChannel = (value: string): boolean => {
+  if (!value) {
+    return true;
+  }
+
+  return value.length <= MAX_EVENT_NOTIFICATION_CHANNEL_LENGTH && EVENT_NOTIFICATION_CHANNEL_PATTERN.test(value);
+};
+
 const EventForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { selectedConference, loading: conferenceLoading } = useConference();
 
   const [availableDates, setAvailableDates] = useState<number[]>([]);
   const [availableLocations, setAvailableLocations] = useState<Location[]>([]);
   const [event, setEvent] = useState<Event>({
     id: 0,
+    conferenceId: selectedConference?.id || 0,
     title: '',
     time: {
       startTime: Date.now(),
@@ -99,6 +116,7 @@ const EventForm: React.FC = () => {
     description: '',
     notifyBefore: false,
     notificationLeadMinutes: DEFAULT_EVENT_NOTIFICATION_LEAD_MINUTES,
+    notificationChannel: '',
     additionalLinks: [],
     dateKey: '',
     images: [],
@@ -115,18 +133,37 @@ const EventForm: React.FC = () => {
 
   useEffect(() => {
     const loadAvailableDates = async () => {
+      if (!selectedConference) {
+        setAvailableDates([]);
+        return;
+      }
+
       try {
-        const dates = await dateService.getAvailableDates();
+        const dates = await dateService.getAvailableDates(selectedConference);
         setAvailableDates(dates);
 
-        if (dates.length > 0 && !id) {
+        if (!id) {
           setEvent((prev) => {
-            if (prev.dateKey) {
-              return prev;
+            const hasCurrentDateInRange = dates.some((timestamp) => timestamp.toString() === prev.dateKey);
+
+            if (!dates.length) {
+              return {
+                ...prev,
+                conferenceId: selectedConference.id,
+                dateKey: '',
+              };
+            }
+
+            if (hasCurrentDateInRange) {
+              return {
+                ...prev,
+                conferenceId: selectedConference.id,
+              };
             }
 
             return {
               ...prev,
+              conferenceId: selectedConference.id,
               dateKey: dates[0].toString(),
               time: createDefaultTimeRange(dates[0]),
             };
@@ -140,7 +177,11 @@ const EventForm: React.FC = () => {
 
     const loadAvailableLocations = async () => {
       try {
-        const locations = await locationService.getAllLocations();
+        if (!selectedConference) {
+          setAvailableLocations([]);
+          return;
+        }
+        const locations = await locationService.getAllLocations(selectedConference.id);
         setAvailableLocations(locations);
       } catch (loadError) {
         console.error('Error loading available locations:', loadError);
@@ -152,11 +193,14 @@ const EventForm: React.FC = () => {
       if (!id) {
         return;
       }
+      if (!selectedConference) {
+        return;
+      }
 
       try {
         setLoadingEvent(true);
         setError(null);
-        const data = await eventService.getEvent(Number(id));
+        const data = await eventService.getEvent(Number(id), selectedConference.id);
         setEvent(data);
       } catch (loadError) {
         setError('Failed to load event. Please try again.');
@@ -169,7 +213,7 @@ const EventForm: React.FC = () => {
     void loadAvailableDates();
     void loadAvailableLocations();
     void loadEvent();
-  }, [id]);
+  }, [id, selectedConference]);
 
   const clearFeedback = () => {
     setSuccess(null);
@@ -308,8 +352,16 @@ const EventForm: React.FC = () => {
   };
 
   const validateEvent = (): string | null => {
+    if (!availableDates.length) {
+      return 'Set the selected conference date range before saving events.';
+    }
+
     if (!event.dateKey) {
       return 'Select a date before saving.';
+    }
+
+    if (!availableDates.some((timestamp) => timestamp.toString() === event.dateKey)) {
+      return 'Select a date within the selected conference range.';
     }
 
     if (!event.title.trim()) {
@@ -329,6 +381,10 @@ const EventForm: React.FC = () => {
       (event.notificationLeadMinutes < 1 || event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
     ) {
       return `Reminder lead time is invalid. Use 1-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES} minutes.`;
+    }
+
+    if (!isValidNotificationChannel(event.notificationChannel.trim())) {
+      return 'Reminder channel is invalid. Use letters, numbers, "-", "_", ".", "~", or "%" only.';
     }
 
     const incompleteLinkIndex = event.additionalLinks.findIndex((link) => {
@@ -369,6 +425,12 @@ const EventForm: React.FC = () => {
     setError(null);
     setSuccess(null);
 
+    if (!selectedConference) {
+      setValidationError('Select a conference before saving events.');
+      setSaving(false);
+      return;
+    }
+
     const validationIssue = validateEvent();
     if (validationIssue) {
       setValidationError(validationIssue);
@@ -381,11 +443,13 @@ const EventForm: React.FC = () => {
     try {
       const eventToSave: Event = {
         ...event,
+        conferenceId: selectedConference.id,
         title: event.title.trim(),
         locationInfo: event.locationInfo,
         description: event.description.trim(),
         notifyBefore: event.notifyBefore === true,
         notificationLeadMinutes: sanitizeEventNotificationLeadMinutes(event.notificationLeadMinutes),
+        notificationChannel: sanitizeNotificationChannel(event.notificationChannel),
         additionalLinks: event.additionalLinks,
         dateKey: event.dateKey,
         images: event.images,
@@ -409,7 +473,7 @@ const EventForm: React.FC = () => {
     }
   };
 
-  if (loadingEvent) {
+  if (conferenceLoading || loadingEvent) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
         <CircularProgress />
@@ -427,13 +491,13 @@ const EventForm: React.FC = () => {
           spacing={2}
           sx={{ mb: 3 }}
         >
-          <Box>
+          <Box sx={{ textAlign: 'left' }}>
             <Typography variant="h5">{id ? 'Edit Event' : 'Create Event'}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               Keep event details accurate for attendees and app users.
             </Typography>
           </Box>
-          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/')} variant="outlined">
+          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/events')} variant="outlined">
             Back to List
           </Button>
         </Stack>
@@ -444,15 +508,37 @@ const EventForm: React.FC = () => {
             color={event.notifyBefore ? 'primary' : 'default'}
             label={event.notifyBefore ? `Reminder ${event.notificationLeadMinutes} min before` : 'Reminder disabled'}
           />
+          {event.notifyBefore && (
+            <Chip
+              size="small"
+              variant="outlined"
+              label={`Channel: ${event.notificationChannel.trim() || 'GENERAL'}`}
+            />
+          )}
           <Chip size="small" variant="outlined" label={`${event.additionalLinks.length} link${event.additionalLinks.length === 1 ? '' : 's'}`} />
           <Chip size="small" variant="outlined" label={`${event.images.length} image${event.images.length === 1 ? '' : 's'}`} />
         </Stack>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {validationError && <Alert severity="warning" sx={{ mb: 2 }}>{validationError}</Alert>}
+        {!selectedConference && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            No conference selected. Choose a conference before editing events.
+          </Alert>
+        )}
+        {selectedConference && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Editing event for selected conference: <strong>{selectedConference.name}</strong>
+          </Alert>
+        )}
         {!availableDates.length && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            No event dates are available yet. Add a date in Date Manager before creating events.
+            No conference dates are available. Set the selected conference start and end dates in Conferences.
+          </Alert>
+        )}
+        {event.dateKey && !hasSelectedDate && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            The event date is outside the selected conference range. Choose a valid date before saving.
           </Alert>
         )}
         {!availableLocations.length && (
@@ -469,7 +555,11 @@ const EventForm: React.FC = () => {
               </Typography>
 
               <Stack spacing={2}>
-                <FormControl fullWidth required error={submitAttempted && !event.dateKey}>
+                <FormControl
+                  fullWidth
+                  required
+                  error={submitAttempted && (!event.dateKey || !hasSelectedDate)}
+                >
                   <InputLabel>Date</InputLabel>
                   <Select
                     value={hasSelectedDate ? event.dateKey : ''}
@@ -494,6 +584,9 @@ const EventForm: React.FC = () => {
                     ))}
                   </Select>
                   {submitAttempted && !event.dateKey && <FormHelperText>Select a date.</FormHelperText>}
+                  {submitAttempted && event.dateKey && !hasSelectedDate && (
+                    <FormHelperText>Select a date within the conference range.</FormHelperText>
+                  )}
                 </FormControl>
 
                 <TextField
@@ -591,6 +684,15 @@ const EventForm: React.FC = () => {
                   </Select>
                 </FormControl>
 
+              </Stack>
+            </Paper>
+
+            <Paper variant="outlined" sx={{ p: 2.5 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Reminder Notifications
+              </Typography>
+
+              <Stack spacing={2}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
                   <FormControlLabel
                     control={
@@ -630,10 +732,28 @@ const EventForm: React.FC = () => {
                       (event.notificationLeadMinutes < 1 ||
                         event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
                         ? `Use 1-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES}.`
-                        : ' '
+                        : 'Default is 15.'
                     }
                   />
                 </Stack>
+
+                <TextField
+                  label="Reminder Channel (Optional)"
+                  value={event.notificationChannel}
+                  onChange={(e) => {
+                    clearFeedback();
+                    setEvent((prev) => ({ ...prev, notificationChannel: e.target.value }));
+                  }}
+                  fullWidth
+                  disabled={!event.notifyBefore}
+                  placeholder="GENERAL"
+                  error={!isValidNotificationChannel(event.notificationChannel.trim())}
+                  helperText={
+                    !isValidNotificationChannel(event.notificationChannel.trim())
+                      ? 'Allowed: letters, numbers, "-", "_", ".", "~", "%".'
+                      : 'When blank, reminders are sent to GENERAL.'
+                  }
+                />
               </Stack>
             </Paper>
 
@@ -860,7 +980,7 @@ const EventForm: React.FC = () => {
                     severity="success"
                     sx={{ flex: 1 }}
                     action={
-                      <Button color="inherit" size="small" onClick={() => navigate('/')}>
+                      <Button color="inherit" size="small" onClick={() => navigate('/events')}>
                         Back to List
                       </Button>
                     }
@@ -874,14 +994,14 @@ const EventForm: React.FC = () => {
                 )}
 
                 <Stack direction="row" spacing={1} justifyContent="flex-end">
-                  <Button variant="text" onClick={() => navigate('/')} disabled={saving}>
+                  <Button variant="text" onClick={() => navigate('/events')} disabled={saving}>
                     Cancel
                   </Button>
                   <Button
                     type="submit"
                     variant="contained"
                     color="primary"
-                    disabled={saving || !availableDates.length || !availableLocations.length}
+                    disabled={saving || !selectedConference || !availableDates.length || !availableLocations.length}
                   >
                     {saving ? <CircularProgress size={24} color="inherit" /> : id ? 'Save Event' : 'Create Event'}
                   </Button>

@@ -1,4 +1,4 @@
-query AvailableDates {
+query ActiveConference {
   conferencesCollection(
     first: 1
     filter: { is_active: { eq: true } }
@@ -7,6 +7,8 @@ query AvailableDates {
     edges {
       node {
         id
+        name
+        schedule_title
         start_date
         end_date
       }

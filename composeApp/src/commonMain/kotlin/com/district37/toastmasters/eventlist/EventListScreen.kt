@@ -27,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
 import com.district37.toastmasters.favorites.FavoriteEventToggle
@@ -68,11 +69,14 @@ fun EventListScreen() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Schedule",
+                text = data.scheduleTitle,
                 style = MaterialTheme.typography.h5,
                 color = MaterialTheme.colors.secondary,
                 fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
             )
             DateSelector(
                 availableTabs = data.availableTabs,

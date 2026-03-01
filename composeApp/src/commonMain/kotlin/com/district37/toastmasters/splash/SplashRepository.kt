@@ -1,6 +1,7 @@
 package com.district37.toastmasters.splash
 
 import com.apollographql.apollo3.ApolloClient
+import com.district37.toastmasters.graphql.ActiveConferenceQuery
 import com.district37.toastmasters.graphql.ResourcesByTypeQuery
 
 private const val SPLASH_RESOURCE_TYPE = "splash"
@@ -9,6 +10,17 @@ class SplashRepository(
     private val apolloClient: ApolloClient,
     private val splashOverrideStore: SplashOverrideStore
 ) {
+    private suspend fun getActiveConferenceId(): Long? {
+        return try {
+            val response = apolloClient.query(ActiveConferenceQuery()).execute()
+            if (response.hasErrors()) {
+                return null
+            }
+            response.data?.conferencesCollection?.edges?.firstOrNull()?.node?.id
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     fun getCachedSplashImageUrl(): String? {
         val cachedUrl = splashOverrideStore.getSplashImageUrl()?.trim()?.takeIf { it.isNotEmpty() }
@@ -21,7 +33,8 @@ class SplashRepository(
 
     suspend fun syncSplashImageUrlFromNetwork(): String? {
         try {
-            val response = apolloClient.query(ResourcesByTypeQuery(SPLASH_RESOURCE_TYPE)).execute()
+            val conferenceId = getActiveConferenceId() ?: return splashOverrideStore.getSplashImageUrl()
+            val response = apolloClient.query(ResourcesByTypeQuery(conferenceId, SPLASH_RESOURCE_TYPE)).execute()
             if (!response.hasErrors()) {
                 val latestUrl = response.data?.resourcesCollection?.edges
                     ?.asSequence()

@@ -1,5 +1,6 @@
 package com.district37.toastmasters.eventlist
 
+import com.district37.toastmasters.ConferenceRepository
 import com.district37.toastmasters.EventRepository
 import com.district37.toastmasters.database.FavoritesRepository
 import com.district37.toastmasters.models.DateTabInfo
@@ -25,8 +26,11 @@ data class EventListScreenState(
     val events: List<EventPreview> = emptyList(),
     val agendaOption: AgendaOption = AgendaOption.FULL_AGENDA,
     val availableTabs: List<DateTabInfo>,
-    val isScheduleLoading: Boolean = false
+    val isScheduleLoading: Boolean = false,
+    val scheduleTitle: String = DEFAULT_SCHEDULE_TITLE
 )
+
+const val DEFAULT_SCHEDULE_TITLE = "Schedule"
 
 object RefreshTriggered : UiEvent
 
@@ -45,6 +49,7 @@ enum class AgendaOption {
 
 class EventListScreenStateSlice(
     private val eventRepository: EventRepository,
+    private val conferenceRepository: ConferenceRepository,
     private val eventPreviewTransformer: EventPreviewTransformer,
     private val favoritesRepository: FavoritesRepository,
     private val dateTransformer: DateTransformer,
@@ -58,8 +63,10 @@ class EventListScreenStateSlice(
         MutableStateFlow(emptyMap())
     private val _loadingDateKeys: MutableStateFlow<Set<Long>> =
         MutableStateFlow(emptySet())
+    private val _scheduleTitle: MutableStateFlow<String> =
+        MutableStateFlow(DEFAULT_SCHEDULE_TITLE)
 
-    private val _screenState: StateFlow<Resource<EventListScreenState>> = combine(
+    private val _baseScreenState: StateFlow<Resource<EventListScreenState>> = combine(
         _availableTabs,
         _eventsByDateKey,
         _loadingDateKeys,
@@ -77,7 +84,8 @@ class EventListScreenStateSlice(
                             events = emptyList(),
                             availableTabs = availableTabs.data,
                             agendaOption = agendaOption,
-                            isScheduleLoading = false
+                            isScheduleLoading = false,
+                            scheduleTitle = DEFAULT_SCHEDULE_TITLE
                         )
                     )
                 } else {
@@ -98,7 +106,8 @@ class EventListScreenStateSlice(
                             events = visibleEvents,
                             availableTabs = availableTabs.data,
                             agendaOption = agendaOption,
-                            isScheduleLoading = loadingDateKeys.contains(selectedTab.dateKey)
+                            isScheduleLoading = loadingDateKeys.contains(selectedTab.dateKey),
+                            scheduleTitle = DEFAULT_SCHEDULE_TITLE
                         )
                     )
                 }
@@ -107,11 +116,21 @@ class EventListScreenStateSlice(
         }
     }.stateIn(CoroutineScope(Dispatchers.IO), SharingStarted.Lazily, Resource.Loading)
 
+    private val _screenState: StateFlow<Resource<EventListScreenState>> = combine(
+        _baseScreenState,
+        _scheduleTitle
+    ) { baseScreenState, scheduleTitle ->
+        baseScreenState.map { state ->
+            state.copy(scheduleTitle = scheduleTitle)
+        }
+    }.stateIn(CoroutineScope(Dispatchers.IO), SharingStarted.Lazily, Resource.Loading)
+
 
     val screenState = _screenState
 
     override fun afterInit() {
         super.afterInit()
+        fetchScheduleTitle()
         fetchAvailableTabs()
     }
 
@@ -209,6 +228,16 @@ class EventListScreenStateSlice(
                         _availableTabs.update { Resource.Error(error) }
                     }
                 )
+        }
+    }
+
+    private fun fetchScheduleTitle() {
+        sliceScope.launch(Dispatchers.IO) {
+            val title = conferenceRepository.getConferenceScheduleTitle()
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: DEFAULT_SCHEDULE_TITLE
+            _scheduleTitle.update { title }
         }
     }
 

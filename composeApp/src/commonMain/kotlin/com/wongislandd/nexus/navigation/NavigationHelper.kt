@@ -8,7 +8,9 @@ class NavigationHelper(private val navigationItemRegistry: NavigationItemRegistr
         navigationController: NavController,
         navigationKey: String,
         args: Map<String, Any?> = emptyMap(),
-        removeSelfFromStack: Boolean = false
+        removeSelfFromStack: Boolean = false,
+        isTopLevelDestination: Boolean = false,
+        topLevelHomeRoute: String? = null
     ): Boolean {
         val navigationItem = navigationItemRegistry.getNavigationItem(navigationKey)
         if (navigationItem != null) {
@@ -17,9 +19,19 @@ class NavigationHelper(private val navigationItemRegistry: NavigationItemRegistr
                 navigationController.popBackStack()
                 navigationController.navigate(route) {
                     popUpTo(route) { inclusive = true }
+                    launchSingleTop = true
                 }
             } else {
-                navigationController.navigate(navigationItem.reconstructRoute(args))
+                navigationController.navigate(route) {
+                    launchSingleTop = true
+                    if (isTopLevelDestination) {
+                        val homeRoute = topLevelHomeRoute ?: route
+                        popUpTo(homeRoute) {
+                            saveState = true
+                        }
+                        restoreState = true
+                    }
+                }
             }
             return true
         } else {

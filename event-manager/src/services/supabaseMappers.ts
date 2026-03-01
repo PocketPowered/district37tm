@@ -4,6 +4,7 @@ import { Location } from '../types/Location';
 
 type EventRow = {
   id: number;
+  conference_id: number | null;
   title: string | null;
   description: string | null;
   images: string[] | null;
@@ -12,6 +13,7 @@ type EventRow = {
   location_info: string | null;
   notify_before: boolean | null;
   notification_lead_minutes: number | null;
+  notification_channel: string | null;
   additional_links: ExternalLink[] | null;
   date_key: number | null;
   tag: EventTag | null;
@@ -59,6 +61,7 @@ type LocationRow = {
 
 export const toEvent = (row: EventRow): Event => ({
   id: row.id,
+  conferenceId: row.conference_id || 0,
   title: row.title || '',
   description: row.description || '',
   images: row.images || [],
@@ -69,6 +72,7 @@ export const toEvent = (row: EventRow): Event => ({
   locationInfo: row.location_info || '',
   notifyBefore: row.notify_before === true,
   notificationLeadMinutes: normalizeNotificationLeadMinutes(row.notification_lead_minutes),
+  notificationChannel: row.notification_channel?.trim() || '',
   additionalLinks: row.additional_links || [],
   dateKey: (row.date_key || 0).toString(),
   tag: row.tag || EventTag.NORMAL,
@@ -76,6 +80,7 @@ export const toEvent = (row: EventRow): Event => ({
 
 export const toEventInsert = (event: Event) => ({
   id: event.id > 0 ? event.id : undefined,
+  conference_id: event.conferenceId > 0 ? event.conferenceId : null,
   title: event.title,
   description: event.description,
   images: event.images || [],
@@ -84,6 +89,7 @@ export const toEventInsert = (event: Event) => ({
   location_info: event.locationInfo,
   notify_before: event.notifyBefore === true,
   notification_lead_minutes: normalizeNotificationLeadMinutes(event.notificationLeadMinutes),
+  notification_channel: event.notificationChannel.trim() || null,
   additional_links: event.additionalLinks || [],
   date_key: event.dateKey ? Number(event.dateKey) : null,
   tag: event.tag || EventTag.NORMAL,

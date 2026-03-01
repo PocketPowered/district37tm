@@ -3,7 +3,7 @@ package com.district37.toastmasters.notifications
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Icon
@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
 import com.district37.toastmasters.navigation.NavigationItemKey
@@ -32,12 +33,13 @@ fun NotificationsEntry(modifier: Modifier = Modifier) {
             {
                 appViewModel.navigate(
                     navController,
-                    NavigationItemKey.NOTIFICATIONS
+                    NavigationItemKey.NOTIFICATIONS,
+                    isTopLevelDestination = true
                 )
             },
         ) {
             Icon(Icons.Default.Notifications, contentDescription = "Notifications")
-            NotificationBadge(modifier = Modifier.padding(start = 4.dp))
+            NotificationBadge()
         }
     }
 }
@@ -51,6 +53,7 @@ fun BoxScope.NotificationBadge(modifier: Modifier = Modifier) {
         Box(
             modifier = modifier
                 .align(Alignment.TopEnd)
+                .offset { IntOffset(x = 6.dp.roundToPx(), y = (-2).dp.roundToPx()) }
                 .size(16.dp),
             contentAlignment = Alignment.Center
         ) {

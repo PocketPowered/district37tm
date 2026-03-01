@@ -8,7 +8,7 @@ const Login: React.FC = () => {
   const { signInWithGoogle, currentUser, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname || '/conferences';
 
   useEffect(() => {
     if (!loading && currentUser) {

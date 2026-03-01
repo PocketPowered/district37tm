@@ -1,6 +1,7 @@
 package com.district37.toastmasters.di
 
 import com.district37.toastmasters.AppViewModel
+import com.district37.toastmasters.ConferenceRepository
 import com.district37.toastmasters.EventRepository
 import com.district37.toastmasters.VersionInfo
 import com.district37.toastmasters.database.DatabaseFactory
@@ -34,6 +35,7 @@ fun appModule(appContext: Any? = null) = module {
     factoryOf(::NavigationSlice)
     factoryOf(::NotificationsSlice)
     singleOf(::EventRepository)
+    singleOf(::ConferenceRepository)
     single<ApolloClient> { createSupabaseApolloClient() }
     single<Set<NavigationItem>> { supportedNavigationItems.values.toSet() }
     single { DatabaseFactory(appContext) }

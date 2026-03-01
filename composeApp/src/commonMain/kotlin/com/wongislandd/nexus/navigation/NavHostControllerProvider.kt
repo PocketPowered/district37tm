@@ -2,6 +2,8 @@ package com.wongislandd.nexus.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import co.touchlab.kermit.Logger
@@ -14,11 +16,16 @@ fun NavHostControllerProvider(
 ) {
     val appViewModel = LocalAppViewModel.current
     CompositionLocalProvider(LocalNavHostController provides navHostController) {
-        navHostController.addOnDestinationChangedListener { _, destination, args ->
-            Logger.i("Navigating to ${destination}, args: $args")
-            // TODO Remove this route tracking based on string, or at least tighten it
-            destination.route?.also {
-                appViewModel.navigationSlice.confirmNavigationToRoute(it)
+        DisposableEffect(navHostController) {
+            val listener = NavController.OnDestinationChangedListener { _, destination, args ->
+                Logger.i("Navigating to ${destination}, args: $args")
+                destination.route?.also {
+                    appViewModel.navigationSlice.confirmNavigationToRoute(it)
+                }
+            }
+            navHostController.addOnDestinationChangedListener(listener)
+            onDispose {
+                navHostController.removeOnDestinationChangedListener(listener)
             }
         }
         content(navHostController)

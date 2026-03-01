@@ -15,8 +15,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 const AUTH_INIT_FAIL_SAFE_MS = 15000;
 const AUTH_REDIRECT_URL_OVERRIDE = process.env.REACT_APP_AUTH_REDIRECT_URL?.trim();
+const CALLBACK_SESSION_POLL_MAX_ATTEMPTS = 20;
+const CALLBACK_SESSION_POLL_DELAY_MS = 150;
 
 const ensureTrailingSlash = (value: string) => (value.endsWith('/') ? value : `${value}/`);
+const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
 const getAuthRedirectUrl = (): string => {
   if (AUTH_REDIRECT_URL_OVERRIDE) {
@@ -48,41 +51,98 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const authorizationCheckRef = useRef<{ email: string; promise: Promise<boolean> } | null>(null);
+  const authRequestRef = useRef(0);
+  const initializedRef = useRef(false);
+  const initializedUserIdRef = useRef<string | null>(null);
 
-  const runAuthorizationCheck = useCallback((email: string): Promise<boolean> => {
-    if (authorizationCheckRef.current?.email === email) {
-      return authorizationCheckRef.current.promise;
+  const getSessionUserWithCallbackFallback = useCallback(async (): Promise<User | null> => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session?.user) {
+      return session.user;
     }
 
-    const promise = (async () => {
-      try {
-        return await isUserAuthorized(email);
-      } catch (error) {
-        console.error('Error checking user authorization:', error);
-        return false;
-      }
-    })();
+    const hasOAuthCode = new URLSearchParams(window.location.search).has('code');
+    if (!hasOAuthCode) {
+      return null;
+    }
 
-    authorizationCheckRef.current = { email, promise };
-    promise.finally(() => {
-      if (authorizationCheckRef.current?.promise === promise) {
-        authorizationCheckRef.current = null;
-      }
-    });
+    for (let attempt = 0; attempt < CALLBACK_SESSION_POLL_MAX_ATTEMPTS; attempt += 1) {
+      await wait(CALLBACK_SESSION_POLL_DELAY_MS);
+      const {
+        data: { session: polledSession },
+      } = await supabase.auth.getSession();
 
-    return promise;
+      if (polledSession?.user) {
+        return polledSession.user;
+      }
+    }
+
+    return null;
   }, []);
 
-  const checkAuthorization = useCallback(async (user: User | null) => {
+  const applyAuthState = useCallback(async (user: User | null) => {
+    const requestId = authRequestRef.current + 1;
+    authRequestRef.current = requestId;
+
+    setCurrentUser(user);
+
     if (!user?.email) {
       setIsAuthorized(false);
+      setLoading(false);
       return;
     }
 
-    const authorized = await runAuthorizationCheck(user.email);
-    setIsAuthorized(authorized);
-  }, [runAuthorizationCheck]);
+    setLoading(true);
+    try {
+      const authorized = await isUserAuthorized(user.email);
+      if (authRequestRef.current !== requestId) {
+        return;
+      }
+      setIsAuthorized(authorized);
+    } catch (error) {
+      if (authRequestRef.current !== requestId) {
+        return;
+      }
+      console.error('Error checking user authorization:', error);
+      setIsAuthorized(false);
+    } finally {
+      if (authRequestRef.current === requestId) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  const handleAuthSessionChange = useCallback(
+    (event: string, user: User | null) => {
+      if (event === 'SIGNED_OUT') {
+        window.setTimeout(() => {
+          void applyAuthState(null);
+        }, 0);
+        return;
+      }
+
+      if (event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION') {
+        return;
+      }
+
+      if (
+        event === 'INITIAL_SESSION' &&
+        initializedRef.current &&
+        initializedUserIdRef.current === (user?.id ?? null)
+      ) {
+        return;
+      }
+
+      // Supabase recommends avoiding awaited Supabase calls directly inside this callback.
+      window.setTimeout(() => {
+        void applyAuthState(user);
+      }, 0);
+    },
+    [applyAuthState]
+  );
 
   const signInWithGoogle = async () => {
     try {
@@ -123,14 +183,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initializeAuth = async () => {
       try {
         setLoading(true);
-        const { data } = await supabase.auth.getSession();
         if (!mounted) return;
-        const user = data.session?.user || null;
-        setCurrentUser(user);
-        if (!user) {
-          setIsAuthorized(false);
-          setLoading(false);
-        }
+        const initialUser = await getSessionUserWithCallbackFallback();
+        initializedRef.current = true;
+        initializedUserIdRef.current = initialUser?.id ?? null;
+        await applyAuthState(initialUser);
       } catch (error) {
         console.error('Error initializing auth:', error);
         if (!mounted) return;
@@ -144,35 +201,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      const user = session?.user || null;
-      const shouldCheckAuthorization =
-        event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED';
-
-      try {
-        setCurrentUser(user);
-        if (!user) {
-          setIsAuthorized(false);
-          setLoading(false);
-          return;
-        }
-
-        if (!shouldCheckAuthorization) {
-          return;
-        }
-
-        setLoading(true);
-        await checkAuthorization(user);
-      } catch (error) {
-        console.error('Error handling auth state change:', error);
-        setCurrentUser(null);
-        setIsAuthorized(false);
-        setLoading(false);
-      } finally {
-        if (mounted && user && shouldCheckAuthorization) {
-          setLoading(false);
-        }
-      }
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      handleAuthSessionChange(event, session?.user || null);
     });
 
     return () => {
@@ -180,7 +210,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.clearTimeout(loadingFailSafe);
       subscription.unsubscribe();
     };
-  }, [checkAuthorization]);
+  }, [applyAuthState, getSessionUserWithCallbackFallback, handleAuthSessionChange]);
 
   const value = {
     currentUser,

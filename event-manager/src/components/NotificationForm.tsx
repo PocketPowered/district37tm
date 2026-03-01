@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { 
-    Box, 
-    Button, 
-    TextField, 
-    Typography, 
-    Paper, 
+import {
+    Box,
+    Button,
+    TextField,
+    Paper,
     Alert,
     FormControl,
     FormHelperText,
@@ -88,10 +87,6 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
 
     return (
         <Paper elevation={3} sx={{ p: 3, maxWidth: 600, mx: 'auto', mt: 4 }}>
-            <Typography variant="h5" gutterBottom>
-                Send Push Notification
-            </Typography>
-            
             {error && (
                 <Alert severity="error" sx={{ mb: 2 }}>
                     {error}

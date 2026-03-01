@@ -2,8 +2,6 @@ package com.district37.toastmasters.navigation
 
 import EventIcon
 import Menu
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.district37.toastmasters.locations.Map
 
@@ -23,11 +21,6 @@ val drawerItems = listOf(
         key = NavigationItemKey.MAPS,
         title = "Maps",
         icon = Map
-    ),
-    DrawerItem(
-        key = NavigationItemKey.NOTIFICATIONS,
-        title = "Notifications",
-        icon = Icons.Default.Notifications,
     ),
     DrawerItem(
         key = NavigationItemKey.RESOURCES,

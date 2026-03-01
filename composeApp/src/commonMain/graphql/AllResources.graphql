@@ -1,5 +1,6 @@
-query AllResources {
+query AllResources($conferenceId: BigInt!) {
   resourcesCollection(
+    filter: { conference_id: { eq: $conferenceId } }
     orderBy: [{ resource_type: AscNullsLast }, { created_at: DescNullsLast }]
   ) {
     edges {

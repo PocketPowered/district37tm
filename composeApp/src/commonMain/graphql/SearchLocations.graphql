@@ -1,6 +1,6 @@
-query SearchLocations($nameLike: String!) {
+query SearchLocations($conferenceId: BigInt!, $nameLike: String!) {
   locationsCollection(
-    filter: { location_name: { ilike: $nameLike } }
+    filter: { conference_id: { eq: $conferenceId }, location_name: { ilike: $nameLike } }
     orderBy: [{ location_name: AscNullsLast }]
   ) {
     edges {
@@ -12,4 +12,3 @@ query SearchLocations($nameLike: String!) {
     }
   }
 }
-

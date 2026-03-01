@@ -497,6 +497,11 @@ type Query {
   conference_datesCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: conference_datesFilter, "Sort order to apply to the collection" orderBy: [conference_datesOrderBy!]): conference_datesConnection
 
   """
+  A pagable collection of type `conferences`
+  """
+  conferencesCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: conferencesFilter, "Sort order to apply to the collection" orderBy: [conferencesOrderBy!]): conferencesConnection
+
+  """
   A pagable collection of type `events`
   """
   eventsCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: eventsFilter, "Sort order to apply to the collection" orderBy: [eventsOrderBy!]): eventsConnection
@@ -1106,6 +1111,100 @@ type conference_datesUpdateResponse {
   records: [conference_dates!]!
 }
 
+type conferences implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: BigInt!
+
+  slug: String!
+
+  name: String!
+
+  schedule_title: String
+
+  start_date: Date
+
+  end_date: Date
+
+  is_active: Boolean!
+
+  created_at: Datetime!
+
+  updated_at: Datetime!
+}
+
+type conferencesConnection {
+  edges: [conferencesEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type conferencesEdge {
+  cursor: String!
+
+  node: conferences!
+}
+
+input conferencesFilter {
+  id: BigIntFilter
+
+  slug: StringFilter
+
+  name: StringFilter
+
+  schedule_title: StringFilter
+
+  start_date: DateFilter
+
+  end_date: DateFilter
+
+  is_active: BooleanFilter
+
+  created_at: DatetimeFilter
+
+  updated_at: DatetimeFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [conferencesFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [conferencesFilter!]
+
+  """
+  Negates a filter
+  """
+  not: conferencesFilter
+}
+
+input conferencesOrderBy {
+  id: OrderByDirection
+
+  slug: OrderByDirection
+
+  name: OrderByDirection
+
+  schedule_title: OrderByDirection
+
+  start_date: OrderByDirection
+
+  end_date: OrderByDirection
+
+  is_active: OrderByDirection
+
+  created_at: OrderByDirection
+
+  updated_at: OrderByDirection
+}
+
 type events implements Node {
   """
   Globally Unique Record Identifier
@@ -1132,13 +1231,14 @@ type events implements Node {
 
   date_key: BigInt
 
+  conference_id: BigInt!
+
   tag: String!
 
   created_at: Datetime!
 
   updated_at: Datetime!
 
-  conference_dates: conference_dates
 }
 
 type eventsConnection {
@@ -1181,6 +1281,8 @@ input eventsFilter {
   location_info: StringFilter
 
   date_key: BigIntFilter
+
+  conference_id: BigIntFilter
 
   tag: StringFilter
 
@@ -1225,6 +1327,8 @@ input eventsInsertInput {
 
   date_key: BigInt
 
+  conference_id: BigInt
+
   tag: String
 
   created_at: Datetime
@@ -1259,6 +1363,8 @@ input eventsOrderBy {
 
   date_key: OrderByDirection
 
+  conference_id: OrderByDirection
+
   tag: OrderByDirection
 
   created_at: OrderByDirection
@@ -1284,6 +1390,8 @@ input eventsUpdateInput {
   additional_links: JSON
 
   date_key: BigInt
+
+  conference_id: BigInt
 
   tag: String
 
@@ -1315,6 +1423,8 @@ type locations implements Node {
   location_name: String!
 
   location_images: [String]!
+
+  conference_id: BigInt!
 
   created_at: Datetime!
 
@@ -1352,6 +1462,8 @@ input locationsFilter {
 
   location_images: StringListFilter
 
+  conference_id: BigIntFilter
+
   created_at: DatetimeFilter
 
   updated_at: DatetimeFilter
@@ -1381,6 +1493,8 @@ input locationsInsertInput {
 
   location_images: [String]
 
+  conference_id: BigInt
+
   created_at: Datetime
 
   updated_at: Datetime
@@ -1403,6 +1517,8 @@ input locationsOrderBy {
 
   location_name: OrderByDirection
 
+  conference_id: OrderByDirection
+
   created_at: OrderByDirection
 
   updated_at: OrderByDirection
@@ -1414,6 +1530,8 @@ input locationsUpdateInput {
   location_name: String
 
   location_images: [String]
+
+  conference_id: BigInt
 
   created_at: Datetime
 
@@ -1874,6 +1992,8 @@ type resources implements Node {
 
   description: String
 
+  conference_id: BigInt!
+
   created_at: Datetime!
 
   updated_at: Datetime!
@@ -1914,6 +2034,8 @@ input resourcesFilter {
 
   description: StringFilter
 
+  conference_id: BigIntFilter
+
   created_at: DatetimeFilter
 
   updated_at: DatetimeFilter
@@ -1947,6 +2069,8 @@ input resourcesInsertInput {
 
   description: String
 
+  conference_id: BigInt
+
   created_at: Datetime
 
   updated_at: Datetime
@@ -1975,6 +2099,8 @@ input resourcesOrderBy {
 
   description: OrderByDirection
 
+  conference_id: OrderByDirection
+
   created_at: OrderByDirection
 
   updated_at: OrderByDirection
@@ -1990,6 +2116,8 @@ input resourcesUpdateInput {
   url: String
 
   description: String
+
+  conference_id: BigInt
 
   created_at: Datetime
 

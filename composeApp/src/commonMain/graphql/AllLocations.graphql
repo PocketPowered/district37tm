@@ -1,5 +1,8 @@
-query AllLocations {
-  locationsCollection(orderBy: [{ location_name: AscNullsLast }]) {
+query AllLocations($conferenceId: BigInt!) {
+  locationsCollection(
+    filter: { conference_id: { eq: $conferenceId } }
+    orderBy: [{ location_name: AscNullsLast }]
+  ) {
     edges {
       node {
         id
@@ -9,4 +12,3 @@ query AllLocations {
     }
   }
 }
-
