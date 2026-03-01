@@ -84,9 +84,9 @@ export const conferenceService = {
     const { data, error } = await supabase
       .from('conferences')
       .select(conferenceFields)
-      .order('is_active', { ascending: false })
       .order('start_date', { ascending: false, nullsFirst: false })
-      .order('name', { ascending: true });
+      .order('name', { ascending: true })
+      .order('id', { ascending: true });
 
     if (error) throw error;
     return (data || []).map((row) => toConference(row as ConferenceRow));

@@ -219,6 +219,11 @@ const ConferencesManager: React.FC = () => {
             {actionError}
           </Alert>
         )}
+        {activeConference && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Active conference: <strong>{activeConference.name}</strong>
+          </Alert>
+        )}
 
         {!hasConferences && (
           <Alert severity="info">No conferences found yet. Create your first conference.</Alert>
@@ -280,11 +285,6 @@ const ConferencesManager: React.FC = () => {
           })}
         </Stack>
 
-        {activeConference && (
-          <Alert severity="success" sx={{ mt: 3 }}>
-            Active conference: <strong>{activeConference.name}</strong>
-          </Alert>
-        )}
       </Paper>
 
       <Dialog open={dialogOpen} onClose={closeDialog} fullWidth maxWidth="sm">
