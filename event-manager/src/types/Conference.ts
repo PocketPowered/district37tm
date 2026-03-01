@@ -3,6 +3,7 @@ export interface Conference {
   slug: string;
   name: string;
   scheduleTitle: string;
+  appHeaderTitle: string | null;
   startDate: string | null;
   endDate: string | null;
   isActive: boolean;
@@ -14,6 +15,7 @@ export interface ConferenceUpsertInput {
   slug: string;
   name: string;
   scheduleTitle?: string;
+  appHeaderTitle?: string | null;
   startDate?: string | null;
   endDate?: string | null;
 }

@@ -13,12 +13,16 @@ import {
     SelectChangeEvent,
 } from '@mui/material';
 import { notificationService } from '../services/notificationService';
+import {
+    NOTIFICATION_TARGET_HELPER_TEXT,
+    NOTIFICATION_TARGET_OPTIONS,
+    NotificationTarget,
+    resolveNotificationTopic,
+} from '../constants/notificationTopics';
 
 interface NotificationFormProps {
     onSuccess?: () => void;
 }
-
-type NotificationTarget = 'GENERAL' | 'APP_ENV_DEBUG' | 'APP_ENV_PROD' | 'APP_VERSION' | 'CUSTOM';
 
 const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
     const [title, setTitle] = useState('');
@@ -30,25 +34,12 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
-    const normalizeTopicSegment = (raw: string) => {
-        const trimmed = raw.trim();
-        if (!trimmed) {
-            return '';
-        }
-        return trimmed
-            .replace(/\./g, '_')
-            .replace(/[^A-Za-z0-9_-]/g, '_');
-    };
-
     const resolveTopic = () => {
-        if (target === 'APP_VERSION') {
-            const normalized = normalizeTopicSegment(version);
-            return normalized ? `APP_VERSION_${normalized}` : '';
-        }
-        if (target === 'CUSTOM') {
-            return customTopic.trim().toUpperCase();
-        }
-        return target;
+        return resolveNotificationTopic({
+            target,
+            version,
+            customTopic,
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -129,14 +120,14 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
                                 setTarget(e.target.value as NotificationTarget)
                             }
                         >
-                            <MenuItem value="GENERAL">All users (GENERAL)</MenuItem>
-                            <MenuItem value="APP_ENV_DEBUG">Debug builds (APP_ENV_DEBUG)</MenuItem>
-                            <MenuItem value="APP_ENV_PROD">Production builds (APP_ENV_PROD)</MenuItem>
-                            <MenuItem value="APP_VERSION">Specific app version</MenuItem>
-                            <MenuItem value="CUSTOM">Custom topic</MenuItem>
+                            {NOTIFICATION_TARGET_OPTIONS.map((option) => (
+                                <MenuItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </MenuItem>
+                            ))}
                         </Select>
                         <FormHelperText>
-                            Clients subscribe to GENERAL + environment + version topics.
+                            {NOTIFICATION_TARGET_HELPER_TEXT}
                         </FormHelperText>
                     </FormControl>
 

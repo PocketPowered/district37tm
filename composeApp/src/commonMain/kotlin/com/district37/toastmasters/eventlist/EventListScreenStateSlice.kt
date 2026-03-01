@@ -27,10 +27,12 @@ data class EventListScreenState(
     val agendaOption: AgendaOption = AgendaOption.FULL_AGENDA,
     val availableTabs: List<DateTabInfo>,
     val isScheduleLoading: Boolean = false,
-    val scheduleTitle: String = DEFAULT_SCHEDULE_TITLE
+    val scheduleTitle: String = DEFAULT_SCHEDULE_TITLE,
+    val topBarTitle: String = DEFAULT_TOP_APP_BAR_TITLE
 )
 
 const val DEFAULT_SCHEDULE_TITLE = "Schedule"
+const val DEFAULT_TOP_APP_BAR_TITLE = "D37 Conference"
 
 object RefreshTriggered : UiEvent
 
@@ -65,6 +67,8 @@ class EventListScreenStateSlice(
         MutableStateFlow(emptySet())
     private val _scheduleTitle: MutableStateFlow<String> =
         MutableStateFlow(DEFAULT_SCHEDULE_TITLE)
+    private val _topBarTitle: MutableStateFlow<String> =
+        MutableStateFlow(DEFAULT_TOP_APP_BAR_TITLE)
 
     private val _baseScreenState: StateFlow<Resource<EventListScreenState>> = combine(
         _availableTabs,
@@ -85,7 +89,8 @@ class EventListScreenStateSlice(
                             availableTabs = availableTabs.data,
                             agendaOption = agendaOption,
                             isScheduleLoading = false,
-                            scheduleTitle = DEFAULT_SCHEDULE_TITLE
+                            scheduleTitle = DEFAULT_SCHEDULE_TITLE,
+                            topBarTitle = DEFAULT_TOP_APP_BAR_TITLE
                         )
                     )
                 } else {
@@ -107,7 +112,8 @@ class EventListScreenStateSlice(
                             availableTabs = availableTabs.data,
                             agendaOption = agendaOption,
                             isScheduleLoading = loadingDateKeys.contains(selectedTab.dateKey),
-                            scheduleTitle = DEFAULT_SCHEDULE_TITLE
+                            scheduleTitle = DEFAULT_SCHEDULE_TITLE,
+                            topBarTitle = DEFAULT_TOP_APP_BAR_TITLE
                         )
                     )
                 }
@@ -118,10 +124,14 @@ class EventListScreenStateSlice(
 
     private val _screenState: StateFlow<Resource<EventListScreenState>> = combine(
         _baseScreenState,
-        _scheduleTitle
-    ) { baseScreenState, scheduleTitle ->
+        _scheduleTitle,
+        _topBarTitle
+    ) { baseScreenState, scheduleTitle, topBarTitle ->
         baseScreenState.map { state ->
-            state.copy(scheduleTitle = scheduleTitle)
+            state.copy(
+                scheduleTitle = scheduleTitle,
+                topBarTitle = topBarTitle
+            )
         }
     }.stateIn(CoroutineScope(Dispatchers.IO), SharingStarted.Lazily, Resource.Loading)
 
@@ -130,7 +140,7 @@ class EventListScreenStateSlice(
 
     override fun afterInit() {
         super.afterInit()
-        fetchScheduleTitle()
+        fetchConferenceTitles()
         fetchAvailableTabs()
     }
 
@@ -231,13 +241,21 @@ class EventListScreenStateSlice(
         }
     }
 
-    private fun fetchScheduleTitle() {
+    private fun fetchConferenceTitles() {
         sliceScope.launch(Dispatchers.IO) {
-            val title = conferenceRepository.getConferenceScheduleTitle()
-                ?.trim()
-                ?.takeIf { it.isNotEmpty() }
-                ?: DEFAULT_SCHEDULE_TITLE
-            _scheduleTitle.update { title }
+            val conferenceTitles = conferenceRepository.getConferenceTitles()
+            _scheduleTitle.update {
+                conferenceTitles?.scheduleTitle
+                    ?.trim()
+                    ?.takeIf { title -> title.isNotEmpty() }
+                    ?: DEFAULT_SCHEDULE_TITLE
+            }
+            _topBarTitle.update {
+                conferenceTitles?.appHeaderTitle
+                    ?.trim()
+                    ?.takeIf { title -> title.isNotEmpty() }
+                    ?: DEFAULT_TOP_APP_BAR_TITLE
+            }
         }
     }
 

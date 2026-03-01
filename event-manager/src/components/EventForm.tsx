@@ -10,6 +10,7 @@ import {
   Stack,
   IconButton,
   Select,
+  SelectChangeEvent,
   MenuItem,
   FormControl,
   InputLabel,
@@ -37,6 +38,13 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { formatDateKey, getUtcDateKeyParts, mergeDateKeyWithLocalTime } from '../utils/dateKey';
 import { handleImageLoadError } from '../utils/imageFallback';
 import { useConference } from '../contexts/ConferenceContext';
+import {
+  NOTIFICATION_TARGET_HELPER_TEXT,
+  NOTIFICATION_TARGET_OPTIONS,
+  NotificationTarget,
+  parseNotificationTopic,
+  resolveNotificationTopic,
+} from '../constants/notificationTopics';
 
 const ONE_HOUR_MS = 3_600_000;
 const DEFAULT_EVENT_NOTIFICATION_LEAD_MINUTES = 15;
@@ -130,6 +138,9 @@ const EventForm: React.FC = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
+  const [reminderTarget, setReminderTarget] = useState<NotificationTarget>('GENERAL');
+  const [reminderVersion, setReminderVersion] = useState('');
+  const [reminderCustomTopic, setReminderCustomTopic] = useState('');
 
   useEffect(() => {
     const loadAvailableDates = async () => {
@@ -202,6 +213,10 @@ const EventForm: React.FC = () => {
         setError(null);
         const data = await eventService.getEvent(Number(id), selectedConference.id);
         setEvent(data);
+        const parsedTopic = parseNotificationTopic(data.notificationChannel);
+        setReminderTarget(parsedTopic.target);
+        setReminderVersion(parsedTopic.version);
+        setReminderCustomTopic(parsedTopic.customTopic);
       } catch (loadError) {
         setError('Failed to load event. Please try again.');
         console.error('Error loading event:', loadError);
@@ -219,6 +234,33 @@ const EventForm: React.FC = () => {
     setSuccess(null);
     setError(null);
     setValidationError(null);
+  };
+
+  const updateReminderChannel = (target: NotificationTarget, version: string, customTopic: string) => {
+    const resolvedTopic = resolveNotificationTopic({
+      target,
+      version,
+      customTopic,
+    });
+    setEvent((prev) => ({ ...prev, notificationChannel: resolvedTopic }));
+  };
+
+  const handleReminderTargetChange = (nextTarget: NotificationTarget) => {
+    clearFeedback();
+    setReminderTarget(nextTarget);
+    updateReminderChannel(nextTarget, reminderVersion, reminderCustomTopic);
+  };
+
+  const handleReminderVersionChange = (nextVersion: string) => {
+    clearFeedback();
+    setReminderVersion(nextVersion);
+    updateReminderChannel(reminderTarget, nextVersion, reminderCustomTopic);
+  };
+
+  const handleReminderCustomTopicChange = (nextCustomTopic: string) => {
+    clearFeedback();
+    setReminderCustomTopic(nextCustomTopic);
+    updateReminderChannel(reminderTarget, reminderVersion, nextCustomTopic);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -381,6 +423,14 @@ const EventForm: React.FC = () => {
       (event.notificationLeadMinutes < 1 || event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
     ) {
       return `Reminder lead time is invalid. Use 1-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES} minutes.`;
+    }
+
+    if (event.notifyBefore && reminderTarget === 'APP_VERSION' && !reminderVersion.trim()) {
+      return 'Enter an app version for reminder targeting (for example: 8.0).';
+    }
+
+    if (event.notifyBefore && reminderTarget === 'CUSTOM' && !reminderCustomTopic.trim()) {
+      return 'Enter a custom reminder topic.';
     }
 
     if (!isValidNotificationChannel(event.notificationChannel.trim())) {
@@ -737,23 +787,69 @@ const EventForm: React.FC = () => {
                   />
                 </Stack>
 
-                <TextField
-                  label="Reminder Channel (Optional)"
-                  value={event.notificationChannel}
-                  onChange={(e) => {
-                    clearFeedback();
-                    setEvent((prev) => ({ ...prev, notificationChannel: e.target.value }));
-                  }}
-                  fullWidth
-                  disabled={!event.notifyBefore}
-                  placeholder="GENERAL"
-                  error={!isValidNotificationChannel(event.notificationChannel.trim())}
-                  helperText={
-                    !isValidNotificationChannel(event.notificationChannel.trim())
-                      ? 'Allowed: letters, numbers, "-", "_", ".", "~", "%".'
-                      : 'When blank, reminders are sent to GENERAL.'
-                  }
-                />
+                <FormControl fullWidth disabled={!event.notifyBefore}>
+                  <InputLabel id="reminder-target-label">Reminder Channel</InputLabel>
+                  <Select
+                    labelId="reminder-target-label"
+                    label="Reminder Channel"
+                    value={reminderTarget}
+                    onChange={(e: SelectChangeEvent<NotificationTarget>) =>
+                      handleReminderTargetChange(e.target.value as NotificationTarget)
+                    }
+                  >
+                    {NOTIFICATION_TARGET_OPTIONS.map((option) => (
+                      <MenuItem key={option.value} value={option.value} sx={{ textAlign: 'left' }}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>{NOTIFICATION_TARGET_HELPER_TEXT}</FormHelperText>
+                </FormControl>
+
+                {reminderTarget === 'APP_VERSION' && (
+                  <TextField
+                    label="App Version"
+                    value={reminderVersion}
+                    onChange={(e) => handleReminderVersionChange(e.target.value)}
+                    fullWidth
+                    disabled={!event.notifyBefore}
+                    placeholder="8.0"
+                    error={submitAttempted && event.notifyBefore && !reminderVersion.trim()}
+                    helperText={
+                      submitAttempted && event.notifyBefore && !reminderVersion.trim()
+                        ? 'Version is required for APP_VERSION reminders.'
+                        : `Will send reminders to topic: ${
+                            resolveNotificationTopic({
+                              target: reminderTarget,
+                              version: reminderVersion,
+                              customTopic: reminderCustomTopic,
+                            }) || 'APP_VERSION_<version>'
+                          }`
+                    }
+                  />
+                )}
+
+                {reminderTarget === 'CUSTOM' && (
+                  <TextField
+                    label="Custom Topic"
+                    value={reminderCustomTopic}
+                    onChange={(e) => handleReminderCustomTopicChange(e.target.value)}
+                    fullWidth
+                    disabled={!event.notifyBefore}
+                    placeholder="APP_VERSION_8_0"
+                    error={
+                      (submitAttempted && event.notifyBefore && !reminderCustomTopic.trim()) ||
+                      !isValidNotificationChannel(event.notificationChannel.trim())
+                    }
+                    helperText={
+                      submitAttempted && event.notifyBefore && !reminderCustomTopic.trim()
+                        ? 'Custom topic is required.'
+                        : !isValidNotificationChannel(event.notificationChannel.trim())
+                          ? 'Allowed: letters, numbers, "-", "_", ".", "~", "%".'
+                          : 'Use this for advanced targeting.'
+                    }
+                  />
+                )}
               </Stack>
             </Paper>
 

@@ -51,6 +51,7 @@ fun EventListScreen() {
     val screenState by viewModel.eventListScreenStateSlice.screenState.collectAsState()
     val isRefreshing = screenState is Resource.Loading
     StatefulScaffold(
+        title = (screenState as? Resource.Success)?.data?.topBarTitle,
         actions = {
             NotificationsEntry()
         },

@@ -1125,6 +1125,8 @@ type conferences implements Node {
 
   schedule_title: String
 
+  app_header_title: String
+
   start_date: Date
 
   end_date: Date
@@ -1156,6 +1158,8 @@ input conferencesFilter {
   name: StringFilter
 
   schedule_title: StringFilter
+
+  app_header_title: StringFilter
 
   start_date: DateFilter
 
@@ -1193,6 +1197,8 @@ input conferencesOrderBy {
   name: OrderByDirection
 
   schedule_title: OrderByDirection
+
+  app_header_title: OrderByDirection
 
   start_date: OrderByDirection
 

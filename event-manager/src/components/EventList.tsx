@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -71,6 +71,12 @@ const EventList: React.FC = () => {
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+  const [pullDistance, setPullDistance] = useState(0);
+  const touchStartYRef = useRef<number | null>(null);
+  const isPullGestureRef = useRef(false);
+
+  const PULL_REFRESH_THRESHOLD = 72;
+  const MAX_PULL_DISTANCE = 120;
 
   const loadAllData = useCallback(async (manualRefresh = false) => {
     if (!selectedConference) {
@@ -136,6 +142,58 @@ const EventList: React.FC = () => {
     }
     void loadAllData();
   }, [conferenceLoading, loadAllData]);
+
+  const isPageAtTop = () => {
+    return window.scrollY <= 0;
+  };
+
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (!isMobile || refreshing) {
+      return;
+    }
+
+    if (!isPageAtTop()) {
+      touchStartYRef.current = null;
+      isPullGestureRef.current = false;
+      return;
+    }
+
+    touchStartYRef.current = event.touches[0]?.clientY ?? null;
+    isPullGestureRef.current = true;
+    setPullDistance(0);
+  };
+
+  const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (!isMobile || !isPullGestureRef.current || touchStartYRef.current === null || refreshing) {
+      return;
+    }
+
+    const currentY = event.touches[0]?.clientY ?? touchStartYRef.current;
+    const delta = currentY - touchStartYRef.current;
+    if (delta <= 0) {
+      setPullDistance(0);
+      return;
+    }
+
+    const nextDistance = Math.min(delta * 0.5, MAX_PULL_DISTANCE);
+    setPullDistance(nextDistance);
+    event.preventDefault();
+  };
+
+  const endPullGesture = () => {
+    if (!isPullGestureRef.current) {
+      return;
+    }
+
+    const shouldRefresh = pullDistance >= PULL_REFRESH_THRESHOLD;
+    touchStartYRef.current = null;
+    isPullGestureRef.current = false;
+    setPullDistance(0);
+
+    if (shouldRefresh && !refreshing) {
+      void loadAllData(true);
+    }
+  };
 
   const handleSort = (key: keyof Event) => {
     setSortConfig((current) => ({
@@ -302,9 +360,34 @@ const EventList: React.FC = () => {
         width: '100%',
         maxWidth: '100%',
         textAlign: 'left',
+        touchAction: 'pan-y',
       }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={endPullGesture}
+      onTouchCancel={endPullGesture}
     >
       <Stack spacing={2.5}>
+        {(isMobile || pullDistance > 0 || refreshing) && (
+          <Box
+            sx={{
+              height: pullDistance > 0 || refreshing ? 32 : 0,
+              transition: 'height 120ms ease',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              {refreshing
+                ? 'Refreshing events...'
+                : pullDistance >= PULL_REFRESH_THRESHOLD
+                  ? 'Release to refresh'
+                  : 'Pull to refresh'}
+            </Typography>
+          </Box>
+        )}
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           justifyContent="flex-end"

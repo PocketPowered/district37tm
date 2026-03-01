@@ -26,6 +26,7 @@ interface ConferenceFormState {
   name: string;
   slug: string;
   scheduleTitle: string;
+  appHeaderTitle: string;
   startDate: string;
   endDate: string;
 }
@@ -34,6 +35,7 @@ const createEmptyConferenceForm = (): ConferenceFormState => ({
   name: '',
   slug: '',
   scheduleTitle: '',
+  appHeaderTitle: '',
   startDate: '',
   endDate: '',
 });
@@ -42,6 +44,7 @@ const conferenceToForm = (conference: Conference): ConferenceFormState => ({
   name: conference.name,
   slug: conference.slug,
   scheduleTitle: conference.scheduleTitle,
+  appHeaderTitle: conference.appHeaderTitle || '',
   startDate: conference.startDate || '',
   endDate: conference.endDate || '',
 });
@@ -121,6 +124,7 @@ const ConferencesManager: React.FC = () => {
     const name = formState.name.trim();
     const slug = conferenceService.sanitizeSlug(formState.slug || formState.name);
     const scheduleTitle = formState.scheduleTitle.trim() || name;
+    const appHeaderTitle = formState.appHeaderTitle.trim() || null;
     const startDate = formState.startDate || null;
     const endDate = formState.endDate || null;
 
@@ -143,6 +147,7 @@ const ConferencesManager: React.FC = () => {
       name,
       slug,
       scheduleTitle,
+      appHeaderTitle,
       startDate,
       endDate,
     };
@@ -254,6 +259,9 @@ const ConferencesManager: React.FC = () => {
                       Schedule title: {conference.scheduleTitle}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
+                      App header title: {conference.appHeaderTitle || conference.scheduleTitle}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
                       Date range: {formatDateLabel(conference.startDate)} - {formatDateLabel(conference.endDate)}
                     </Typography>
                   </Box>
@@ -323,6 +331,18 @@ const ConferencesManager: React.FC = () => {
                 }))
               }
               helperText='Shown in app header. Defaults to conference name if left empty.'
+              fullWidth
+            />
+            <TextField
+              label="App Header Title"
+              value={formState.appHeaderTitle}
+              onChange={(event) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  appHeaderTitle: event.target.value,
+                }))
+              }
+              helperText="Shown in the mobile top app bar. Defaults to Schedule Title if left empty."
               fullWidth
             />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>

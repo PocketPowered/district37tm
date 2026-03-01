@@ -6,6 +6,7 @@ type ConferenceRow = {
   slug: string | null;
   name: string | null;
   schedule_title: string | null;
+  app_header_title: string | null;
   start_date: string | null;
   end_date: string | null;
   is_active: boolean | null;
@@ -14,7 +15,7 @@ type ConferenceRow = {
 };
 
 const conferenceFields =
-  'id, slug, name, schedule_title, start_date, end_date, is_active, created_at, updated_at';
+  'id, slug, name, schedule_title, app_header_title, start_date, end_date, is_active, created_at, updated_at';
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -35,12 +36,21 @@ const normalizeDateField = (value: string | null | undefined): string | null => 
   return trimmed.length > 0 ? trimmed : null;
 };
 
+const normalizeTextField = (value: string | null | undefined): string | null => {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
 const toConference = (row: ConferenceRow): Conference => {
   return {
     id: row.id,
     slug: row.slug?.trim() || '',
     name: row.name?.trim() || '',
     scheduleTitle: row.schedule_title?.trim() || row.name?.trim() || '',
+    appHeaderTitle: row.app_header_title?.trim() || null,
     startDate: row.start_date,
     endDate: row.end_date,
     isActive: row.is_active === true,
@@ -53,6 +63,7 @@ const toConferenceInsert = (input: ConferenceUpsertInput) => {
   const slug = sanitizeSlug(input.slug);
   const name = input.name.trim();
   const scheduleTitle = input.scheduleTitle?.trim() || name;
+  const appHeaderTitle = normalizeTextField(input.appHeaderTitle);
   const startDate = normalizeDateField(input.startDate);
   const endDate = normalizeDateField(input.endDate);
 
@@ -72,6 +83,7 @@ const toConferenceInsert = (input: ConferenceUpsertInput) => {
     slug,
     name,
     schedule_title: scheduleTitle,
+    app_header_title: appHeaderTitle,
     start_date: startDate,
     end_date: endDate,
   };

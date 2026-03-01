@@ -9,6 +9,7 @@ query ActiveConference {
         id
         name
         schedule_title
+        app_header_title
         start_date
         end_date
       }
