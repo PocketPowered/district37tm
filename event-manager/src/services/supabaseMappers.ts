@@ -22,14 +22,14 @@ type EventRow = {
 const DEFAULT_NOTIFICATION_LEAD_MINUTES = 15;
 const MAX_NOTIFICATION_LEAD_MINUTES = 24 * 60;
 
-const toPositiveInteger = (value: unknown, fallback: number): number => {
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+const toNonNegativeInteger = (value: unknown, fallback: number): number => {
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
     return Math.floor(value);
   }
 
   if (typeof value === 'string') {
     const parsed = Number.parseInt(value, 10);
-    if (Number.isFinite(parsed) && parsed > 0) {
+    if (Number.isFinite(parsed) && parsed >= 0) {
       return parsed;
     }
   }
@@ -38,7 +38,7 @@ const toPositiveInteger = (value: unknown, fallback: number): number => {
 };
 
 const normalizeNotificationLeadMinutes = (value: unknown): number => {
-  const parsed = toPositiveInteger(value, DEFAULT_NOTIFICATION_LEAD_MINUTES);
+  const parsed = toNonNegativeInteger(value, DEFAULT_NOTIFICATION_LEAD_MINUTES);
   if (parsed > MAX_NOTIFICATION_LEAD_MINUTES) {
     return DEFAULT_NOTIFICATION_LEAD_MINUTES;
   }

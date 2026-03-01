@@ -78,14 +78,18 @@ const isValidHttpUrl = (value: string): boolean => {
 const sanitizeEventNotificationLeadMinutes = (value: unknown): number => {
   if (typeof value === 'number' && Number.isFinite(value)) {
     const parsed = Math.floor(value);
-    if (parsed > 0 && parsed <= MAX_EVENT_NOTIFICATION_LEAD_MINUTES) {
-      return parsed;
-    }
+    if (parsed < 0) return 0;
+    if (parsed > MAX_EVENT_NOTIFICATION_LEAD_MINUTES) return MAX_EVENT_NOTIFICATION_LEAD_MINUTES;
+    return parsed;
   }
 
   if (typeof value === 'string') {
-    const parsed = Number.parseInt(value, 10);
-    if (Number.isFinite(parsed) && parsed > 0 && parsed <= MAX_EVENT_NOTIFICATION_LEAD_MINUTES) {
+    const trimmed = value.trim();
+    if (!trimmed) return 0;
+    const parsed = Number.parseInt(trimmed, 10);
+    if (Number.isFinite(parsed)) {
+      if (parsed < 0) return 0;
+      if (parsed > MAX_EVENT_NOTIFICATION_LEAD_MINUTES) return MAX_EVENT_NOTIFICATION_LEAD_MINUTES;
       return parsed;
     }
   }
@@ -420,9 +424,9 @@ const EventForm: React.FC = () => {
 
     if (
       event.notifyBefore &&
-      (event.notificationLeadMinutes < 1 || event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
+      (event.notificationLeadMinutes < 0 || event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
     ) {
-      return `Reminder lead time is invalid. Use 1-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES} minutes.`;
+      return `Reminder lead time is invalid. Use 0-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES} minutes.`;
     }
 
     if (event.notifyBefore && reminderTarget === 'APP_VERSION' && !reminderVersion.trim()) {
@@ -769,19 +773,19 @@ const EventForm: React.FC = () => {
                     }}
                     disabled={!event.notifyBefore}
                     sx={{ minWidth: { xs: '100%', sm: 220 } }}
-                    inputProps={{ min: 1, max: MAX_EVENT_NOTIFICATION_LEAD_MINUTES, step: 1 }}
+                    inputProps={{ min: 0, max: MAX_EVENT_NOTIFICATION_LEAD_MINUTES, step: 1 }}
                     error={
                       submitAttempted &&
                       event.notifyBefore &&
-                      (event.notificationLeadMinutes < 1 ||
+                      (event.notificationLeadMinutes < 0 ||
                         event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
                     }
                     helperText={
                       submitAttempted &&
                       event.notifyBefore &&
-                      (event.notificationLeadMinutes < 1 ||
+                      (event.notificationLeadMinutes < 0 ||
                         event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
-                        ? `Use 1-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES}.`
+                        ? `Use 0-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES}.`
                         : 'Default is 15.'
                     }
                   />

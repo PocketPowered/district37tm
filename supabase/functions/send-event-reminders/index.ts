@@ -8,6 +8,7 @@ type EventRow = {
   location_info: string | null;
   start_time: number | null;
   end_time: number | null;
+  conference_id: number | null;
   notify_before: unknown;
   notification_lead_minutes: unknown;
   notification_channel: unknown;
@@ -17,6 +18,7 @@ type ParsedEventReminder = {
   locationInfo: string;
   startTime: number;
   leadMinutes: number;
+  conferenceId: number | null;
   notificationChannel: string | null;
 };
 
@@ -29,6 +31,7 @@ const TOPIC_PATTERN = /^[A-Za-z0-9\-_.~%]+$/;
 const SCAN_WINDOW_PAST_MS = 90_000;
 const SCAN_WINDOW_FUTURE_MS = 30_000;
 const EVENT_LOOKAHEAD_MS = 36 * 60 * 60 * 1000;
+const DEFAULT_REMINDER_TIMEZONE = Deno.env.get("EVENT_REMINDER_TIMEZONE")?.trim() || "America/New_York";
 
 const CRON_SECRET_SETTING_KEY = "event_reminder_cron_secret";
 const SECRET_HEADER_NAME = "x-event-reminder-secret";
@@ -44,14 +47,14 @@ const json = (status: number, payload: unknown) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const parsePositiveInt = (value: unknown, fallback: number) => {
+const parseNonNegativeInt = (value: unknown, fallback: number) => {
   if (typeof value === "number" && Number.isFinite(value)) {
     const parsed = Math.floor(value);
-    if (parsed > 0 && parsed <= MAX_LEAD_MINUTES) return parsed;
+    if (parsed >= 0 && parsed <= MAX_LEAD_MINUTES) return parsed;
   }
   if (typeof value === "string") {
     const parsed = Number.parseInt(value, 10);
-    if (Number.isFinite(parsed) && parsed > 0 && parsed <= MAX_LEAD_MINUTES) return parsed;
+    if (Number.isFinite(parsed) && parsed >= 0 && parsed <= MAX_LEAD_MINUTES) return parsed;
   }
   return fallback;
 };
@@ -80,27 +83,49 @@ const parseEventReminder = (raw: EventRow): ParsedEventReminder | null => {
     title: typeof raw.title === "string" && raw.title.trim() ? raw.title : "Upcoming event",
     locationInfo: typeof raw.location_info === "string" ? raw.location_info : "",
     startTime,
-    leadMinutes: parsePositiveInt(raw.notification_lead_minutes, DEFAULT_LEAD_MINUTES),
+    leadMinutes: parseNonNegativeInt(raw.notification_lead_minutes, DEFAULT_LEAD_MINUTES),
+    conferenceId: typeof raw.conference_id === "number" && Number.isFinite(raw.conference_id) ? raw.conference_id : null,
     notificationChannel: normalizeTopic(raw.notification_channel),
   };
+};
+
+const formatReminderStartTime = (startTimeMs: number): string => {
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: DEFAULT_REMINDER_TIMEZONE,
+    }).format(new Date(startTimeMs));
+  } catch {
+    return new Date(startTimeMs).toISOString();
+  }
 };
 
 const isUniqueViolation = (error: unknown): boolean =>
   Boolean(error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "23505");
 
-const getExpectedCronSecret = async (adminClient: SupabaseClient): Promise<string | null> => {
-  const envSecret = Deno.env.get("EVENT_REMINDER_CRON_SECRET")?.trim();
-  if (envSecret) return envSecret;
+const getExpectedCronSecrets = async (adminClient: SupabaseClient): Promise<string[]> => {
+  const secrets = new Set<string>();
 
-  const { data } = await adminClient
+  const envSecret = Deno.env.get("EVENT_REMINDER_CRON_SECRET")?.trim();
+  if (envSecret) {
+    secrets.add(envSecret);
+  }
+
+  const { data, error } = await adminClient
     .from("system_runtime_settings")
     .select("value")
     .eq("key", CRON_SECRET_SETTING_KEY)
     .maybeSingle();
-  const dbSecret = typeof data?.value === "string" ? data.value.trim() : "";
-  if (dbSecret) return dbSecret;
+  if (!error) {
+    const dbSecret = typeof data?.value === "string" ? data.value.trim() : "";
+    if (dbSecret) {
+      secrets.add(dbSecret);
+    }
+  }
 
-  return null;
+  return Array.from(secrets);
 };
 
 const sendFcmMessage = async (
@@ -148,15 +173,16 @@ Deno.serve(async (req) => {
     }
 
     const authHeader = req.headers.get("Authorization");
-    const requestSecret = req.headers.get(SECRET_HEADER_NAME);
+    const requestSecret = req.headers.get(SECRET_HEADER_NAME)?.trim() || null;
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     let callerEmail = "system:event-reminder";
 
-    const expectedCronSecret = await getExpectedCronSecret(adminClient);
+    const expectedCronSecrets = await getExpectedCronSecrets(adminClient);
     const isServiceRoleBearer =
       Boolean(authHeader?.startsWith("Bearer ")) && authHeader?.slice(7).trim() === serviceRoleKey;
-    const hasValidCronSecret = Boolean(expectedCronSecret) && requestSecret === expectedCronSecret;
+    const hasValidCronSecret =
+      Boolean(requestSecret) && expectedCronSecrets.some((secret) => secret === requestSecret);
 
     if (!isServiceRoleBearer && !hasValidCronSecret) {
       if (!authHeader) {
@@ -190,7 +216,7 @@ Deno.serve(async (req) => {
     const nowMs = Date.now();
     const { data: events, error: eventsError } = await adminClient
       .from("events")
-      .select("id, title, location_info, start_time, end_time, notify_before, notification_lead_minutes, notification_channel")
+      .select("id, title, location_info, start_time, end_time, conference_id, notify_before, notification_lead_minutes, notification_channel")
       .gte("end_time", nowMs - 5 * 60_000)
       .lte("start_time", nowMs + EVENT_LOOKAHEAD_MS)
       .order("start_time", { ascending: true });
@@ -209,6 +235,30 @@ Deno.serve(async (req) => {
 
     if (dueReminders.length === 0) {
       return json(200, { ok: true, message: "No due event reminders", scannedEvents: events?.length || 0 });
+    }
+
+    const conferenceIds = Array.from(
+      new Set(
+        dueReminders
+          .map((due) => due.reminder.conferenceId)
+          .filter((conferenceId): conferenceId is number => typeof conferenceId === "number" && Number.isFinite(conferenceId)),
+      ),
+    );
+
+    const conferenceNameById = new Map<number, string>();
+    if (conferenceIds.length > 0) {
+      const { data: conferences } = await adminClient
+        .from("conferences")
+        .select("id, name")
+        .in("id", conferenceIds);
+
+      for (const conference of conferences || []) {
+        const conferenceId = typeof conference.id === "number" ? conference.id : Number.NaN;
+        const conferenceName = typeof conference.name === "string" ? conference.name.trim() : "";
+        if (Number.isFinite(conferenceId) && conferenceName) {
+          conferenceNameById.set(conferenceId, conferenceName);
+        }
+      }
     }
 
     const auth = new GoogleAuth({
@@ -245,11 +295,12 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const minuteLabel = due.reminder.leadMinutes === 1 ? "minute" : "minutes";
-      const title = `${due.reminder.title} starts in ${due.reminder.leadMinutes} ${minuteLabel}`;
-      const body = due.reminder.locationInfo.trim()
-        ? `${due.reminder.title} is about to begin at ${due.reminder.locationInfo}.`
-        : `${due.reminder.title} is about to begin.`;
+      const title =
+        (typeof due.reminder.conferenceId === "number" && conferenceNameById.get(due.reminder.conferenceId)) ||
+        "Upcoming Event";
+      const startTimeLabel = formatReminderStartTime(due.reminder.startTime);
+      const locationSuffix = due.reminder.locationInfo.trim() ? ` in ${due.reminder.locationInfo.trim()}` : "";
+      const body = `"${due.reminder.title}" will be starting soon at ${startTimeLabel}${locationSuffix}.`;
       const topic = due.reminder.notificationChannel || defaultTopic;
 
       const { data: notificationRecord, error: notificationInsertError } = await adminClient
