@@ -141,4 +141,25 @@ export const resourceService = {
     const { error } = await supabase.from('resources').delete().eq('id', id).eq('conference_id', conferenceId);
     if (error) throw error;
   },
+
+  async deleteResourceCategory(categoryKey: string, conferenceId: number): Promise<void> {
+    const normalizedKey = normalizeResourceCategoryKey(categoryKey);
+    if (!normalizedKey) {
+      throw new Error('Category key is invalid');
+    }
+
+    const { error: resourcesError } = await supabase
+      .from('resources')
+      .delete()
+      .eq('conference_id', conferenceId)
+      .eq('resource_type', normalizedKey);
+    if (resourcesError) throw resourcesError;
+
+    const { error: categoryError } = await supabase
+      .from('resource_categories')
+      .delete()
+      .eq('conference_id', conferenceId)
+      .eq('key', normalizedKey);
+    if (categoryError) throw categoryError;
+  },
 };

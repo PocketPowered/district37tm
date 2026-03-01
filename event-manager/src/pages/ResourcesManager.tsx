@@ -117,8 +117,10 @@ const ResourcesManager: React.FC = () => {
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteCategoryDialogOpen, setDeleteCategoryDialogOpen] = useState(false);
 
   const [resourceToDelete, setResourceToDelete] = useState<BackendExternalLink | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
   const [editingResource, setEditingResource] = useState<BackendExternalLink | null>(null);
 
   const [formData, setFormData] = useState<ResourceFormData>(initialFormData);
@@ -127,6 +129,7 @@ const ResourcesManager: React.FC = () => {
 
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryError, setNewCategoryError] = useState<string | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState(false);
 
   const currentTab = useMemo(
     () => categories.findIndex((category) => category === selectedCategory),
@@ -374,6 +377,11 @@ const ResourcesManager: React.FC = () => {
     setDeleteDialogOpen(true);
   };
 
+  const handleDeleteCategoryClick = (category: string) => {
+    setCategoryToDelete(category);
+    setDeleteCategoryDialogOpen(true);
+  };
+
   const handleRemoveConfirm = async () => {
     if (!resourceToDelete?.id) return;
     if (!selectedConference) return;
@@ -386,6 +394,24 @@ const ResourcesManager: React.FC = () => {
     } catch (err) {
       setError('Failed to remove resource');
       console.error(err);
+    }
+  };
+
+  const handleDeleteCategoryConfirm = async () => {
+    if (!categoryToDelete) return;
+    if (!selectedConference) return;
+
+    try {
+      setDeletingCategory(true);
+      await resourceService.deleteResourceCategory(categoryToDelete, selectedConference.id);
+      await fetchResources();
+      setDeleteCategoryDialogOpen(false);
+      setCategoryToDelete(null);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to delete category'));
+      console.error(err);
+    } finally {
+      setDeletingCategory(false);
     }
   };
 
@@ -518,6 +544,8 @@ const ResourcesManager: React.FC = () => {
   }
 
   const normalizedCategoryPreview = normalizeResourceCategoryKey(newCategoryName);
+  const deleteCategoryResourceCount = categoryToDelete ? (resourcesByCategory[categoryToDelete]?.length ?? 0) : 0;
+  const deleteCategoryLabel = categoryToDelete ? getCategoryLabel(categoryToDelete) : '';
 
   return (
     <Container maxWidth="md">
@@ -555,7 +583,15 @@ const ResourcesManager: React.FC = () => {
 
             {categories.map((category, index) => (
               <TabPanel key={category} value={currentTab < 0 ? 0 : currentTab} index={index}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <Button
+                    startIcon={<DeleteIcon />}
+                    variant="outlined"
+                    color="error"
+                    onClick={() => handleDeleteCategoryClick(category)}
+                  >
+                    Delete Category
+                  </Button>
                   <Button startIcon={<AddIcon />} variant="outlined" onClick={() => openAddResourceDialogForCategory(category)}>
                     Add Resource
                   </Button>
@@ -656,6 +692,42 @@ const ResourcesManager: React.FC = () => {
               variant="contained"
             >
               {editingResource ? 'Update' : 'Add'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={deleteCategoryDialogOpen}
+          onClose={() => {
+            if (deletingCategory) return;
+            setDeleteCategoryDialogOpen(false);
+            setCategoryToDelete(null);
+          }}
+          aria-labelledby="delete-category-dialog-title"
+          aria-describedby="delete-category-dialog-description"
+        >
+          <DialogTitle id="delete-category-dialog-title">Delete Category</DialogTitle>
+          <DialogContent>
+            <DialogContentText id="delete-category-dialog-description">
+              {categoryToDelete
+                ? `Delete "${deleteCategoryLabel}" category and its ${deleteCategoryResourceCount} resource${
+                    deleteCategoryResourceCount === 1 ? '' : 's'
+                  }? This action cannot be undone.`
+                : 'Delete this category? This action cannot be undone.'}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setDeleteCategoryDialogOpen(false);
+                setCategoryToDelete(null);
+              }}
+              disabled={deletingCategory}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleDeleteCategoryConfirm} color="error" autoFocus disabled={deletingCategory}>
+              {deletingCategory ? 'Deleting...' : 'Delete Category'}
             </Button>
           </DialogActions>
         </Dialog>

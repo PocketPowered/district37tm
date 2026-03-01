@@ -7,6 +7,21 @@ type EdgeFunctionResult = {
   functionName: string;
 };
 
+export type NotificationHistoryItem = {
+  id: string;
+  title: string;
+  body: string;
+  topic: string;
+  status: string;
+  createdBy: string;
+  createdAt: string;
+};
+
+export type NotificationHistoryPage = {
+  items: NotificationHistoryItem[];
+  totalCount: number;
+};
+
 const getValidAccessToken = async (): Promise<string> => {
   const {
     data: { session },
@@ -118,5 +133,38 @@ export const notificationService = {
     }
 
     return result.payload;
+  },
+
+  getNotificationHistory: async (page: number, pageSize: number): Promise<NotificationHistoryPage> => {
+    const safePage = Number.isFinite(page) && page >= 0 ? Math.floor(page) : 0;
+    const safePageSize = Number.isFinite(pageSize) && pageSize > 0 ? Math.floor(pageSize) : 10;
+    const from = safePage * safePageSize;
+    const to = from + safePageSize - 1;
+
+    const { data, count, error } = await supabase
+      .from('notifications')
+      .select('id, title, body, topic, status, created_by, created_at', { count: 'exact' })
+      .in('status', ['sent', 'queued'])
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      throw error;
+    }
+
+    const items: NotificationHistoryItem[] = (data || []).map((row) => ({
+      id: row.id,
+      title: row.title,
+      body: row.body,
+      topic: row.topic,
+      status: row.status,
+      createdBy: row.created_by || 'unknown',
+      createdAt: row.created_at,
+    }));
+
+    return {
+      items,
+      totalCount: count || 0,
+    };
   },
 };
