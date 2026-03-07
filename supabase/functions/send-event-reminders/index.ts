@@ -1,7 +1,7 @@
-import { GoogleAuth } from "npm:google-auth-library@9.15.1";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 type EventReminderRequest = { topic?: string };
+
 type EventRow = {
   id: number;
   title: string | null;
@@ -13,13 +13,29 @@ type EventRow = {
   notification_lead_minutes: unknown;
   notification_channel: unknown;
 };
-type ParsedEventReminder = {
+
+type ReminderRow = {
+  id: number;
+  event_id: number;
+  is_enabled: boolean | null;
+  lead_minutes: number | null;
+  channel: string | null;
+  body_template: string | null;
+};
+
+type ParsedReminder = {
+  key: string;
+  leadMinutes: number;
+  channel: string | null;
+  bodyTemplate: string | null;
+};
+
+type ParsedEvent = {
+  id: number;
   title: string;
   locationInfo: string;
   startTime: number;
-  leadMinutes: number;
   conferenceId: number | null;
-  notificationChannel: string | null;
 };
 
 type SupabaseClient = ReturnType<typeof createClient>;
@@ -35,6 +51,8 @@ const DEFAULT_REMINDER_TIMEZONE = Deno.env.get("EVENT_REMINDER_TIMEZONE")?.trim(
 
 const CRON_SECRET_SETTING_KEY = "event_reminder_cron_secret";
 const SECRET_HEADER_NAME = "x-event-reminder-secret";
+
+const DEFAULT_TEMPLATE = '"{{event_name}}" will be starting soon at {{start_time}} in {{location}}.';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -73,19 +91,38 @@ const normalizeTopic = (value: unknown): string | null => {
   return withoutPrefix;
 };
 
-const parseEventReminder = (raw: EventRow): ParsedEventReminder | null => {
-  if (!(raw.notify_before === true || raw.notify_before === "true")) return null;
-
+const parseEvent = (raw: EventRow): ParsedEvent | null => {
   const startTime = typeof raw.start_time === "number" && Number.isFinite(raw.start_time) ? raw.start_time : NaN;
   if (!Number.isFinite(startTime) || startTime <= 0) return null;
 
   return {
+    id: raw.id,
     title: typeof raw.title === "string" && raw.title.trim() ? raw.title : "Upcoming event",
-    locationInfo: typeof raw.location_info === "string" ? raw.location_info : "",
+    locationInfo: typeof raw.location_info === "string" ? raw.location_info.trim() : "",
     startTime,
-    leadMinutes: parseNonNegativeInt(raw.notification_lead_minutes, DEFAULT_LEAD_MINUTES),
     conferenceId: typeof raw.conference_id === "number" && Number.isFinite(raw.conference_id) ? raw.conference_id : null,
-    notificationChannel: normalizeTopic(raw.notification_channel),
+  };
+};
+
+const parseReminder = (raw: ReminderRow): ParsedReminder | null => {
+  if (raw.is_enabled === false) return null;
+
+  return {
+    key: `reminder:${raw.id}`,
+    leadMinutes: parseNonNegativeInt(raw.lead_minutes, DEFAULT_LEAD_MINUTES),
+    channel: normalizeTopic(raw.channel),
+    bodyTemplate: typeof raw.body_template === "string" && raw.body_template.trim() ? raw.body_template.trim() : null,
+  };
+};
+
+const parseLegacyReminder = (raw: EventRow): ParsedReminder | null => {
+  if (!(raw.notify_before === true || raw.notify_before === "true")) return null;
+
+  return {
+    key: "legacy",
+    leadMinutes: parseNonNegativeInt(raw.notification_lead_minutes, DEFAULT_LEAD_MINUTES),
+    channel: normalizeTopic(raw.notification_channel),
+    bodyTemplate: null,
   };
 };
 
@@ -102,58 +139,48 @@ const formatReminderStartTime = (startTimeMs: number): string => {
   }
 };
 
-const isUniqueViolation = (error: unknown): boolean =>
-  Boolean(error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "23505");
+const applyTemplate = (
+  template: string,
+  payload: { eventName: string; startTime: string; location: string; conferenceName: string },
+): string => {
+  return template
+    .replace(/\{\{\s*event_name\s*\}\}/gi, payload.eventName)
+    .replace(/\{\{\s*start_time\s*\}\}/gi, payload.startTime)
+    .replace(/\{\{\s*location\s*\}\}/gi, payload.location)
+    .replace(/\{\{\s*conference_name\s*\}\}/gi, payload.conferenceName);
+};
+
+const buildReminderBody = (
+  template: string | null,
+  payload: { eventName: string; startTime: string; location: string; conferenceName: string },
+): string => {
+  if (!template) {
+    const locationSuffix = payload.location ? ` in ${payload.location}` : "";
+    return `"${payload.eventName}" will be starting soon at ${payload.startTime}${locationSuffix}.`;
+  }
+
+  return applyTemplate(template || DEFAULT_TEMPLATE, payload);
+};
 
 const getExpectedCronSecrets = async (adminClient: SupabaseClient): Promise<string[]> => {
   const secrets = new Set<string>();
 
   const envSecret = Deno.env.get("EVENT_REMINDER_CRON_SECRET")?.trim();
-  if (envSecret) {
-    secrets.add(envSecret);
-  }
+  if (envSecret) secrets.add(envSecret);
 
   const { data, error } = await adminClient
     .from("system_runtime_settings")
     .select("value")
     .eq("key", CRON_SECRET_SETTING_KEY)
     .maybeSingle();
+
   if (!error) {
     const dbSecret = typeof data?.value === "string" ? data.value.trim() : "";
-    if (dbSecret) {
-      secrets.add(dbSecret);
-    }
+    if (dbSecret) secrets.add(dbSecret);
   }
 
   return Array.from(secrets);
 };
-
-const sendFcmMessage = async (
-  token: string,
-  firebaseProjectId: string,
-  accessToken: string,
-  title: string,
-  body: string,
-) =>
-  await fetch(`https://fcm.googleapis.com/v1/projects/${firebaseProjectId}/messages:send`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      message: {
-        topic: token,
-        notification: { title, body },
-        data: { title, body },
-        android: { priority: "high", notification: { sound: "default" } },
-        apns: {
-          headers: { "apns-priority": "10", "apns-push-type": "alert" },
-          payload: { aps: { alert: { title, body }, sound: "default" } },
-        },
-      },
-    }),
-  });
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -162,14 +189,9 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const firebaseServiceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
-    const firebaseProjectId = Deno.env.get("FIREBASE_PROJECT_ID");
 
     if (!supabaseUrl || !serviceRoleKey || !anonKey) {
       return json(500, { error: "Missing Supabase secrets for edge function runtime" });
-    }
-    if (!firebaseServiceAccountJson || !firebaseProjectId) {
-      return json(500, { error: "Missing Firebase secrets (FIREBASE_SERVICE_ACCOUNT_JSON / FIREBASE_PROJECT_ID)" });
     }
 
     const authHeader = req.headers.get("Authorization");
@@ -186,9 +208,7 @@ Deno.serve(async (req) => {
 
     if (!isServiceRoleBearer && !hasValidCronSecret) {
       if (!authHeader) {
-        return json(401, {
-          error: "Missing Authorization header or x-event-reminder-secret",
-        });
+        return json(401, { error: "Missing Authorization header or x-event-reminder-secret" });
       }
 
       const callerClient = createClient(supabaseUrl, anonKey, {
@@ -216,41 +236,75 @@ Deno.serve(async (req) => {
     const nowMs = Date.now();
     const { data: events, error: eventsError } = await adminClient
       .from("events")
-      .select("id, title, location_info, start_time, end_time, conference_id, notify_before, notification_lead_minutes, notification_channel")
+      .select(
+        "id, title, location_info, start_time, end_time, conference_id, notify_before, notification_lead_minutes, notification_channel",
+      )
       .gte("end_time", nowMs - 5 * 60_000)
       .lte("start_time", nowMs + EVENT_LOOKAHEAD_MS)
       .order("start_time", { ascending: true });
-    if (eventsError) return json(500, { error: "Failed to load events", details: eventsError.message });
 
-    const dueReminders: Array<{ eventId: number; reminder: ParsedEventReminder }> = [];
-    for (const event of (events || []) as EventRow[]) {
-      const reminder = parseEventReminder(event);
-      if (!reminder || reminder.startTime <= nowMs) continue;
-
-      const triggerAt = reminder.startTime - reminder.leadMinutes * 60_000;
-      if (triggerAt < nowMs - SCAN_WINDOW_PAST_MS || triggerAt > nowMs + SCAN_WINDOW_FUTURE_MS) continue;
-
-      dueReminders.push({ eventId: event.id, reminder });
+    if (eventsError) {
+      return json(500, { error: "Failed to load events", details: eventsError.message });
     }
 
-    if (dueReminders.length === 0) {
-      return json(200, { ok: true, message: "No due event reminders", scannedEvents: events?.length || 0 });
+    const parsedEvents = new Map<number, ParsedEvent>();
+    const eventIds: number[] = [];
+
+    for (const event of (events || []) as EventRow[]) {
+      const parsed = parseEvent(event);
+      if (!parsed) continue;
+      if (parsed.startTime <= nowMs) continue;
+      parsedEvents.set(parsed.id, parsed);
+      eventIds.push(parsed.id);
+    }
+
+    if (eventIds.length === 0) {
+      return json(200, { ok: true, message: "No upcoming events to evaluate" });
+    }
+
+    const { data: reminderRows, error: remindersError } = await adminClient
+      .from("event_notification_reminders")
+      .select("id, event_id, is_enabled, lead_minutes, channel, body_template")
+      .in("event_id", eventIds)
+      .order("sort_order", { ascending: true })
+      .order("id", { ascending: true });
+
+    if (remindersError) {
+      return json(500, { error: "Failed to load event reminder settings", details: remindersError.message });
+    }
+
+    const reminderMap = new Map<number, ParsedReminder[]>();
+
+    for (const row of (reminderRows || []) as ReminderRow[]) {
+      const parsed = parseReminder(row);
+      if (!parsed) continue;
+
+      const existing = reminderMap.get(row.event_id) || [];
+      existing.push(parsed);
+      reminderMap.set(row.event_id, existing);
+    }
+
+    for (const rawEvent of (events || []) as EventRow[]) {
+      if (!parsedEvents.has(rawEvent.id)) continue;
+      if (reminderMap.has(rawEvent.id)) continue;
+
+      const legacyReminder = parseLegacyReminder(rawEvent);
+      if (!legacyReminder) continue;
+
+      reminderMap.set(rawEvent.id, [legacyReminder]);
     }
 
     const conferenceIds = Array.from(
       new Set(
-        dueReminders
-          .map((due) => due.reminder.conferenceId)
+        Array.from(parsedEvents.values())
+          .map((event) => event.conferenceId)
           .filter((conferenceId): conferenceId is number => typeof conferenceId === "number" && Number.isFinite(conferenceId)),
       ),
     );
 
     const conferenceNameById = new Map<number, string>();
     if (conferenceIds.length > 0) {
-      const { data: conferences } = await adminClient
-        .from("conferences")
-        .select("id, name")
-        .in("id", conferenceIds);
+      const { data: conferences } = await adminClient.from("conferences").select("id, name").in("id", conferenceIds);
 
       for (const conference of conferences || []) {
         const conferenceId = typeof conference.id === "number" ? conference.id : Number.NaN;
@@ -261,98 +315,67 @@ Deno.serve(async (req) => {
       }
     }
 
-    const auth = new GoogleAuth({
-      credentials: JSON.parse(firebaseServiceAccountJson),
-      scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
-    });
-    const authClient = await auth.getClient();
-    const accessToken = await authClient.getAccessToken();
-    if (!accessToken.token) return json(500, { error: "Could not obtain Firebase access token" });
-
-    let sentCount = 0;
-    let failedCount = 0;
+    let dueReminderCount = 0;
+    let queuedCount = 0;
     let duplicateCount = 0;
 
-    for (const due of dueReminders) {
-      const { data: reminderDelivery, error: reminderInsertError } = await adminClient
-        .from("event_reminder_deliveries")
-        .insert({
-          event_id: due.eventId,
-          event_start_time: due.reminder.startTime,
-          lead_minutes: due.reminder.leadMinutes,
-          event_title: due.reminder.title,
-          status: "queued",
-        })
-        .select("id")
-        .single();
+    for (const [eventId, event] of parsedEvents.entries()) {
+      const reminders = reminderMap.get(eventId) || [];
+      if (!reminders.length) continue;
 
-      if (reminderInsertError) {
-        if (isUniqueViolation(reminderInsertError)) {
+      for (const reminder of reminders) {
+        const triggerAt = event.startTime - reminder.leadMinutes * 60_000;
+        if (triggerAt < nowMs - SCAN_WINDOW_PAST_MS || triggerAt > nowMs + SCAN_WINDOW_FUTURE_MS) continue;
+
+        dueReminderCount += 1;
+
+        const conferenceName =
+          (typeof event.conferenceId === "number" && conferenceNameById.get(event.conferenceId)) || "Upcoming Event";
+        const startTimeLabel = formatReminderStartTime(event.startTime);
+        const body = buildReminderBody(reminder.bodyTemplate, {
+          eventName: event.title,
+          startTime: startTimeLabel,
+          location: event.locationInfo,
+          conferenceName,
+        });
+
+        const dedupeKey = `event:${event.id}:${reminder.key}:start:${event.startTime}:lead:${reminder.leadMinutes}`;
+        const topic = reminder.channel || defaultTopic;
+
+        const { data: insertedRows, error: insertError } = await adminClient
+          .from("notifications")
+          .upsert(
+            {
+              title: conferenceName,
+              body,
+              topic,
+              created_by: callerEmail,
+              status: "queued",
+              scheduled_for: new Date(Math.max(triggerAt, nowMs)).toISOString(),
+              source: "event_reminder",
+              source_dedupe_key: dedupeKey,
+            },
+            { onConflict: "source_dedupe_key", ignoreDuplicates: true },
+          )
+          .select("id");
+
+        if (insertError) {
+          return json(500, { error: "Failed to enqueue reminder notification", details: insertError.message });
+        }
+
+        if (insertedRows && insertedRows.length > 0) {
+          queuedCount += 1;
+        } else {
           duplicateCount += 1;
-          continue;
         }
-        failedCount += 1;
-        continue;
       }
-
-      const title =
-        (typeof due.reminder.conferenceId === "number" && conferenceNameById.get(due.reminder.conferenceId)) ||
-        "Upcoming Event";
-      const startTimeLabel = formatReminderStartTime(due.reminder.startTime);
-      const locationSuffix = due.reminder.locationInfo.trim() ? ` in ${due.reminder.locationInfo.trim()}` : "";
-      const body = `"${due.reminder.title}" will be starting soon at ${startTimeLabel}${locationSuffix}.`;
-      const topic = due.reminder.notificationChannel || defaultTopic;
-
-      const { data: notificationRecord, error: notificationInsertError } = await adminClient
-        .from("notifications")
-        .insert({ title, body, topic, created_by: callerEmail, status: "queued" })
-        .select("id")
-        .single();
-
-      if (notificationInsertError || !notificationRecord) {
-        failedCount += 1;
-        await adminClient
-          .from("event_reminder_deliveries")
-          .update({
-            status: "failed",
-            response: { error: notificationInsertError?.message || "Failed to create notification record" },
-          })
-          .eq("id", reminderDelivery.id);
-        continue;
-      }
-
-      const fcmResponse = await sendFcmMessage(topic, firebaseProjectId, accessToken.token, title, body);
-      const responseText = await fcmResponse.text();
-      const parsedResponse = (() => {
-        try {
-          return JSON.parse(responseText);
-        } catch {
-          return { raw: responseText };
-        }
-      })();
-
-      await adminClient.from("notification_deliveries").insert({
-        notification_id: notificationRecord.id,
-        token: topic,
-        success: fcmResponse.ok,
-        response: parsedResponse,
-      });
-      await adminClient.from("notifications").update({ status: fcmResponse.ok ? "sent" : "failed" }).eq("id", notificationRecord.id);
-      await adminClient
-        .from("event_reminder_deliveries")
-        .update({ status: fcmResponse.ok ? "sent" : "failed", notification_id: notificationRecord.id, response: parsedResponse })
-        .eq("id", reminderDelivery.id);
-
-      if (fcmResponse.ok) sentCount += 1;
-      else failedCount += 1;
     }
 
     return json(200, {
       ok: true,
-      scannedEvents: events?.length || 0,
-      dueReminders: dueReminders.length,
-      sentCount,
-      failedCount,
+      scannedEvents: parsedEvents.size,
+      dueReminders: dueReminderCount,
+      queuedCount,
       duplicateCount,
       defaultTopic,
     });
