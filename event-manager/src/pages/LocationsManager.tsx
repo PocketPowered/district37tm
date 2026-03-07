@@ -21,10 +21,12 @@ import { Location } from '../types/Location';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { handleImageLoadError } from '../utils/imageFallback';
 import { useConference } from '../contexts/ConferenceContext';
+import { ACCEPTED_IMAGE_FILE_INPUT, imageUploadService } from '../services/imageUploadService';
 
 const LocationsManager: React.FC = () => {
   const { selectedConference, loading: conferenceLoading } = useConference();
@@ -41,6 +43,7 @@ const LocationsManager: React.FC = () => {
     locationImages: []
   });
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const fetchLocations = useCallback(async () => {
     if (!selectedConference) {
@@ -141,6 +144,43 @@ const LocationsManager: React.FC = () => {
       }));
       setNewImageUrl('');
     }
+  };
+
+  const handleUploadImage = async (file: File) => {
+    if (!selectedConference) {
+      setError('Select a conference before uploading images.');
+      return;
+    }
+
+    setError(null);
+    setUploadingImage(true);
+
+    try {
+      const uploadedUrl = await imageUploadService.uploadAdminImage({
+        file,
+        conferenceId: selectedConference.id,
+        category: 'locations',
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        locationImages: [...prev.locationImages, uploadedUrl],
+      }));
+    } catch (uploadError) {
+      const message = uploadError instanceof Error ? uploadError.message : 'Failed to upload image.';
+      setError(message);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleImageFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) {
+      return;
+    }
+    void handleUploadImage(file);
   };
 
   const handleRemoveImage = (index: number) => {
@@ -288,6 +328,15 @@ const LocationsManager: React.FC = () => {
                   >
                     Add Image
                   </Button>
+                  <Button
+                    component="label"
+                    startIcon={uploadingImage ? <CircularProgress size={16} /> : <UploadFileIcon />}
+                    variant="outlined"
+                    disabled={uploadingImage || !selectedConference}
+                  >
+                    {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                    <input hidden accept={ACCEPTED_IMAGE_FILE_INPUT} type="file" onChange={handleImageFileSelection} />
+                  </Button>
                 </Box>
                 <Box
                   sx={{
@@ -418,7 +467,7 @@ const LocationsManager: React.FC = () => {
             <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
             <Button 
               onClick={editingLocation ? handleUpdateLocation : handleAddLocation}
-              disabled={!formData.locationName}
+              disabled={!formData.locationName || uploadingImage}
               variant="contained"
             >
               {editingLocation ? 'Update' : 'Add'}

@@ -10,7 +10,6 @@ import {
   Stack,
   IconButton,
   Select,
-  SelectChangeEvent,
   MenuItem,
   FormControl,
   InputLabel,
@@ -28,6 +27,7 @@ import { locationService } from '../services/locationService';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LinkIcon from '@mui/icons-material/Link';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
@@ -39,18 +39,28 @@ import { formatDateKey, getUtcDateKeyParts, mergeDateKeyWithLocalTime } from '..
 import { handleImageLoadError } from '../utils/imageFallback';
 import { useConference } from '../contexts/ConferenceContext';
 import {
-  NOTIFICATION_TARGET_HELPER_TEXT,
-  NOTIFICATION_TARGET_OPTIONS,
-  NotificationTarget,
-  parseNotificationTopic,
-  resolveNotificationTopic,
-} from '../constants/notificationTopics';
+  ACCEPTED_IMAGE_FILE_INPUT,
+  imageUploadService,
+} from '../services/imageUploadService';
+import { eventReminderService, EventReminderConfig } from '../services/eventReminderService';
 
 const ONE_HOUR_MS = 3_600_000;
 const DEFAULT_EVENT_NOTIFICATION_LEAD_MINUTES = 15;
 const MAX_EVENT_NOTIFICATION_LEAD_MINUTES = 24 * 60;
 const MAX_EVENT_NOTIFICATION_CHANNEL_LENGTH = 900;
 const EVENT_NOTIFICATION_CHANNEL_PATTERN = /^[A-Za-z0-9\-_.~%]+$/;
+const DEFAULT_REMINDER_BODY_TEMPLATE = '';
+
+type EventReminderDraft = EventReminderConfig;
+
+const createDefaultReminder = (eventId = 0): EventReminderDraft => ({
+  eventId,
+  isEnabled: true,
+  leadMinutes: DEFAULT_EVENT_NOTIFICATION_LEAD_MINUTES,
+  channel: '',
+  bodyTemplate: DEFAULT_REMINDER_BODY_TEMPLATE,
+  sortOrder: 0,
+});
 
 const createDefaultTimeRange = (dateTimestamp: number) => {
   const { year, month, day } = getUtcDateKeyParts(dateTimestamp);
@@ -142,9 +152,9 @@ const EventForm: React.FC = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
-  const [reminderTarget, setReminderTarget] = useState<NotificationTarget>('GENERAL');
-  const [reminderVersion, setReminderVersion] = useState('');
-  const [reminderCustomTopic, setReminderCustomTopic] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [remindersEnabled, setRemindersEnabled] = useState(false);
+  const [reminders, setReminders] = useState<EventReminderDraft[]>([]);
 
   useEffect(() => {
     const loadAvailableDates = async () => {
@@ -217,10 +227,30 @@ const EventForm: React.FC = () => {
         setError(null);
         const data = await eventService.getEvent(Number(id), selectedConference.id);
         setEvent(data);
-        const parsedTopic = parseNotificationTopic(data.notificationChannel);
-        setReminderTarget(parsedTopic.target);
-        setReminderVersion(parsedTopic.version);
-        setReminderCustomTopic(parsedTopic.customTopic);
+
+        const loadedReminders = await eventReminderService.getEventReminders(data.id);
+        if (loadedReminders.length > 0) {
+          setRemindersEnabled(true);
+          setReminders(
+            loadedReminders.map((reminder, index) => ({
+              ...reminder,
+              eventId: data.id,
+              sortOrder: index,
+            })),
+          );
+        } else if (data.notifyBefore) {
+          setRemindersEnabled(true);
+          setReminders([
+            {
+              ...createDefaultReminder(data.id),
+              leadMinutes: sanitizeEventNotificationLeadMinutes(data.notificationLeadMinutes),
+              channel: sanitizeNotificationChannel(data.notificationChannel),
+            },
+          ]);
+        } else {
+          setRemindersEnabled(false);
+          setReminders([]);
+        }
       } catch (loadError) {
         setError('Failed to load event. Please try again.');
         console.error('Error loading event:', loadError);
@@ -240,31 +270,25 @@ const EventForm: React.FC = () => {
     setValidationError(null);
   };
 
-  const updateReminderChannel = (target: NotificationTarget, version: string, customTopic: string) => {
-    const resolvedTopic = resolveNotificationTopic({
-      target,
-      version,
-      customTopic,
-    });
-    setEvent((prev) => ({ ...prev, notificationChannel: resolvedTopic }));
+  const updateReminder = (index: number, patch: Partial<EventReminderDraft>) => {
+    clearFeedback();
+    setReminders((prev) => prev.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)));
   };
 
-  const handleReminderTargetChange = (nextTarget: NotificationTarget) => {
+  const handleAddReminder = () => {
     clearFeedback();
-    setReminderTarget(nextTarget);
-    updateReminderChannel(nextTarget, reminderVersion, reminderCustomTopic);
+    setReminders((prev) => [
+      ...prev,
+      {
+        ...createDefaultReminder(event.id),
+        sortOrder: prev.length,
+      },
+    ]);
   };
 
-  const handleReminderVersionChange = (nextVersion: string) => {
+  const handleRemoveReminder = (index: number) => {
     clearFeedback();
-    setReminderVersion(nextVersion);
-    updateReminderChannel(reminderTarget, nextVersion, reminderCustomTopic);
-  };
-
-  const handleReminderCustomTopicChange = (nextCustomTopic: string) => {
-    clearFeedback();
-    setReminderCustomTopic(nextCustomTopic);
-    updateReminderChannel(reminderTarget, reminderVersion, nextCustomTopic);
+    setReminders((prev) => prev.filter((_, itemIndex) => itemIndex !== index));
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -376,6 +400,43 @@ const EventForm: React.FC = () => {
     setImageUrl('');
   };
 
+  const handleUploadImage = async (file: File) => {
+    if (!selectedConference) {
+      setError('Select a conference before uploading images.');
+      return;
+    }
+
+    clearFeedback();
+    setUploadingImage(true);
+
+    try {
+      const uploadedUrl = await imageUploadService.uploadAdminImage({
+        file,
+        conferenceId: selectedConference.id,
+        category: 'events',
+      });
+
+      setEvent((prev) => ({
+        ...prev,
+        images: [...prev.images, uploadedUrl],
+      }));
+    } catch (uploadError) {
+      const message = uploadError instanceof Error ? uploadError.message : 'Failed to upload image.';
+      setError(message);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleImageFileSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) {
+      return;
+    }
+    void handleUploadImage(file);
+  };
+
   const handleRemoveImage = (index: number) => {
     clearFeedback();
 
@@ -422,23 +483,30 @@ const EventForm: React.FC = () => {
       return 'Event end time must be after the start time.';
     }
 
-    if (
-      event.notifyBefore &&
-      (event.notificationLeadMinutes < 0 || event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
-    ) {
-      return `Reminder lead time is invalid. Use 0-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES} minutes.`;
-    }
+    if (remindersEnabled) {
+      if (!reminders.length) {
+        return 'Add at least one reminder or turn off reminder notifications.';
+      }
 
-    if (event.notifyBefore && reminderTarget === 'APP_VERSION' && !reminderVersion.trim()) {
-      return 'Enter an app version for reminder targeting (for example: 8.0).';
-    }
+      const enabledReminders = reminders.filter((reminder) => reminder.isEnabled);
+      if (!enabledReminders.length) {
+        return 'Enable at least one reminder or turn off reminder notifications.';
+      }
 
-    if (event.notifyBefore && reminderTarget === 'CUSTOM' && !reminderCustomTopic.trim()) {
-      return 'Enter a custom reminder topic.';
-    }
+      const invalidLeadIndex = reminders.findIndex(
+        (reminder) =>
+          reminder.leadMinutes < 0 || reminder.leadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES,
+      );
+      if (invalidLeadIndex >= 0) {
+        return `Reminder ${invalidLeadIndex + 1} has an invalid lead time. Use 0-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES} minutes.`;
+      }
 
-    if (!isValidNotificationChannel(event.notificationChannel.trim())) {
-      return 'Reminder channel is invalid. Use letters, numbers, "-", "_", ".", "~", or "%" only.';
+      const invalidChannelIndex = reminders.findIndex(
+        (reminder) => !isValidNotificationChannel(reminder.channel.trim()),
+      );
+      if (invalidChannelIndex >= 0) {
+        return `Reminder ${invalidChannelIndex + 1} channel is invalid. Use letters, numbers, "-", "_", ".", "~", or "%" only.`;
+      }
     }
 
     const incompleteLinkIndex = event.additionalLinks.findIndex((link) => {
@@ -467,6 +535,14 @@ const EventForm: React.FC = () => {
   const invalidLinksCount = useMemo(() => {
     return event.additionalLinks.filter((link) => link.url.trim() && !isValidHttpUrl(link.url.trim())).length;
   }, [event.additionalLinks]);
+  const enabledReminderCount = useMemo(
+    () => reminders.filter((reminder) => reminder.isEnabled).length,
+    [reminders],
+  );
+  const primaryReminder = useMemo(
+    () => reminders.find((reminder) => reminder.isEnabled) || reminders[0] || null,
+    [reminders],
+  );
   const hasSelectedDate = availableDates.some((timestamp) => timestamp.toString() === event.dateKey);
   const hasSelectedLocation = availableLocations.some(
     (location) => location.locationName === event.locationInfo,
@@ -495,15 +571,30 @@ const EventForm: React.FC = () => {
     setValidationError(null);
 
     try {
+      const normalizedReminders = remindersEnabled
+        ? reminders.map((reminder, index) => ({
+            ...reminder,
+            eventId: event.id,
+            isEnabled: reminder.isEnabled !== false,
+            leadMinutes: sanitizeEventNotificationLeadMinutes(reminder.leadMinutes),
+            channel: sanitizeNotificationChannel(reminder.channel),
+            bodyTemplate: reminder.bodyTemplate.trim(),
+            sortOrder: index,
+          }))
+        : [];
+      const activeReminder = normalizedReminders.find((reminder) => reminder.isEnabled);
+
       const eventToSave: Event = {
         ...event,
         conferenceId: selectedConference.id,
         title: event.title.trim(),
         locationInfo: event.locationInfo,
         description: event.description.trim(),
-        notifyBefore: event.notifyBefore === true,
-        notificationLeadMinutes: sanitizeEventNotificationLeadMinutes(event.notificationLeadMinutes),
-        notificationChannel: sanitizeNotificationChannel(event.notificationChannel),
+        notifyBefore: Boolean(activeReminder),
+        notificationLeadMinutes: activeReminder
+          ? activeReminder.leadMinutes
+          : DEFAULT_EVENT_NOTIFICATION_LEAD_MINUTES,
+        notificationChannel: activeReminder ? activeReminder.channel : '',
         additionalLinks: event.additionalLinks,
         dateKey: event.dateKey,
         images: event.images,
@@ -511,13 +602,29 @@ const EventForm: React.FC = () => {
       };
 
       if (id) {
-        await eventService.updateEvent(Number(id), { ...eventToSave, id: Number(id) });
+        const savedEvent = await eventService.updateEvent(Number(id), { ...eventToSave, id: Number(id) });
+        await eventReminderService.replaceEventReminders(
+          savedEvent.id,
+          normalizedReminders.map((reminder) => ({ ...reminder, eventId: savedEvent.id })),
+        );
+        setEvent(savedEvent);
         setSuccess('Event updated successfully.');
       } else {
-        const created = await eventService.createEvent(eventToSave);
-        setEvent(created);
+        const createdEvent = await eventService.createEvent(eventToSave);
+        const savedReminders = await eventReminderService.replaceEventReminders(
+          createdEvent.id,
+          normalizedReminders.map((reminder) => ({ ...reminder, eventId: createdEvent.id })),
+        );
+        setEvent(createdEvent);
+        setReminders(
+          savedReminders.map((reminder, index) => ({
+            ...reminder,
+            eventId: createdEvent.id,
+            sortOrder: index,
+          })),
+        );
         setSuccess('Event created successfully.');
-        navigate(`/events/${created.id}/edit`, { replace: true });
+        navigate(`/events/${createdEvent.id}/edit`, { replace: true });
       }
     } catch (saveError) {
       setError('Failed to save event. Please try again.');
@@ -559,14 +666,20 @@ const EventForm: React.FC = () => {
         <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 3 }}>
           <Chip
             size="small"
-            color={event.notifyBefore ? 'primary' : 'default'}
-            label={event.notifyBefore ? `Reminder ${event.notificationLeadMinutes} min before` : 'Reminder disabled'}
+            color={enabledReminderCount > 0 ? 'primary' : 'default'}
+            label={
+              enabledReminderCount > 0
+                ? `${enabledReminderCount} reminder${enabledReminderCount === 1 ? '' : 's'} enabled`
+                : remindersEnabled
+                  ? 'Reminder notifications enabled'
+                  : 'Reminder disabled'
+            }
           />
-          {event.notifyBefore && (
+          {primaryReminder && (
             <Chip
               size="small"
               variant="outlined"
-              label={`Channel: ${event.notificationChannel.trim() || 'GENERAL'}`}
+              label={`Primary: ${primaryReminder.leadMinutes} min · ${primaryReminder.channel.trim() || 'GENERAL'}`}
             />
           )}
           <Chip size="small" variant="outlined" label={`${event.additionalLinks.length} link${event.additionalLinks.length === 1 ? '' : 's'}`} />
@@ -747,112 +860,117 @@ const EventForm: React.FC = () => {
               </Typography>
 
               <Stack spacing={2}>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={event.notifyBefore}
-                        onChange={(e) => {
-                          clearFeedback();
-                          setEvent((prev) => ({ ...prev, notifyBefore: e.target.checked }));
-                        }}
-                      />
-                    }
-                    label="Send reminder before this event"
-                  />
-                  <TextField
-                    type="number"
-                    label="Minutes Before Start"
-                    value={event.notificationLeadMinutes}
-                    onChange={(e) => {
-                      clearFeedback();
-                      setEvent((prev) => ({
-                        ...prev,
-                        notificationLeadMinutes: sanitizeEventNotificationLeadMinutes(e.target.value),
-                      }));
-                    }}
-                    disabled={!event.notifyBefore}
-                    sx={{ minWidth: { xs: '100%', sm: 220 } }}
-                    inputProps={{ min: 0, max: MAX_EVENT_NOTIFICATION_LEAD_MINUTES, step: 1 }}
-                    error={
-                      submitAttempted &&
-                      event.notifyBefore &&
-                      (event.notificationLeadMinutes < 0 ||
-                        event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
-                    }
-                    helperText={
-                      submitAttempted &&
-                      event.notifyBefore &&
-                      (event.notificationLeadMinutes < 0 ||
-                        event.notificationLeadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES)
-                        ? `Use 0-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES}.`
-                        : 'Default is 15.'
-                    }
-                  />
-                </Stack>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={remindersEnabled}
+                      onChange={(e) => {
+                        clearFeedback();
+                        const nextEnabled = e.target.checked;
+                        setRemindersEnabled(nextEnabled);
+                        if (nextEnabled && reminders.length === 0) {
+                          setReminders([{ ...createDefaultReminder(event.id), sortOrder: 0 }]);
+                        }
+                        if (!nextEnabled) {
+                          setReminders([]);
+                        }
+                      }}
+                    />
+                  }
+                  label="Enable reminder notifications for this event"
+                />
 
-                <FormControl fullWidth disabled={!event.notifyBefore}>
-                  <InputLabel id="reminder-target-label">Reminder Channel</InputLabel>
-                  <Select
-                    labelId="reminder-target-label"
-                    label="Reminder Channel"
-                    value={reminderTarget}
-                    onChange={(e: SelectChangeEvent<NotificationTarget>) =>
-                      handleReminderTargetChange(e.target.value as NotificationTarget)
-                    }
-                  >
-                    {NOTIFICATION_TARGET_OPTIONS.map((option) => (
-                      <MenuItem key={option.value} value={option.value} sx={{ textAlign: 'left' }}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <FormHelperText>{NOTIFICATION_TARGET_HELPER_TEXT}</FormHelperText>
-                </FormControl>
+                {remindersEnabled && (
+                  <>
+                    {!reminders.length ? (
+                      <Alert severity="info">Add at least one reminder rule.</Alert>
+                    ) : (
+                      reminders.map((reminder, index) => {
+                        const invalidLead =
+                          reminder.leadMinutes < 0 ||
+                          reminder.leadMinutes > MAX_EVENT_NOTIFICATION_LEAD_MINUTES;
+                        const invalidChannel = !isValidNotificationChannel(reminder.channel.trim());
 
-                {reminderTarget === 'APP_VERSION' && (
-                  <TextField
-                    label="App Version"
-                    value={reminderVersion}
-                    onChange={(e) => handleReminderVersionChange(e.target.value)}
-                    fullWidth
-                    disabled={!event.notifyBefore}
-                    placeholder="8.0"
-                    error={submitAttempted && event.notifyBefore && !reminderVersion.trim()}
-                    helperText={
-                      submitAttempted && event.notifyBefore && !reminderVersion.trim()
-                        ? 'Version is required for APP_VERSION reminders.'
-                        : `Will send reminders to topic: ${
-                            resolveNotificationTopic({
-                              target: reminderTarget,
-                              version: reminderVersion,
-                              customTopic: reminderCustomTopic,
-                            }) || 'APP_VERSION_<version>'
-                          }`
-                    }
-                  />
-                )}
+                        return (
+                          <Paper key={`${reminder.id || 'new'}-${index}`} variant="outlined" sx={{ p: 2 }}>
+                            <Stack
+                              direction={{ xs: 'column', sm: 'row' }}
+                              justifyContent="space-between"
+                              spacing={1}
+                              sx={{ mb: 2 }}
+                            >
+                              <Typography variant="subtitle1">Reminder {index + 1}</Typography>
+                              <Stack direction="row" spacing={1} alignItems="center">
+                                <FormControlLabel
+                                  control={
+                                    <Switch
+                                      checked={reminder.isEnabled}
+                                      onChange={(e) => updateReminder(index, { isEnabled: e.target.checked })}
+                                    />
+                                  }
+                                  label={reminder.isEnabled ? 'Enabled' : 'Disabled'}
+                                />
+                                <IconButton
+                                  onClick={() => handleRemoveReminder(index)}
+                                  aria-label={`Remove reminder ${index + 1}`}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Stack>
+                            </Stack>
 
-                {reminderTarget === 'CUSTOM' && (
-                  <TextField
-                    label="Custom Topic"
-                    value={reminderCustomTopic}
-                    onChange={(e) => handleReminderCustomTopicChange(e.target.value)}
-                    fullWidth
-                    disabled={!event.notifyBefore}
-                    placeholder="APP_VERSION_8_0"
-                    error={
-                      (submitAttempted && event.notifyBefore && !reminderCustomTopic.trim()) ||
-                      !isValidNotificationChannel(event.notificationChannel.trim())
-                    }
-                    helperText={
-                      submitAttempted && event.notifyBefore && !reminderCustomTopic.trim()
-                        ? 'Custom topic is required.'
-                        : !isValidNotificationChannel(event.notificationChannel.trim())
-                          ? 'Allowed: letters, numbers, "-", "_", ".", "~", "%".'
-                          : 'Use this for advanced targeting.'
-                    }
-                  />
+                            <Stack spacing={2}>
+                              <TextField
+                                type="number"
+                                label="Minutes Before Start"
+                                value={reminder.leadMinutes}
+                                onChange={(e) =>
+                                  updateReminder(index, {
+                                    leadMinutes: sanitizeEventNotificationLeadMinutes(e.target.value),
+                                  })
+                                }
+                                inputProps={{ min: 0, max: MAX_EVENT_NOTIFICATION_LEAD_MINUTES, step: 1 }}
+                                error={submitAttempted && invalidLead}
+                                helperText={
+                                  submitAttempted && invalidLead
+                                    ? `Use 0-${MAX_EVENT_NOTIFICATION_LEAD_MINUTES}.`
+                                    : '0 sends at event start.'
+                                }
+                              />
+
+                              <TextField
+                                label="Reminder Channel (optional)"
+                                value={reminder.channel}
+                                onChange={(e) => updateReminder(index, { channel: e.target.value })}
+                                placeholder="GENERAL or APP_ENV_DEBUG"
+                                error={submitAttempted && invalidChannel}
+                                helperText={
+                                  submitAttempted && invalidChannel
+                                    ? 'Allowed: letters, numbers, "-", "_", ".", "~", "%".'
+                                    : 'If blank, GENERAL is used.'
+                                }
+                              />
+
+                              <TextField
+                                label="Body Template (optional)"
+                                value={reminder.bodyTemplate}
+                                onChange={(e) => updateReminder(index, { bodyTemplate: e.target.value })}
+                                multiline
+                                rows={3}
+                                helperText={
+                                  'Leave blank for default. Placeholders: {{event_name}}, {{start_time}}, {{location}}, {{conference_name}}.'
+                                }
+                              />
+                            </Stack>
+                          </Paper>
+                        );
+                      })
+                    )}
+
+                    <Button startIcon={<AddIcon />} onClick={handleAddReminder} variant="outlined">
+                      Add Reminder
+                    </Button>
+                  </>
                 )}
               </Stack>
             </Paper>
@@ -940,6 +1058,15 @@ const EventForm: React.FC = () => {
                   />
                   <Button startIcon={<AddIcon />} onClick={handleAddImage} variant="outlined" disabled={!imageUrl.trim()}>
                     Add Image
+                  </Button>
+                  <Button
+                    component="label"
+                    startIcon={uploadingImage ? <CircularProgress size={16} /> : <UploadFileIcon />}
+                    variant="outlined"
+                    disabled={uploadingImage || !selectedConference}
+                  >
+                    {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                    <input hidden accept={ACCEPTED_IMAGE_FILE_INPUT} type="file" onChange={handleImageFileSelection} />
                   </Button>
                 </Stack>
               </Stack>
@@ -1101,7 +1228,13 @@ const EventForm: React.FC = () => {
                     type="submit"
                     variant="contained"
                     color="primary"
-                    disabled={saving || !selectedConference || !availableDates.length || !availableLocations.length}
+                    disabled={
+                      saving ||
+                      uploadingImage ||
+                      !selectedConference ||
+                      !availableDates.length ||
+                      !availableLocations.length
+                    }
                   >
                     {saving ? <CircularProgress size={24} color="inherit" /> : id ? 'Save Event' : 'Create Event'}
                   </Button>
