@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/district37tm/static/css/main.e6c13ad2.css",
+    "main.js": "/district37tm/static/js/main.b68452e9.js",
+    "static/js/453.0d310be3.chunk.js": "/district37tm/static/js/453.0d310be3.chunk.js",
+    "index.html": "/district37tm/index.html",
+    "main.e6c13ad2.css.map": "/district37tm/static/css/main.e6c13ad2.css.map",
+    "main.b68452e9.js.map": "/district37tm/static/js/main.b68452e9.js.map",
+    "453.0d310be3.chunk.js.map": "/district37tm/static/js/453.0d310be3.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.b68452e9.js"
+  ]
+}
