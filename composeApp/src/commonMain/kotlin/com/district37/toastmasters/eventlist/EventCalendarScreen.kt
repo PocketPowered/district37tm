@@ -1,31 +1,37 @@
 package com.district37.toastmasters.eventlist
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.ScrollableTabRow
 import androidx.compose.material.Tab
 import androidx.compose.material.Text
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
+import com.district37.toastmasters.favorites.FavoriteEventToggle
+import com.district37.toastmasters.navigation.EVENT_ID_ARG
+import com.district37.toastmasters.navigation.NavigationItemKey
 import com.district37.toastmasters.models.DateTabInfo
 import com.district37.toastmasters.navigation.StatefulScaffold
 import com.district37.toastmasters.notifications.NotificationsEntry
@@ -36,7 +42,7 @@ import org.koin.core.annotation.KoinExperimentalAPI
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
-fun EventListScreen() {
+fun EventCalendarScreen() {
     val viewModel = koinViewModel<EventListViewModel>()
     val appViewModel = LocalAppViewModel.current
     val navController = LocalNavHostController.current
@@ -80,6 +86,14 @@ fun EventListScreen() {
                         coroutineScope,
                         DateChanged(tab)
                     )
+                },
+                onFavoritesToggle = {
+                    val nextAgenda = if (data.agendaOption == AgendaOption.FAVORITES_AGENDA) {
+                        AgendaOption.FULL_AGENDA
+                    } else {
+                        AgendaOption.FAVORITES_AGENDA
+                    }
+                    viewModel.uiEventBus.sendEvent(coroutineScope, AgendaChanged(nextAgenda))
                 }
             )
             if (data.events.isEmpty()) {
@@ -105,14 +119,24 @@ fun EventListScreen() {
                         .fillMaxSize()
                         .padding(top = 8.dp)
                 ) {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(vertical = 8.dp).fillMaxSize()
-                    ) {
-                        items(data.events) { event ->
-                            EventCard(event)
-                        }
-                    }
+
+                        CalendarAgendaView(
+                            events = data.events,
+                            onEventClick = { event ->
+                                appViewModel.navigate(
+                                    navController,
+                                    NavigationItemKey.EVENT_DETAILS,
+                                    mapOf(EVENT_ID_ARG to event.id)
+                                )
+                            },
+                            onFavoriteToggle = { event ->
+                                appViewModel.uiEventBus.sendEvent(
+                                    coroutineScope,
+                                    FavoriteEventToggle(event.id, !event.isFavorited)
+                                )
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
                     if (data.isScheduleLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier
@@ -132,6 +156,7 @@ private fun DateSelector(
     availableTabs: List<DateTabInfo>,
     agendaSelection: AgendaOption,
     onTabClick: (DateTabInfo) -> Unit,
+    onFavoritesToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val selectedTabIndex = availableTabs.indexOfFirst { it.isSelected }.let { idx ->
@@ -164,6 +189,25 @@ private fun DateSelector(
                     }
                 )
             }
+        }
+        IconButton(onClick = onFavoritesToggle) {
+            Icon(
+                imageVector = if (agendaSelection == AgendaOption.FAVORITES_AGENDA) {
+                    Icons.Filled.Favorite
+                } else {
+                    Icons.Outlined.FavoriteBorder
+                },
+                contentDescription = if (agendaSelection == AgendaOption.FAVORITES_AGENDA) {
+                    "Show full schedule"
+                } else {
+                    "Show favorites"
+                },
+                tint = if (agendaSelection == AgendaOption.FAVORITES_AGENDA) {
+                    Color.Red
+                } else {
+                    MaterialTheme.colors.onSurface.copy(alpha = 0.75f)
+                }
+            )
         }
     }
 }

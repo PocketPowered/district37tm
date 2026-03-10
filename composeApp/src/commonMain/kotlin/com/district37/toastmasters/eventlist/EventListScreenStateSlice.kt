@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 
 data class EventListScreenState(
     val events: List<EventPreview> = emptyList(),
-    val agendaOption: AgendaOption = AgendaOption.FULL_AGENDA,
+    val agendaOption: AgendaOption = AgendaOption.LIST_AGENDA,
     val availableTabs: List<DateTabInfo>,
     val isScheduleLoading: Boolean = false,
     val scheduleTitle: String = DEFAULT_SCHEDULE_TITLE,
@@ -46,7 +46,8 @@ data class DateChanged(
 
 enum class AgendaOption {
     FULL_AGENDA,
-    FAVORITES_AGENDA
+    FAVORITES_AGENDA,
+    LIST_AGENDA
 }
 
 class EventListScreenStateSlice(

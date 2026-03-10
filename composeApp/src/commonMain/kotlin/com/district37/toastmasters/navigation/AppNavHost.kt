@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import com.district37.toastmasters.eventdetails.EventDetailsScreen
+import com.district37.toastmasters.eventlist.EventCalendarScreen
 import com.district37.toastmasters.eventlist.EventListScreen
 import com.district37.toastmasters.locations.LocationsScreen
 import com.district37.toastmasters.notifications.NotificationOnboardingScreen
@@ -59,6 +60,9 @@ fun AppNavHost(
     ).completeRoute
     val eventListRoute = requireNotNull(
         supportedNavigationItems[NavigationItemKey.EVENT_LIST]
+    ).completeRoute
+    val eventCalendarRoute = requireNotNull(
+        supportedNavigationItems[NavigationItemKey.EVENT_CALENDAR]
     ).completeRoute
     val eventDetailsRoute = requireNotNull(
         supportedNavigationItems[NavigationItemKey.EVENT_DETAILS]
@@ -121,6 +125,10 @@ fun AppNavHost(
         ) {
             composable(route = eventListRoute) {
                 EventListScreen()
+            }
+
+            composable(route = eventCalendarRoute) {
+                EventCalendarScreen()
             }
 
             composable(
