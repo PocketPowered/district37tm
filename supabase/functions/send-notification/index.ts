@@ -6,7 +6,20 @@ type NotificationRequest = {
   title?: string;
   body?: string;
   topic?: string;
+  scheduledFor?: string | number;
 };
+
+type NotificationRow = {
+  id: string;
+  title: string;
+  body: string;
+  topic: string;
+  status: string;
+  scheduled_for: string | null;
+};
+
+const MAX_TOPIC_LENGTH = 900;
+const TOPIC_PATTERN = /^[A-Za-z0-9\-_.~%]+$/;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +33,85 @@ const json = (status: number, payload: unknown) =>
       ...corsHeaders,
       "Content-Type": "application/json",
     },
+  });
+
+const normalizeTopic = (value: unknown): string | null => {
+  if (typeof value !== "string") return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const withoutPrefix = trimmed.startsWith("/topics/") ? trimmed.slice("/topics/".length) : trimmed;
+  if (!withoutPrefix) return null;
+  if (withoutPrefix.length > MAX_TOPIC_LENGTH) return null;
+  if (!TOPIC_PATTERN.test(withoutPrefix)) return null;
+
+  return withoutPrefix;
+};
+
+const parseScheduledFor = (value: unknown): Date | null => {
+  if (value == null) return null;
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  return null;
+};
+
+const sendFcmMessage = async (
+  topic: string,
+  firebaseProjectId: string,
+  accessToken: string,
+  title: string,
+  body: string,
+) =>
+  await fetch(`https://fcm.googleapis.com/v1/projects/${firebaseProjectId}/messages:send`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: {
+        topic,
+        notification: {
+          title,
+          body,
+        },
+        data: {
+          title,
+          body,
+        },
+        android: {
+          priority: "high",
+          notification: {
+            sound: "default",
+          },
+        },
+        apns: {
+          headers: {
+            "apns-priority": "10",
+            "apns-push-type": "alert",
+          },
+          payload: {
+            aps: {
+              alert: {
+                title,
+                body,
+              },
+              sound: "default",
+            },
+          },
+        },
+      },
+    }),
   });
 
 Deno.serve(async (req) => {
@@ -69,42 +161,62 @@ Deno.serve(async (req) => {
     }
 
     const requestBody = (await req.json()) as NotificationRequest;
-    let notificationId = requestBody.notificationId;
-    let title = requestBody.title;
-    let body = requestBody.body;
-    let topic = requestBody.topic || "GENERAL";
+    const scheduledFor = parseScheduledFor(requestBody.scheduledFor);
+    const normalizedTopic = normalizeTopic(requestBody.topic) || "GENERAL";
 
-    if (notificationId) {
-      const { data: notification, error: notificationError } = await adminClient
+    let notification: NotificationRow;
+
+    if (requestBody.notificationId) {
+      const { data: existing, error: notificationError } = await adminClient
         .from("notifications")
-        .select("id, title, body, topic")
-        .eq("id", notificationId)
+        .select("id, title, body, topic, status, scheduled_for")
+        .eq("id", requestBody.notificationId)
         .single();
-      if (notificationError || !notification) {
+
+      if (notificationError || !existing) {
         return json(404, { error: "Notification not found" });
       }
-      title = notification.title;
-      body = notification.body;
-      topic = notification.topic || "GENERAL";
+
+      notification = existing as NotificationRow;
     } else {
+      const title = requestBody.title?.trim();
+      const body = requestBody.body?.trim();
+
       if (!title || !body) {
         return json(400, { error: "Provide notificationId or both title/body" });
       }
+
+      const scheduledForIso = scheduledFor?.toISOString() ?? new Date().toISOString();
+
       const { data: inserted, error: insertError } = await adminClient
         .from("notifications")
         .insert({
           title,
           body,
-          topic,
+          topic: normalizedTopic,
           created_by: user.email.toLowerCase(),
           status: "queued",
+          scheduled_for: scheduledForIso,
+          source: "manual",
         })
-        .select("id")
+        .select("id, title, body, topic, status, scheduled_for")
         .single();
+
       if (insertError || !inserted) {
         return json(500, { error: "Failed to create notification record" });
       }
-      notificationId = inserted.id;
+
+      notification = inserted as NotificationRow;
+    }
+
+    if (scheduledFor && scheduledFor.getTime() > Date.now() + 1000) {
+      return json(200, {
+        ok: true,
+        scheduled: true,
+        notificationId: notification.id,
+        topic: notification.topic,
+        scheduledFor: notification.scheduled_for,
+      });
     }
 
     const credentials = JSON.parse(firebaseServiceAccountJson);
@@ -119,49 +231,12 @@ Deno.serve(async (req) => {
       throw new Error("Could not obtain Firebase access token");
     }
 
-    const fcmResponse = await fetch(
-      `https://fcm.googleapis.com/v1/projects/${firebaseProjectId}/messages:send`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken.token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: {
-            topic,
-            notification: {
-              title: title || "",
-              body: body || "",
-            },
-            data: {
-              title: title || "",
-              body: body || "",
-            },
-            android: {
-              priority: "high",
-              notification: {
-                sound: "default",
-              },
-            },
-            apns: {
-              headers: {
-                "apns-priority": "10",
-                "apns-push-type": "alert",
-              },
-              payload: {
-                aps: {
-                  alert: {
-                    title: title || "",
-                    body: body || "",
-                  },
-                  sound: "default",
-                },
-              },
-            },
-          },
-        }),
-      },
+    const fcmResponse = await sendFcmMessage(
+      notification.topic || "GENERAL",
+      firebaseProjectId,
+      accessToken.token,
+      notification.title || "",
+      notification.body || "",
     );
 
     const responseText = await fcmResponse.text();
@@ -174,16 +249,19 @@ Deno.serve(async (req) => {
     })();
 
     await adminClient.from("notification_deliveries").insert({
-      notification_id: notificationId,
-      token: topic,
+      notification_id: notification.id,
+      token: notification.topic,
       success: fcmResponse.ok,
       response: parsedResponse,
     });
 
     await adminClient
       .from("notifications")
-      .update({ status: fcmResponse.ok ? "sent" : "failed" })
-      .eq("id", notificationId);
+      .update({
+        status: fcmResponse.ok ? "sent" : "failed",
+        sent_at: fcmResponse.ok ? new Date().toISOString() : null,
+      })
+      .eq("id", notification.id);
 
     if (!fcmResponse.ok) {
       return json(502, { error: "FCM request failed", details: parsedResponse });
@@ -191,8 +269,9 @@ Deno.serve(async (req) => {
 
     return json(200, {
       ok: true,
-      notificationId,
-      topic,
+      scheduled: false,
+      notificationId: notification.id,
+      topic: notification.topic,
       response: parsedResponse,
     });
   } catch (error) {

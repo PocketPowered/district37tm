@@ -6,6 +6,7 @@ import {
   Chip,
   CircularProgress,
   FormControl,
+  FormControlLabel,
   FormHelperText,
   InputLabel,
   MenuItem,
@@ -13,6 +14,7 @@ import {
   Select,
   SelectChangeEvent,
   Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
@@ -43,6 +45,8 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
   const [target, setTarget] = useState<NotificationTarget>('GENERAL');
   const [version, setVersion] = useState('');
   const [customTopic, setCustomTopic] = useState('');
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduledAtLocal, setScheduledAtLocal] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -97,9 +101,31 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
         );
       }
 
-      await notificationService.sendNotification(title, body, topic);
+      let scheduledForIso: string | undefined;
+      if (scheduleEnabled) {
+        if (!scheduledAtLocal.trim()) {
+          throw new Error('Choose when to send this scheduled notification.');
+        }
 
-      setSuccess(`Notification sent successfully to topic "${topic}".`);
+        const parsedScheduledAt = new Date(scheduledAtLocal);
+        if (Number.isNaN(parsedScheduledAt.getTime())) {
+          throw new Error('Scheduled time is invalid.');
+        }
+
+        scheduledForIso = parsedScheduledAt.toISOString();
+      }
+
+      const result = await notificationService.sendNotification(title, body, topic, scheduledForIso);
+
+      if (result.scheduled) {
+        const scheduledLabel = result.scheduledFor
+          ? new Date(result.scheduledFor).toLocaleString()
+          : new Date(scheduledForIso || Date.now()).toLocaleString();
+        setSuccess(`Notification scheduled for ${scheduledLabel} to topic "${topic}".`);
+      } else {
+        setSuccess(`Notification sent successfully to topic "${topic}".`);
+      }
+
       setTitle('');
       setBody('');
       setHistoryPage(0);
@@ -113,7 +139,8 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
     }
   };
 
-  const formatTimestamp = (value: string) => {
+  const formatTimestamp = (value: string | null) => {
+    if (!value) return '—';
     return new Date(value).toLocaleString();
   };
 
@@ -128,7 +155,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
   };
 
   return (
-    <Box sx={{ maxWidth: 1100, mx: 'auto', mt: 4 }}>
+    <Box sx={{ maxWidth: 1200, mx: 'auto', mt: 4 }}>
       <Paper elevation={3} sx={{ p: 3 }}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -197,8 +224,36 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
               />
             )}
 
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={scheduleEnabled}
+                  onChange={(e) => {
+                    setScheduleEnabled(e.target.checked);
+                    if (!e.target.checked) {
+                      setScheduledAtLocal('');
+                    }
+                  }}
+                />
+              }
+              label="Schedule"
+            />
+
+            {scheduleEnabled && (
+              <TextField
+                type="datetime-local"
+                label="Send At"
+                value={scheduledAtLocal}
+                onChange={(e) => setScheduledAtLocal(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+                required
+                helperText="Scheduled notifications are queued and sent automatically when due."
+              />
+            )}
+
             <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading}>
-              {loading ? 'Sending...' : 'Send Notification'}
+              {loading ? 'Saving...' : scheduleEnabled ? 'Schedule Notification' : 'Send Notification'}
             </Button>
           </Box>
         </form>
@@ -228,7 +283,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
           </Box>
         ) : historyItems.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
-            No sent notifications yet.
+            No queued or sent notifications yet.
           </Typography>
         ) : (
           <>
@@ -236,18 +291,23 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ width: 190 }}>Sent At</TableCell>
-                    <TableCell sx={{ width: 230 }}>Title</TableCell>
+                    <TableCell sx={{ width: 180 }}>Created</TableCell>
+                    <TableCell sx={{ width: 180 }}>Scheduled For</TableCell>
+                    <TableCell sx={{ width: 180 }}>Sent At</TableCell>
+                    <TableCell sx={{ width: 210 }}>Title</TableCell>
                     <TableCell>Message</TableCell>
                     <TableCell sx={{ width: 180 }}>Topic</TableCell>
-                    <TableCell sx={{ width: 120 }}>Status</TableCell>
+                    <TableCell sx={{ width: 110 }}>Status</TableCell>
                     <TableCell sx={{ width: 170 }}>Sender</TableCell>
+                    <TableCell sx={{ width: 130 }}>Source</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {historyItems.map((item) => (
                     <TableRow key={item.id} hover>
                       <TableCell>{formatTimestamp(item.createdAt)}</TableCell>
+                      <TableCell>{formatTimestamp(item.scheduledFor)}</TableCell>
+                      <TableCell>{formatTimestamp(item.sentAt)}</TableCell>
                       <TableCell sx={{ fontWeight: 500 }}>{item.title}</TableCell>
                       <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{item.body}</TableCell>
                       <TableCell>
@@ -262,6 +322,7 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onSuccess }) => {
                         />
                       </TableCell>
                       <TableCell>{formatSender(item.createdBy)}</TableCell>
+                      <TableCell>{item.source || 'manual'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

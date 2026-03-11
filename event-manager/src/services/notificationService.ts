@@ -7,6 +7,14 @@ type EdgeFunctionResult = {
   functionName: string;
 };
 
+export type NotificationSendResponse = {
+  ok: boolean;
+  scheduled?: boolean;
+  notificationId?: string;
+  topic?: string;
+  scheduledFor?: string;
+};
+
 export type NotificationHistoryItem = {
   id: string;
   title: string;
@@ -15,6 +23,9 @@ export type NotificationHistoryItem = {
   status: string;
   createdBy: string;
   createdAt: string;
+  scheduledFor: string | null;
+  sentAt: string | null;
+  source: string | null;
 };
 
 export type NotificationHistoryPage = {
@@ -56,7 +67,7 @@ const getValidAccessToken = async (): Promise<string> => {
 const callNotificationFunction = async (
   functionName: string,
   accessToken: string,
-  payload: { title: string; body: string; topic: string }
+  payload: { title: string; body: string; topic: string; scheduledFor?: string }
 ): Promise<EdgeFunctionResult> => {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
     method: 'POST',
@@ -79,14 +90,20 @@ const callNotificationFunction = async (
 };
 
 export const notificationService = {
-  sendNotification: async (title: string, body: string, topic: string) => {
+  sendNotification: async (
+    title: string,
+    body: string,
+    topic: string,
+    scheduledFor?: string
+  ): Promise<NotificationSendResponse> => {
     const requestPayload = {
       title,
       body,
       topic: topic || 'GENERAL',
+      ...(scheduledFor ? { scheduledFor } : {}),
     };
 
-    const candidates = ['send-notification-v2', 'send-notification'];
+    const candidates = ['send-notification', 'send-notification-v2'];
     const tryCandidates = async (accessToken: string): Promise<EdgeFunctionResult | null> => {
       let result: EdgeFunctionResult | null = null;
       for (let i = 0; i < candidates.length; i += 1) {
@@ -121,7 +138,9 @@ export const notificationService = {
     }
 
     if (!result) {
-      throw new Error('Notification function is not deployed (tried send-notification and send-notification-v2).');
+      throw new Error(
+        'Notification function is not deployed (tried send-notification and send-notification-v2).',
+      );
     }
 
     if (!result.response.ok) {
@@ -132,7 +151,7 @@ export const notificationService = {
       throw new Error(`[${result.functionName}] ${backendMessage}`);
     }
 
-    return result.payload;
+    return (result.payload || { ok: true }) as NotificationSendResponse;
   },
 
   getNotificationHistory: async (page: number, pageSize: number): Promise<NotificationHistoryPage> => {
@@ -143,8 +162,8 @@ export const notificationService = {
 
     const { data, count, error } = await supabase
       .from('notifications')
-      .select('id, title, body, topic, status, created_by, created_at', { count: 'exact' })
-      .in('status', ['sent', 'queued'])
+      .select('id, title, body, topic, status, created_by, created_at, scheduled_for, sent_at, source', { count: 'exact' })
+      .or('status.eq.sent,status.eq.queued')
       .order('created_at', { ascending: false })
       .range(from, to);
 
@@ -160,6 +179,9 @@ export const notificationService = {
       status: row.status,
       createdBy: row.created_by || 'unknown',
       createdAt: row.created_at,
+      scheduledFor: row.scheduled_for || null,
+      sentAt: row.sent_at || null,
+      source: row.source || null,
     }));
 
     return {

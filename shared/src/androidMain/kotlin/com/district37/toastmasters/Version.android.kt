@@ -2,10 +2,17 @@ package com.district37.toastmasters
 
 import android.content.Context
 import android.content.pm.PackageInfo
+import android.os.Build
 
 class AndroidVersionInfo(private val packageInfo: PackageInfo) : VersionInfo {
-    override val versionName: String = packageInfo.versionName
-    override val versionCode: Int = packageInfo.versionCode
+    override val versionName: String = packageInfo.versionName ?: ""
+    override val versionCode: Int =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageInfo.longVersionCode.toInt()
+        } else {
+            @Suppress("DEPRECATION")
+            packageInfo.versionCode
+        }
 }
 
 actual fun getVersionInfo(context: Any?): VersionInfo {
