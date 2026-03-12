@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 data class EventListScreenState(
     val events: List<EventPreview> = emptyList(),
     val agendaOption: AgendaOption = AgendaOption.LIST_AGENDA,
+    val viewMode: AgendaViewMode = AgendaViewMode.EVENT_LIST,
     val availableTabs: List<DateTabInfo>,
     val isScheduleLoading: Boolean = false,
     val scheduleTitle: String = DEFAULT_SCHEDULE_TITLE,
@@ -38,6 +39,10 @@ object RefreshTriggered : UiEvent
 
 data class AgendaChanged(
     val selectedAgenda: AgendaOption
+) : UiEvent
+
+data class AgendaViewModeChanged(
+    val selectedViewMode: AgendaViewMode
 ) : UiEvent
 
 data class DateChanged(
@@ -56,10 +61,13 @@ class EventListScreenStateSlice(
     private val eventPreviewTransformer: EventPreviewTransformer,
     private val favoritesRepository: FavoritesRepository,
     private val dateTransformer: DateTransformer,
+    private val agendaViewPreferenceStore: AgendaViewPreferenceStore,
 ) : ViewModelSlice() {
 
     private val _agendaSelection: MutableStateFlow<AgendaOption> =
         MutableStateFlow(AgendaOption.FULL_AGENDA)
+    private val _viewMode: MutableStateFlow<AgendaViewMode> =
+        MutableStateFlow(agendaViewPreferenceStore.getSelectedAgendaViewMode())
     private val _availableTabs: MutableStateFlow<Resource<List<DateTabInfo>>> =
         MutableStateFlow(Resource.Loading)
     private val _eventsByDateKey: MutableStateFlow<Map<Long, List<EventPreview>>> =
@@ -70,14 +78,25 @@ class EventListScreenStateSlice(
         MutableStateFlow(DEFAULT_SCHEDULE_TITLE)
     private val _topBarTitle: MutableStateFlow<String> =
         MutableStateFlow(DEFAULT_TOP_APP_BAR_TITLE)
+    private val _agendaAndViewMode: StateFlow<Pair<AgendaOption, AgendaViewMode>> = combine(
+        _agendaSelection,
+        _viewMode
+    ) { agendaOption, viewMode ->
+        agendaOption to viewMode
+    }.stateIn(
+        CoroutineScope(Dispatchers.IO),
+        SharingStarted.Lazily,
+        AgendaOption.FULL_AGENDA to _viewMode.value
+    )
 
     private val _baseScreenState: StateFlow<Resource<EventListScreenState>> = combine(
         _availableTabs,
         _eventsByDateKey,
         _loadingDateKeys,
         favoritesRepository.getAllFavorites(),
-        _agendaSelection
-    ) { availableTabs, eventsByDateKey, loadingDateKeys, favoritedEventIds, agendaOption ->
+        _agendaAndViewMode
+    ) { availableTabs, eventsByDateKey, loadingDateKeys, favoritedEventIds, agendaState ->
+        val (agendaOption, viewMode) = agendaState
         when (availableTabs) {
             is Resource.Loading -> Resource.Loading
             is Resource.Error -> Resource.Error(ErrorType.CLIENT_ERROR)
@@ -89,6 +108,7 @@ class EventListScreenStateSlice(
                             events = emptyList(),
                             availableTabs = availableTabs.data,
                             agendaOption = agendaOption,
+                            viewMode = viewMode,
                             isScheduleLoading = false,
                             scheduleTitle = DEFAULT_SCHEDULE_TITLE,
                             topBarTitle = DEFAULT_TOP_APP_BAR_TITLE
@@ -112,6 +132,7 @@ class EventListScreenStateSlice(
                             events = visibleEvents,
                             availableTabs = availableTabs.data,
                             agendaOption = agendaOption,
+                            viewMode = viewMode,
                             isScheduleLoading = loadingDateKeys.contains(selectedTab.dateKey),
                             scheduleTitle = DEFAULT_SCHEDULE_TITLE,
                             topBarTitle = DEFAULT_TOP_APP_BAR_TITLE
@@ -184,6 +205,11 @@ class EventListScreenStateSlice(
 
             is AgendaChanged -> {
                 _agendaSelection.update { event.selectedAgenda }
+            }
+
+            is AgendaViewModeChanged -> {
+                _viewMode.update { event.selectedViewMode }
+                agendaViewPreferenceStore.setSelectedAgendaViewMode(event.selectedViewMode)
             }
         }
     }

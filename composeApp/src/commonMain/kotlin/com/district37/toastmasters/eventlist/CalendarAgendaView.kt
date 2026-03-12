@@ -286,7 +286,7 @@ private fun CalendarEventBlock(
     val backgroundColor = when (positionedEvent.event.tag) {
         EventTag.HIGHLIGHTED -> MaterialTheme.colors.secondary.copy(alpha = 0.28f)
         EventTag.BREAK -> MaterialTheme.colors.primary.copy(alpha = 0.16f)
-        EventTag.NORMAL -> MaterialTheme.colors.surface
+        EventTag.NORMAL -> androidx.compose.ui.graphics.Color.White
     }
 
     Card(
@@ -296,7 +296,7 @@ private fun CalendarEventBlock(
             .height(height)
             .clickable { onClick() },
         shape = RoundedCornerShape(6.dp),
-        elevation = if (positionedEvent.totalColumns > 1) 0.dp else 1.dp,
+        elevation = if (positionedEvent.totalColumns > 1) 1.dp else 3.dp,
         border = BorderStroke(
             width = 1.dp,
             color = MaterialTheme.colors.onSurface.copy(alpha = 0.10f)

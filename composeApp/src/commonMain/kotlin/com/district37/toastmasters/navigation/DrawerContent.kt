@@ -56,6 +56,7 @@ fun DrawerContent(
             val isSelected = when (item.key) {
                 NavigationItemKey.EVENT_LIST -> {
                     currentNavigationItem.navigationKey == NavigationItemKey.EVENT_LIST.name ||
+                        currentNavigationItem.navigationKey == NavigationItemKey.EVENT_CALENDAR.name ||
                         currentNavigationItem.navigationKey == NavigationItemKey.EVENT_DETAILS.name
                 }
 

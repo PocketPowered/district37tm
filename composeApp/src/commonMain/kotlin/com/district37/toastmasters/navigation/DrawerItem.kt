@@ -1,6 +1,5 @@
 package com.district37.toastmasters.navigation
 
-import EventIcon
 import Menu
 import androidx.compose.material.icons.Icons
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -16,13 +15,8 @@ data class DrawerItem(
 val drawerItems = listOf(
     DrawerItem(
         key = NavigationItemKey.EVENT_LIST,
-        title = "Event List",
+        title = "Agenda",
         icon = Icons.AutoMirrored.Outlined.List,
-    ),
-    DrawerItem(
-        key = NavigationItemKey.EVENT_CALENDAR,
-        title = "Schedule",
-        icon = EventIcon,
     ),
     DrawerItem(
         key = NavigationItemKey.MAPS,
