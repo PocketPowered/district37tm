@@ -1,10 +1,15 @@
 package com.district37.toastmasters
 
+import platform.Foundation.NSBundle
+
 class IOSVersionInfo : VersionInfo {
     override val versionName: String
-        get() = "iOS Toastmasters"
+        get() = NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleShortVersionString") as? String
+            ?: ""
     override val versionCode: Int
-        get() = 5
+        get() = (NSBundle.mainBundle.objectForInfoDictionaryKey("CFBundleVersion") as? String)
+            ?.toIntOrNull()
+            ?: 0
 }
 
-actual fun getVersionInfo(context: Any?): VersionInfo = IOSVersionInfo() 
+actual fun getVersionInfo(context: Any?): VersionInfo = IOSVersionInfo()
