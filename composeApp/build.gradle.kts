@@ -68,8 +68,8 @@ android {
         applicationId = "com.district37.toastmasters"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 11
-        versionName = "10.1"
+        versionCode = 12
+        versionName = "10.2"
     }
     packaging {
         resources {
