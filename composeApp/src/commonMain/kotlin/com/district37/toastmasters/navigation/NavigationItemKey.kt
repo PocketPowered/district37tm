@@ -9,5 +9,7 @@ enum class NavigationItemKey {
     EVENT_DETAILS,
     NOTIFICATIONS,
     RESOURCES,
-    MAPS
+    MAPS,
+    LOCATION_EVENTS,
+    DEV_SETTINGS
 }

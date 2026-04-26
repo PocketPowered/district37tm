@@ -1,0 +1,13 @@
+query AllConferences {
+  conferencesCollection(orderBy: [{ start_date: DescNullsLast }]) {
+    edges {
+      node {
+        id
+        name
+        is_active
+        start_date
+        end_date
+      }
+    }
+  }
+}

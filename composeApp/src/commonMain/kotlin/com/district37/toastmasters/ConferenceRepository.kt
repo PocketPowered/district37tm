@@ -1,11 +1,10 @@
 package com.district37.toastmasters
 
 import co.touchlab.kermit.Logger
-import com.apollographql.apollo3.ApolloClient
-import com.district37.toastmasters.graphql.ActiveConferenceQuery
+import com.wongislandd.nexus.util.Resource
 
 class ConferenceRepository(
-    private val apolloClient: ApolloClient
+    private val resolver: ActiveConferenceResolver
 ) {
     private val logger = Logger.withTag("ConferenceRepository")
 
@@ -15,33 +14,21 @@ class ConferenceRepository(
     )
 
     suspend fun getConferenceTitles(): ConferenceTitles? {
-        return try {
-            val response = apolloClient.query(ActiveConferenceQuery()).execute()
-            if (response.hasErrors()) {
-                logger.e {
-                    "ActiveConferenceQuery returned errors: ${response.errors?.joinToString { it.message }}"
-                }
-                return null
+        return when (val result = resolver.resolve()) {
+            is Resource.Success -> {
+                val conference = result.data
+                ConferenceTitles(
+                    scheduleTitle = conference.scheduleTitle?.trim()?.takeIf { it.isNotEmpty() }
+                        ?: conference.name.trim().takeIf { it.isNotEmpty() },
+                    appHeaderTitle = conference.appHeaderTitle?.trim()?.takeIf { it.isNotEmpty() }
+                        ?: conference.scheduleTitle?.trim()?.takeIf { it.isNotEmpty() }
+                        ?: conference.name.trim().takeIf { it.isNotEmpty() }
+                )
             }
-
-            response.data?.conferencesCollection?.edges
-                ?.firstOrNull()
-                ?.node
-                ?.let { conference ->
-                    ConferenceTitles(
-                        scheduleTitle = conference.schedule_title?.trim()?.takeIf { it.isNotEmpty() }
-                            ?: conference.name.trim().takeIf { it.isNotEmpty() },
-                        appHeaderTitle = conference.app_header_title?.trim()?.takeIf { it.isNotEmpty() }
-                            ?: conference.schedule_title?.trim()?.takeIf { it.isNotEmpty() }
-                            ?: conference.name.trim().takeIf { it.isNotEmpty() }
-                    )
-                } ?: run {
-                logger.e { "ActiveConferenceQuery returned no active conference." }
+            else -> {
+                logger.e { "Failed to resolve active conference for titles." }
                 null
             }
-        } catch (e: Exception) {
-            logger.e(e) { "Failed to fetch conference titles." }
-            null
         }
     }
 }

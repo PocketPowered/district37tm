@@ -2,6 +2,7 @@ package com.district37.toastmasters.resources
 
 import Linkout
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,9 +51,8 @@ fun ResourcesScreen() {
         forceHamburgerMenu = true
     ) { resourceCategories ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
+            contentPadding = PaddingValues(16.dp),
+            modifier = Modifier.fillMaxSize()
         ) {
             if (resourceCategories.isEmpty()) {
                 item {

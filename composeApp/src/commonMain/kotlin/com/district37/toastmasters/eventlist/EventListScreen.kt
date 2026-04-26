@@ -134,12 +134,23 @@ fun EventListScreen() {
                     if (data.isScheduleLoading) {
                         CircularProgressIndicator()
                     } else {
-                        Text(
-                            text = if (data.agendaOption == AgendaOption.FAVORITES_AGENDA) "No favorites found" else "No events found",
-                            style = MaterialTheme.typography.body1,
-                            color = MaterialTheme.colors.secondary,
-                            textAlign = TextAlign.Center
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = if (data.agendaOption == AgendaOption.FAVORITES_AGENDA) "No favorites found" else "No events found",
+                                style = MaterialTheme.typography.h5,
+                                color = MaterialTheme.colors.secondary,
+                                textAlign = TextAlign.Center
+                            )
+                            if (data.agendaOption == AgendaOption.FAVORITES_AGENDA) {
+                                Text(
+                                    text = "Click the heart next to events to add favorites!",
+                                    style = MaterialTheme.typography.body2,
+                                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(top = 8.dp, start = 32.dp, end = 32.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }

@@ -50,7 +50,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-private fun Modifier.shimmerEffect(): Modifier = composed {
+internal fun Modifier.shimmerEffect(): Modifier = composed {
     val shimmerColors = listOf(
         Color(0xFFB8860B).copy(alpha = 0.2f),
         Color(0xFFF2DF74).copy(alpha = 0.4f),

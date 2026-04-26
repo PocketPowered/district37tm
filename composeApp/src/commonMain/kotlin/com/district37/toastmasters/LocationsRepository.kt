@@ -1,29 +1,22 @@
 package com.district37.toastmasters
 
 import com.apollographql.apollo3.ApolloClient
-import com.district37.toastmasters.graphql.ActiveConferenceQuery
 import com.district37.toastmasters.graphql.AllLocationsQuery
 import com.district37.toastmasters.graphql.SearchLocationsQuery
 import com.wongislandd.nexus.util.ErrorType
 import com.wongislandd.nexus.util.Resource
 
-class LocationsRepository(private val apolloClient: ApolloClient) {
-    private suspend fun getActiveConferenceId(): Long? {
-        return try {
-            val response = apolloClient.query(ActiveConferenceQuery()).execute()
-            if (response.hasErrors()) {
-                return null
-            }
-            response.data?.conferencesCollection?.edges?.firstOrNull()?.node?.id
-        } catch (_: Exception) {
-            null
-        }
-    }
-
+class LocationsRepository(
+    private val apolloClient: ApolloClient,
+    private val resolver: ActiveConferenceResolver
+) {
     suspend fun getAllLocations(): Resource<List<AllLocationsQuery.Node>> {
         return try {
-            val conferenceId = getActiveConferenceId() ?: return Resource.Error(ErrorType.NOT_FOUND)
-            val response = apolloClient.query(AllLocationsQuery(conferenceId)).execute()
+            val conference = resolver.resolve()
+            if (conference !is Resource.Success) {
+                return Resource.Error(ErrorType.NOT_FOUND)
+            }
+            val response = apolloClient.query(AllLocationsQuery(conference.data.id)).execute()
             if (response.hasErrors()) {
                 return Resource.Error(ErrorType.CLIENT_ERROR)
             }
@@ -36,9 +29,12 @@ class LocationsRepository(private val apolloClient: ApolloClient) {
 
     suspend fun searchLocationsByName(query: String): Resource<List<SearchLocationsQuery.Node>> {
         return try {
-            val conferenceId = getActiveConferenceId() ?: return Resource.Error(ErrorType.NOT_FOUND)
+            val conference = resolver.resolve()
+            if (conference !is Resource.Success) {
+                return Resource.Error(ErrorType.NOT_FOUND)
+            }
             val pattern = if (query.isBlank()) "%" else "%${query.trim()}%"
-            val response = apolloClient.query(SearchLocationsQuery(conferenceId, pattern)).execute()
+            val response = apolloClient.query(SearchLocationsQuery(conference.data.id, pattern)).execute()
             if (response.hasErrors()) {
                 return Resource.Error(ErrorType.CLIENT_ERROR)
             }

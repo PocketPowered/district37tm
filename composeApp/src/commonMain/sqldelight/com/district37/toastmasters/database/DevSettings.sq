@@ -1,0 +1,12 @@
+CREATE TABLE dev_settings (
+    conference_override_id INTEGER
+);
+
+getConferenceOverrideId:
+SELECT conference_override_id FROM dev_settings LIMIT 1;
+
+setConferenceOverrideId:
+INSERT OR REPLACE INTO dev_settings(conference_override_id) VALUES (?);
+
+clearConferenceOverrideId:
+DELETE FROM dev_settings;

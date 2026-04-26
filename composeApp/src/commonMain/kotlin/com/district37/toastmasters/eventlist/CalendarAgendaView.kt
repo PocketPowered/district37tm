@@ -30,6 +30,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -284,16 +286,20 @@ private fun CalendarEventBlock(
     val xOffset = (columnWidth + gapBetweenColumns) * positionedEvent.column
 
     val backgroundColor = when (positionedEvent.event.tag) {
-        EventTag.HIGHLIGHTED -> MaterialTheme.colors.secondary.copy(alpha = 0.28f)
-        EventTag.BREAK -> MaterialTheme.colors.primary.copy(alpha = 0.16f)
-        EventTag.NORMAL -> androidx.compose.ui.graphics.Color.White
+        EventTag.HIGHLIGHTED -> MaterialTheme.colors.surface
+        EventTag.BREAK -> MaterialTheme.colors.primary.copy(alpha = 1f)
+        EventTag.NORMAL -> MaterialTheme.colors.surface
     }
 
-    Card(
+    Box(
         modifier = Modifier
             .offset(x = xOffset, y = topOffset)
             .width(columnWidth)
             .height(height)
+    ) {
+    Card(
+        modifier = Modifier
+            .matchParentSize()
             .clickable { onClick() },
         shape = RoundedCornerShape(6.dp),
         elevation = if (positionedEvent.totalColumns > 1) 1.dp else 3.dp,
@@ -378,6 +384,15 @@ private fun CalendarEventBlock(
                 )
             }
         }
+    }
+    if (positionedEvent.event.tag == EventTag.HIGHLIGHTED) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(RoundedCornerShape(6.dp))
+                .shimmerEffect()
+        )
+    }
     }
 }
 

@@ -10,4 +10,5 @@ val locationsModule = module {
     singleOf(::AllLocationNodeTransformer)
     singleOf(::SearchLocationNodeTransformer)
     viewModelOf(::LocationsViewModel)
+    viewModelOf(::LocationEventsViewModel)
 } 

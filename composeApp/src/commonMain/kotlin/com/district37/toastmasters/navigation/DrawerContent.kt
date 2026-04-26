@@ -1,5 +1,7 @@
 package com.district37.toastmasters.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,13 +15,20 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.district37.toastmasters.LocalAppViewModel
+import com.wongislandd.nexus.navigation.LocalNavHostController
+
+private const val DEV_TOOLS_TAP_THRESHOLD = 4
 
 @Composable
 fun DrawerContent(
@@ -27,8 +36,12 @@ fun DrawerContent(
     onCloseDrawer: () -> Unit
 ) {
     val appViewModel = LocalAppViewModel.current
+    val navController = LocalNavHostController.current
     val currentNavigationItem by
     appViewModel.navigationSlice.currentlySelectedNavigationItem.collectAsState()
+
+    var versionTapCount by remember { mutableStateOf(0) }
+    val devToolsUnlocked = versionTapCount >= DEV_TOOLS_TAP_THRESHOLD
 
     Column(
         modifier = Modifier
@@ -45,7 +58,7 @@ fun DrawerContent(
             Text(
                 text = "District 37 Toastmasters",
                 style = MaterialTheme.typography.h5,
-                color = MaterialTheme.colors.primary
+                color = MaterialTheme.colors.onSurface
             )
         }
 
@@ -67,21 +80,40 @@ fun DrawerContent(
                 isSelected = isSelected,
                 onItemClick = {
                     onItemClick(item.key)
-                    onCloseDrawer()
                 }
             )
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Version Info
+        // Version Info with dev tools easter egg
         Divider()
         Spacer(modifier = Modifier.padding(8.dp))
-        Text(
-            text = "Version: v${appViewModel.versionInfo.versionName} (${appViewModel.versionInfo.versionCode})",
-            style = MaterialTheme.typography.caption,
-            color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Version: v${appViewModel.versionInfo.versionName} (${appViewModel.versionInfo.versionCode})",
+                style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
+                modifier = Modifier.clickable { versionTapCount++ }
+            )
+            AnimatedVisibility(visible = devToolsUnlocked) {
+                Row {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(onClick = {
+                        onCloseDrawer()
+                        appViewModel.navigate(navController, NavigationItemKey.DEV_SETTINGS)
+                    }) {
+                        Text(
+                            text = "Dev Tools",
+                            style = MaterialTheme.typography.caption,
+                            color = MaterialTheme.colors.secondary
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

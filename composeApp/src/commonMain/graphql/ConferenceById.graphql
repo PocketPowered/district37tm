@@ -1,0 +1,15 @@
+query ConferenceById($id: BigInt!) {
+  conferencesCollection(first: 1, filter: { id: { eq: $id } }) {
+    edges {
+      node {
+        id
+        name
+        is_active
+        schedule_title
+        app_header_title
+        start_date
+        end_date
+      }
+    }
+  }
+}

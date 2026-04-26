@@ -7,6 +7,7 @@ import androidx.compose.material.DrawerValue
 import androidx.compose.material.Scaffold
 import androidx.compose.material.rememberDrawerState
 import androidx.compose.material.rememberScaffoldState
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -58,11 +59,14 @@ fun <T> StatefulScaffold(
             {
                 DrawerContent(
                     onItemClick = { key ->
-                        appViewModel.navigate(
-                            navigationController = navController,
-                            navigationKey = key,
-                            isTopLevelDestination = true
-                        )
+                        coroutineScope.launch(Dispatchers.Main) {
+                            drawerState.close()
+                            appViewModel.navigate(
+                                navigationController = navController,
+                                navigationKey = key,
+                                isTopLevelDestination = true
+                            )
+                        }
                     },
                     onCloseDrawer = {
                         coroutineScope.launch(Dispatchers.Main) {
@@ -72,6 +76,7 @@ fun <T> StatefulScaffold(
                 )
             }
         } else null,
+        drawerScrimColor = Color.Black.copy(alpha = 0.5f),
         scaffoldState = scaffoldState,
         modifier = modifier
     ) {

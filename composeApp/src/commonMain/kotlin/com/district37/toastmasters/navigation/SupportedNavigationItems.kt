@@ -3,6 +3,7 @@ package com.district37.toastmasters.navigation
 import com.wongislandd.nexus.navigation.NavigationItem
 
 val EVENT_ID_ARG = "eventId"
+val LOCATION_NAME_ARG = "locationName"
 
 val supportedNavigationItems = mutableMapOf(
     NavigationItemKey.SPLASH_SCREEN to NavigationItem(
@@ -50,5 +51,16 @@ val supportedNavigationItems = mutableMapOf(
         NavigationItemKey.MAPS.name,
         "Maps",
         "maps"
+    ),
+    NavigationItemKey.LOCATION_EVENTS to NavigationItem(
+        NavigationItemKey.LOCATION_EVENTS.name,
+        "Events at Location",
+        "locationevents",
+        supportedArgs = listOf(LOCATION_NAME_ARG)
+    ),
+    NavigationItemKey.DEV_SETTINGS to NavigationItem(
+        NavigationItemKey.DEV_SETTINGS.name,
+        "Dev Settings",
+        "dev-settings"
     )
 )
