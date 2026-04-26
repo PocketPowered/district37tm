@@ -1,5 +1,6 @@
 package com.district37.toastmasters
 
+import co.touchlab.kermit.Logger
 import com.apollographql.apollo3.ApolloClient
 import com.district37.toastmasters.graphql.AvailableDatesQuery
 import com.district37.toastmasters.graphql.EventDetailsQuery
@@ -11,6 +12,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 
 class EventRepository(private val apolloClient: ApolloClient) {
+    private val logger = Logger.withTag("EventRepository")
+
     private data class ActiveConferenceDateRange(
         val conferenceId: Long,
         val startDateIso: String?,
@@ -21,11 +24,17 @@ class EventRepository(private val apolloClient: ApolloClient) {
         return try {
             val response = apolloClient.query(AvailableDatesQuery()).execute()
             if (response.hasErrors()) {
+                logger.e {
+                    "AvailableDatesQuery returned errors: ${response.errors?.joinToString { it.message }}"
+                }
                 return Resource.Error(ErrorType.CLIENT_ERROR)
             }
 
             val activeConference = response.data?.conferencesCollection?.edges?.firstOrNull()?.node
-                ?: return Resource.Error(ErrorType.NOT_FOUND)
+                ?: run {
+                    logger.e { "AvailableDatesQuery returned no active conference." }
+                    return Resource.Error(ErrorType.NOT_FOUND)
+                }
 
             Resource.Success(
                 ActiveConferenceDateRange(
@@ -35,6 +44,7 @@ class EventRepository(private val apolloClient: ApolloClient) {
                 )
             )
         } catch (e: Exception) {
+            logger.e(e) { "Failed to fetch active conference date range." }
             Resource.Error(ErrorType.UNKNOWN, e)
         }
     }
@@ -88,14 +98,24 @@ class EventRepository(private val apolloClient: ApolloClient) {
                 )
             ).execute()
             if (response.hasErrors()) {
+                logger.e {
+                    "EventDetailsQuery failed for eventId=$id conferenceId=${activeConference.data.conferenceId}: " +
+                        "${response.errors?.joinToString { it.message }}"
+                }
                 return Resource.Error(ErrorType.CLIENT_ERROR)
             }
 
             val node = response.data?.eventsCollection?.edges?.firstOrNull()?.node
-                ?: return Resource.Error(ErrorType.NOT_FOUND)
+                ?: run {
+                    logger.e {
+                        "EventDetailsQuery returned no event for eventId=$id conferenceId=${activeConference.data.conferenceId}."
+                    }
+                    return Resource.Error(ErrorType.NOT_FOUND)
+                }
 
             Resource.Success(node)
         } catch (e: Exception) {
+            logger.e(e) { "Failed to fetch event details for eventId=$id." }
             Resource.Error(ErrorType.UNKNOWN, e)
         }
     }
@@ -114,12 +134,19 @@ class EventRepository(private val apolloClient: ApolloClient) {
                 )
             ).execute()
             if (response.hasErrors()) {
+                logger.e {
+                    "EventPreviewsByDateQuery failed for conferenceId=${activeConference.data.conferenceId} dateKey=$dateKey: " +
+                        "${response.errors?.joinToString { it.message }}"
+                }
                 return Resource.Error(ErrorType.CLIENT_ERROR)
             }
 
             val previews = response.data?.eventsCollection?.edges?.map { it.node } ?: emptyList()
             Resource.Success(previews)
         } catch (e: Exception) {
+            logger.e(e) {
+                "Failed to fetch event previews for conferenceId=${activeConference.data.conferenceId} dateKey=$dateKey."
+            }
             Resource.Error(ErrorType.UNKNOWN, e)
         }
     }

@@ -147,7 +147,9 @@ const EventForm: React.FC = () => {
 
   const [loadingEvent, setLoadingEvent] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [submitAttempted, setSubmitAttempted] = useState(false);
@@ -634,6 +636,19 @@ const EventForm: React.FC = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this event?')) return;
+    if (!selectedConference || !id) return;
+    setDeleting(true);
+    try {
+      await eventService.deleteEvent(Number(id), selectedConference.id);
+      navigate('/events');
+    } catch (err) {
+      setDeleteError('Failed to delete event. Please try again.');
+      setDeleting(false);
+    }
+  };
+
   if (conferenceLoading || loadingEvent) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
@@ -658,9 +673,22 @@ const EventForm: React.FC = () => {
               Keep event details accurate for attendees and app users.
             </Typography>
           </Box>
-          <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/events')} variant="outlined">
-            Back to List
-          </Button>
+          <Stack direction="row" spacing={1}>
+            {id && (
+              <Button
+                startIcon={deleting ? <CircularProgress size={16} /> : <DeleteIcon />}
+                onClick={handleDelete}
+                variant="outlined"
+                color="error"
+                disabled={deleting}
+              >
+                Delete Event
+              </Button>
+            )}
+            <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/events')} variant="outlined">
+              Back to List
+            </Button>
+          </Stack>
         </Stack>
 
         <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 3 }}>
@@ -687,6 +715,7 @@ const EventForm: React.FC = () => {
         </Stack>
 
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {deleteError && <Alert severity="error" sx={{ mb: 2 }}>{deleteError}</Alert>}
         {validationError && <Alert severity="warning" sx={{ mb: 2 }}>{validationError}</Alert>}
         {!selectedConference && (
           <Alert severity="warning" sx={{ mb: 2 }}>
